@@ -69,30 +69,39 @@
 
         
 
-           /* --- RELLENADO LIBRE --- */
+               /* --- RELLENADO LIBRE --- */
         .canvas-container { width: 100%; overflow: auto; border: 1px solid #444; border-radius: 8px; background: #222; position: relative; margin-top: 10px; display: flex; flex-direction: column; gap: 10px; padding: 10px; }
+        
+        /* ¡IMPORTANTE! Quitamos el overflow: hidden para que los botones no se corten */
         .pdf-page-wrapper { position: relative; width: 100%; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
         .free-pdf-canvas { display: block; width: 100%; cursor: crosshair; }
         
-        /* Inputs flotantes para el rellenado libre */
-        .floating-input-wrapper { position: absolute; display: flex; align-items: center; gap: 5px; z-index: 10; }
-        .floating-input { background: rgba(255, 255, 255, 0.95); border: 2px solid #e67e22; color: #000; font-weight: bold; padding: 6px 10px; border-radius: 6px; outline: none; font-size: 14px; min-width: 150px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        /* Inputs flotantes y Arrastre */
+        .floating-input-wrapper { position: absolute; display: flex; align-items: center; gap: 5px; z-index: 50; background: rgba(255, 255, 255, 0.95); padding: 4px; border-radius: 6px; box-shadow: 0 4px 10px rgba(0,0,0,0.4); border: 1px solid #ccc; }
+        .drag-handle { cursor: grab; font-size: 18px; padding: 0 5px; color: #888; user-select: none; display: flex; align-items: center; }
+        .drag-handle:active { cursor: grabbing; }
         
-        .btn-confirm-input { background: #2ecc71; color: #000; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 12px; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3); font-weight: bold; transition: 0.2s; }
-        .btn-confirm-input:hover { background: #27ae60; transform: scale(1.1); }
-        .btn-size-input { background: #3498db; color: white; border: none; border-radius: 4px; width: 24px; height: 28px; cursor: pointer; font-size: 14px; font-weight: bold; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: 0.2s; }
+        .floating-input { background: transparent; border: 1px solid #e67e22; color: #000; font-weight: bold; padding: 4px 8px; border-radius: 4px; outline: none; font-size: 12px; min-width: 120px; }
+        
+        .btn-size-input { background: #3498db; color: white; border: none; border-radius: 4px; width: 26px; height: 26px; cursor: pointer; font-size: 16px; font-weight: bold; display: flex; justify-content: center; align-items: center; transition: 0.2s; }
         .btn-size-input:hover { background: #2980b9; }
-
         
-        .btn-delete-input { background: #e74c3c; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 12px; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3); font-weight: bold; transition: 0.2s; }
-        .btn-delete-input:hover { background: #c0392b; transform: scale(1.1); }
+        .btn-confirm-input { background: #2ecc71; color: #000; border: none; border-radius: 4px; width: 26px; height: 26px; cursor: pointer; font-size: 12px; display: flex; justify-content: center; align-items: center; font-weight: bold; transition: 0.2s; }
+        .btn-confirm-input:hover { background: #27ae60; }
         
-        /* Texto ya confirmado en pantalla */
-        .confirmed-text { position: absolute; color: #000; font-family: sans-serif; font-size: 15px; font-weight: bold; white-space: nowrap; z-index: 5; pointer-events: none; text-shadow: 0 0 2px rgba(255,255,255,0.8); }
+        .btn-delete-input { background: #e74c3c; color: white; border: none; border-radius: 4px; width: 26px; height: 26px; cursor: pointer; font-size: 12px; display: flex; justify-content: center; align-items: center; font-weight: bold; transition: 0.2s; }
+        .btn-delete-input:hover { background: #c0392b; }
+        
+        /* Texto ya confirmado en pantalla (Arrastrable) */
+        .confirmed-text-wrapper { position: absolute; display: flex; align-items: center; gap: 5px; z-index: 40; cursor: grab; padding: 2px 6px; border: 1px dashed transparent; border-radius: 4px; }
+        .confirmed-text-wrapper:hover { border: 1px dashed #3498db; background: rgba(255,255,255,0.9); }
+        .confirmed-text-wrapper:active { cursor: grabbing; }
+        .confirmed-text { color: #000; font-family: sans-serif; font-weight: bold; white-space: nowrap; pointer-events: none; }
 
         
     
-    
+
+        
     </style>
     
 </head>
@@ -527,14 +536,22 @@
 
 
 
+
     
+    
+
     function crearInputFlotante(parent, x, y, pageNum) {
         const wrapper = document.createElement('div');
         wrapper.className = 'floating-input-wrapper';
         wrapper.style.left = `${x}px`;
         wrapper.style.top = `${y - 15}px`; 
         
-        let currentFontSize = 12; // Tamaño de letra inicial
+        let currentFontSize = 12; 
+
+        // Icono de arrastre
+        const dragHandle = document.createElement('div');
+        dragHandle.className = 'drag-handle';
+        dragHandle.innerHTML = '✥';
 
         const input = document.createElement('input');
         input.type = 'text';
@@ -542,16 +559,15 @@
         input.placeholder = "Escribe aquí...";
         input.style.fontSize = `${currentFontSize}px`;
         
-        // Botones para achicar y agrandar la letra
         const btnMinus = document.createElement('button');
         btnMinus.innerText = '-';
         btnMinus.className = 'btn-size-input';
-        btnMinus.onclick = () => { currentFontSize--; input.style.fontSize = `${currentFontSize}px`; };
+        btnMinus.onclick = () => { currentFontSize--; input.style.fontSize = `${currentFontSize}px`; inputData.fontSize = currentFontSize; };
 
         const btnPlus = document.createElement('button');
         btnPlus.innerText = '+';
         btnPlus.className = 'btn-size-input';
-        btnPlus.onclick = () => { currentFontSize++; input.style.fontSize = `${currentFontSize}px`; };
+        btnPlus.onclick = () => { currentFontSize++; input.style.fontSize = `${currentFontSize}px`; inputData.fontSize = currentFontSize; };
         
         const btnConfirm = document.createElement('button');
         btnConfirm.innerText = '✔️';
@@ -565,8 +581,6 @@
             wrapper: wrapper,
             input: input,
             pageNum: pageNum,
-            canvasX: x,
-            canvasY: y,
             textoFinal: "",
             fontSize: currentFontSize
         };
@@ -582,18 +596,33 @@
                 btnDelete.click(); 
                 return;
             }
+            
+            // Cambiar a modo texto confirmado
+            wrapper.className = 'confirmed-text-wrapper';
             wrapper.innerHTML = ''; 
-            wrapper.className = 'confirmed-text';
-            wrapper.style.left = `${x}px`;
-            // Ajuste visual para que la base de la letra quede exactamente donde hiciste clic
-            wrapper.style.top = `${y - currentFontSize}px`; 
-            wrapper.style.fontSize = `${currentFontSize}px`;
-            wrapper.innerText = texto;
+            
+            const spanText = document.createElement('span');
+            spanText.className = 'confirmed-text';
+            spanText.style.fontSize = `${currentFontSize}px`;
+            spanText.innerText = texto;
+            
+            // Botón de borrar oculto que aparece al pasar el mouse
+            const btnEditDelete = document.createElement('button');
+            btnEditDelete.innerText = '✖';
+            btnEditDelete.className = 'btn-delete-input';
+            btnEditDelete.style.display = 'none'; 
+            btnEditDelete.onclick = btnDelete.onclick;
+
+            wrapper.onmouseenter = () => btnEditDelete.style.display = 'flex';
+            wrapper.onmouseleave = () => btnEditDelete.style.display = 'none';
+
+            wrapper.appendChild(spanText);
+            wrapper.appendChild(btnEditDelete);
             
             inputData.textoFinal = texto;
-            inputData.fontSize = currentFontSize; // Guardamos el tamaño que eligió el usuario
         };
         
+        wrapper.appendChild(dragHandle);
         wrapper.appendChild(input);
         wrapper.appendChild(btnMinus);
         wrapper.appendChild(btnPlus);
@@ -602,7 +631,59 @@
         parent.appendChild(wrapper);
         
         inputsFlotantes.push(inputData);
+        
+        // Activar el motor de arrastre
+        hacerArrastrable(wrapper, dragHandle);
+        
         input.focus();
+    }
+
+    // Motor de arrastre para Mouse y Táctil (Celulares)
+    function hacerArrastrable(elmnt, handle) {
+        let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+        
+        handle.onmousedown = dragMouseDown;
+        handle.ontouchstart = dragTouchStart;
+        
+        // Si ya está confirmado, todo el texto sirve para arrastrar
+        elmnt.onmousedown = function(e) { if(elmnt.className === 'confirmed-text-wrapper' && e.target.tagName !== 'BUTTON') dragMouseDown(e); };
+        elmnt.ontouchstart = function(e) { if(elmnt.className === 'confirmed-text-wrapper' && e.target.tagName !== 'BUTTON') dragTouchStart(e); };
+
+        function dragMouseDown(e) {
+            e.preventDefault();
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            document.onmouseup = closeDragElement;
+            document.onmousemove = elementDrag;
+        }
+
+        function dragTouchStart(e) {
+            pos3 = e.touches[0].clientX;
+            pos4 = e.touches[0].clientY;
+            document.ontouchend = closeDragElement;
+            document.ontouchmove = elementDrag;
+        }
+
+        function elementDrag(e) {
+            e.preventDefault();
+            let clientX = e.clientX || (e.touches && e.touches[0].clientX);
+            let clientY = e.clientY || (e.touches && e.touches[0].clientY);
+            
+            pos1 = pos3 - clientX;
+            pos2 = pos4 - clientY;
+            pos3 = clientX;
+            pos4 = clientY;
+            
+            elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+            elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+        }
+
+        function closeDragElement() {
+            document.onmouseup = null;
+            document.onmousemove = null;
+            document.ontouchend = null;
+            document.ontouchmove = null;
+        }
     }
 
     async function generarPdfLibre() {
@@ -627,14 +708,17 @@
                     const pdfHeight = targetPage.getHeight();
                     const scale = freeCanvasScales[item.pageNum];
                     
-                    const pdfX = item.canvasX / scale;
-                    // Matemática exacta: La base de la letra en el PDF será exactamente donde hizo clic
-                    const pdfY = pdfHeight - (item.canvasY / scale);
+                    // Calculamos la posición exacta leyendo dónde quedó la caja después de arrastrarla
+                    const isConfirmed = item.wrapper.className === 'confirmed-text-wrapper';
+                    const offsetX = isConfirmed ? 4 : 28; // Compensar el ancho del icono de arrastre
+                    
+                    const pdfX = (item.wrapper.offsetLeft + offsetX) / scale;
+                    const pdfY = pdfHeight - ((item.wrapper.offsetTop + item.fontSize + 8) / scale);
 
                     targetPage.drawText(texto, {
                         x: pdfX,
                         y: pdfY, 
-                        size: item.fontSize, // Usa el tamaño que el usuario ajustó
+                        size: item.fontSize,
                         color: PDFLib.rgb(0, 0, 0)
                     });
                 }
@@ -661,6 +745,8 @@
         }
     }
 
+
+    
 
     
     
