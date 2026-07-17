@@ -69,7 +69,7 @@
 
         
 
-        /* --- RELLENADO LIBRE --- */
+           /* --- RELLENADO LIBRE --- */
         .canvas-container { width: 100%; overflow: auto; border: 1px solid #444; border-radius: 8px; background: #222; position: relative; margin-top: 10px; display: flex; flex-direction: column; gap: 10px; padding: 10px; }
         .pdf-page-wrapper { position: relative; width: 100%; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
         .free-pdf-canvas { display: block; width: 100%; cursor: crosshair; }
@@ -77,8 +77,15 @@
         /* Inputs flotantes para el rellenado libre */
         .floating-input-wrapper { position: absolute; display: flex; align-items: center; gap: 5px; z-index: 10; }
         .floating-input { background: rgba(255, 255, 255, 0.95); border: 2px solid #e67e22; color: #000; font-weight: bold; padding: 6px 10px; border-radius: 6px; outline: none; font-size: 14px; min-width: 150px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        
+        .btn-confirm-input { background: #2ecc71; color: #000; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 12px; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3); font-weight: bold; transition: 0.2s; }
+        .btn-confirm-input:hover { background: #27ae60; transform: scale(1.1); }
+        
         .btn-delete-input { background: #e74c3c; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 12px; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3); font-weight: bold; transition: 0.2s; }
         .btn-delete-input:hover { background: #c0392b; transform: scale(1.1); }
+        
+        /* Texto ya confirmado en pantalla */
+        .confirmed-text { position: absolute; color: #000; font-family: sans-serif; font-size: 15px; font-weight: bold; white-space: nowrap; z-index: 5; pointer-events: none; text-shadow: 0 0 2px rgba(255,255,255,0.8); }
 
         
     
@@ -431,10 +438,11 @@
 
 
 
-        // --- LÓGICA: RELLENADO LIBRE (TÁCTIL) ---
+    // --- LÓGICA: RELLENADO LIBRE (TÁCTIL) ---
     let freePdfDoc = null;
     let freeCanvasScales = {};
     let inputsFlotantes = [];
+    let freePdfPageCount = 0; // Guardará cuántas hojas tiene el PDF
 
     function abrirRellenadoLibre() {
         if (!usuarioActual || usuarioActual.creditos <= 0) {
@@ -443,14 +451,14 @@
             return;
         }
         
-        // Limpiar estado anterior
         document.getElementById('free-pdf-upload').value = '';
         document.getElementById('free-canvas-container').style.display = 'none';
-        document.getElementById('free-canvas-container').innerHTML = ''; // Limpiar páginas
+        document.getElementById('free-canvas-container').innerHTML = ''; 
         document.getElementById('btn-generar-free').style.display = 'none';
         
         inputsFlotantes = [];
         freeCanvasScales = {};
+        freePdfPageCount = 0;
         
         showScreen('screen-rellenado-libre');
     }
@@ -462,24 +470,20 @@
         const file = e.target.files[0];
         const arrayBuffer = await file.arrayBuffer();
         
-        // Cargar para edición final
         freePdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
-        
-        // Cargar para visualización
         const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
         const pdf = await loadingTask.promise;
         
+        freePdfPageCount = pdf.numPages; // Guardamos la cantidad de hojas
+        
         const container = document.getElementById('free-canvas-container');
-        container.innerHTML = ''; // Limpiar
+        container.innerHTML = ''; 
         inputsFlotantes = [];
         freeCanvasScales = {};
-        
         container.style.display = 'flex';
         
-        // Renderizar página por página
         for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
             const page = await pdf.getPage(pageNum);
-            
             const wrapper = document.createElement('div');
             wrapper.className = 'pdf-page-wrapper';
             wrapper.dataset.pageNum = pageNum;
@@ -491,8 +495,6 @@
             container.appendChild(wrapper);
             
             const ctx = canvas.getContext('2d');
-            
-            // El ancho del contenedor menos el padding
             const containerWidth = container.clientWidth - 20; 
             const unscaledViewport = page.getViewport({ scale: 1 });
             const scale = containerWidth / unscaledViewport.width;
@@ -504,58 +506,86 @@
             
             await page.render({ canvasContext: ctx, viewport: viewport }).promise;
             
-            // Evento para crear input al tocar esta página específica
             wrapper.addEventListener('click', function(ev) {
-                // Evitar crear un input si se hizo clic en un input existente o en el botón de borrar
                 if (ev.target.tagName.toLowerCase() === 'input' || ev.target.tagName.toLowerCase() === 'button') return;
-                
                 const rect = this.getBoundingClientRect();
                 const x = ev.clientX - rect.left;
                 const y = ev.clientY - rect.top;
-                
                 crearInputFlotante(this, x, y, pageNum);
             });
         }
         
-        document.getElementById('btn-generar-free').style.display = 'block';
+        // Actualizamos el botón con la cantidad de créditos a cobrar
+        const btnGenerar = document.getElementById('btn-generar-free');
+        btnGenerar.innerText = `✨ Bajar Documento (${freePdfPageCount} Créditos)`;
+        btnGenerar.style.display = 'block';
     });
 
     function crearInputFlotante(parent, x, y, pageNum) {
         const wrapper = document.createElement('div');
         wrapper.className = 'floating-input-wrapper';
         wrapper.style.left = `${x}px`;
-        wrapper.style.top = `${y - 15}px`; // Centrar un poco mejor
+        wrapper.style.top = `${y - 15}px`; 
         
         const input = document.createElement('input');
         input.type = 'text';
         input.className = 'floating-input';
         input.placeholder = "Escribe aquí...";
         
+        const btnConfirm = document.createElement('button');
+        btnConfirm.innerText = '✔️';
+        btnConfirm.className = 'btn-confirm-input';
+        
         const btnDelete = document.createElement('button');
         btnDelete.innerText = '✖';
         btnDelete.className = 'btn-delete-input';
-        btnDelete.onclick = function() {
-            wrapper.remove();
-            inputsFlotantes = inputsFlotantes.filter(i => i.wrapper !== wrapper);
-        };
         
-        wrapper.appendChild(input);
-        wrapper.appendChild(btnDelete);
-        parent.appendChild(wrapper);
-        
-        inputsFlotantes.push({
+        const inputData = {
             wrapper: wrapper,
             input: input,
             pageNum: pageNum,
             canvasX: x,
-            canvasY: y
-        });
+            canvasY: y,
+            textoFinal: ""
+        };
         
+        btnDelete.onclick = function() {
+            wrapper.remove();
+            inputsFlotantes = inputsFlotantes.filter(i => i !== inputData);
+        };
+        
+        // Al confirmar, la caja se vuelve texto plano
+        btnConfirm.onclick = function() {
+            const texto = input.value.trim();
+            if (!texto) {
+                btnDelete.click(); // Si está vacío, lo borra
+                return;
+            }
+            wrapper.innerHTML = ''; 
+            wrapper.className = 'confirmed-text';
+            wrapper.style.left = `${x}px`;
+            wrapper.style.top = `${y - 8}px`; 
+            wrapper.innerText = texto;
+            inputData.textoFinal = texto;
+        };
+        
+        wrapper.appendChild(input);
+        wrapper.appendChild(btnConfirm);
+        wrapper.appendChild(btnDelete);
+        parent.appendChild(wrapper);
+        
+        inputsFlotantes.push(inputData);
         input.focus();
     }
 
     async function generarPdfLibre() {
         if (!freePdfDoc) return;
+
+        // Validar si tiene suficientes créditos para la cantidad de hojas
+        if (usuarioActual.creditos < freePdfPageCount) {
+            alert(`⚠️ Necesitas ${freePdfPageCount} créditos para descargar este documento de ${freePdfPageCount} hojas. Tienes ${usuarioActual.creditos}.`);
+            return;
+        }
 
         const btn = document.getElementById('btn-generar-free');
         btn.innerText = "⏳ Procesando...";
@@ -564,11 +594,11 @@
         try {
             const pages = freePdfDoc.getPages();
 
-            // Estampar cada input flotante en su página correspondiente
             inputsFlotantes.forEach(item => {
-                const texto = item.input.value.trim();
+                // Toma el texto confirmado, o lo que haya en el input si olvidó darle al check
+                const texto = item.textoFinal || item.input.value.trim();
                 if (texto) {
-                    const targetPage = pages[item.pageNum - 1]; // Las páginas en pdf-lib empiezan en 0
+                    const targetPage = pages[item.pageNum - 1]; 
                     const pdfHeight = targetPage.getHeight();
                     const scale = freeCanvasScales[item.pageNum];
                     
@@ -584,9 +614,13 @@
                 }
             });
 
-            // Descontar crédito
-            const pagado = await descontarCredito();
-            if (!pagado) throw new Error("No se pudo procesar el pago.");
+            // Descontar créditos según la cantidad de hojas
+            const nuevoSaldo = usuarioActual.creditos - freePdfPageCount;
+            const { error } = await supabase.from('usuarios_codigos').update({ creditos: nuevoSaldo }).eq('id', usuarioActual.id);
+            if (error) throw new Error("No se pudo procesar el pago.");
+            
+            usuarioActual.creditos = nuevoSaldo;
+            actualizarUI();
 
             // Descargar
             const pdfBytes = await freePdfDoc.save();
@@ -598,13 +632,13 @@
         } catch (err) {
             alert("Error: " + err.message);
         } finally {
-            btn.innerText = "✨ Descargar PDF Lleno (1 Crédito)";
+            btn.innerText = `✨ Bajar Documento (${freePdfPageCount} Créditos)`;
             btn.disabled = false;
         }
     }
 
 
-
+    
     
 
 
