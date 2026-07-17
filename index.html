@@ -65,13 +65,26 @@
         .btn-generar { background: #2ecc71; color: #000; border: none; padding: 15px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; width: 100%; margin-top: 10px; }
         .btn-volver { background: transparent; color: #aaa; border: 1px solid #555; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 13px; width: fit-content; margin-bottom: 10px; }
 
+
+
+        
+
         /* --- RELLENADO LIBRE --- */
-        .canvas-container { width: 100%; overflow: auto; border: 1px solid #444; border-radius: 8px; background: #222; position: relative; margin-top: 10px; }
-        #free-pdf-canvas { display: block; width: 100%; cursor: crosshair; }
+        .canvas-container { width: 100%; overflow: auto; border: 1px solid #444; border-radius: 8px; background: #222; position: relative; margin-top: 10px; display: flex; flex-direction: column; gap: 10px; padding: 10px; }
+        .pdf-page-wrapper { position: relative; width: 100%; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+        .free-pdf-canvas { display: block; width: 100%; cursor: crosshair; }
         
         /* Inputs flotantes para el rellenado libre */
-        .floating-input { position: absolute; background: rgba(255, 255, 255, 0.9); border: 2px solid #e67e22; color: #000; font-weight: bold; padding: 2px 5px; border-radius: 4px; outline: none; font-size: 14px; z-index: 10; min-width: 100px; }
+        .floating-input-wrapper { position: absolute; display: flex; align-items: center; gap: 5px; z-index: 10; }
+        .floating-input { background: rgba(255, 255, 255, 0.95); border: 2px solid #e67e22; color: #000; font-weight: bold; padding: 6px 10px; border-radius: 6px; outline: none; font-size: 14px; min-width: 150px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .btn-delete-input { background: #e74c3c; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 12px; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3); font-weight: bold; transition: 0.2s; }
+        .btn-delete-input:hover { background: #c0392b; transform: scale(1.1); }
+
+        
+    
+    
     </style>
+    
 </head>
 <body>
 
@@ -81,6 +94,10 @@
         <div class="creditos-badge">🪙 <span id="user-creditos">0</span></div>
     </div>
 
+
+
+
+    
     <!-- PANTALLA 1: INICIO -->
     <div id="screen-home" class="screen active">
         <div class="compra-section" id="seccion-compra">
@@ -141,6 +158,8 @@
         <button class="btn-generar" id="btn-generar-free" onclick="generarPdfLibre()" style="display: none; background: #e67e22;">✨ Descargar PDF Lleno (1 Crédito)</button>
     </div>
 </div>
+
+
 <script>
     // 1. CONFIGURACIÓN SUPABASE
     const supabaseUrl = 'https://wpzddhmllctdsiuxenss.supabase.co';
@@ -154,7 +173,10 @@
     let plantillaSeleccionada = null;
     let plantillasGlobales = [];
 
-    document.addEventListener('DOMContentLoaded', ( ) => cargarPlantillas());
+    document.addEventListener('DOMContentLoaded', async ( ) => {
+        await cargarPlantillas();
+        await verificarSesionGuardada(); // Revisa si el usuario ya había entrado antes
+    });
 
     function showScreen(screenId) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -162,11 +184,65 @@
         window.scrollTo(0, 0);
     }
 
+    // --- SESIÓN Y MEMORIA DEL CELULAR ---
+    async function verificarSesionGuardada() {
+        const codigoGuardado = localStorage.getItem('docufacil_codigo');
+        if (codigoGuardado) {
+            // Si hay un código guardado, consultamos a la BD para ver su saldo actual
+            const { data, error } = await supabase.from('usuarios_codigos').select('*').eq('codigo', codigoGuardado).single();
+            if (!error && data) {
+                usuarioActual = data;
+                actualizarUI();
+            } else {
+                // Si el código fue borrado de la BD, limpiamos la memoria
+                localStorage.removeItem('docufacil_codigo');
+                actualizarUI();
+            }
+        } else {
+            actualizarUI();
+        }
+    }
+
+    function cerrarSesion() {
+        localStorage.removeItem('docufacil_codigo');
+        usuarioActual = null;
+        actualizarUI();
+    }
+
+    // --- ACTUALIZAR INTERFAZ (UI) ---
+    function actualizarUI() {
+        const activarSec = document.querySelector('.activar-section');
+        
+        if (usuarioActual) {
+            document.getElementById('user-creditos').innerText = usuarioActual.creditos;
+            // Cambiamos la caja de texto por un panel que muestra su código activo
+            activarSec.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h3 style="color: #2ecc71; margin-bottom: 5px; font-size: 14px;">✅ Código Activo</h3>
+                        <p style="color: #fff; font-weight: bold; font-size: 18px; letter-spacing: 1px;">${usuarioActual.codigo}</p>
+                    </div>
+                    <button onclick="cerrarSesion()" style="background: transparent; border: 1px solid #e74c3c; color: #e74c3c; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-size: 12px; font-weight: bold;">Desvincular</button>
+                </div>
+            `;
+        } else {
+            document.getElementById('user-creditos').innerText = '0';
+            // Mostramos la caja para ingresar el código
+            activarSec.innerHTML = `
+                <h3>🔑 ¿Ya tienes un código? Actívalo aquí:</h3>
+                <div class="input-codigo-wrapper">
+                    <input type="text" id="input-codigo" class="input-codigo" placeholder="EJ: MANU-123" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9-]/g, '')">
+                    <button class="btn-activar" onclick="activarCodigo()">Activar</button>
+                </div>
+            `;
+        }
+        renderizarPlantillas();
+    }
+
     // --- CARGA Y RENDERIZADO DE PLANTILLAS ---
     async function cargarPlantillas() {
         const { data, error } = await supabase.from('plantillas').select('*');
         plantillasGlobales = data || [];
-        renderizarPlantillas();
     }
 
     function renderizarPlantillas() {
@@ -216,13 +292,17 @@
 
         const { data, error } = await supabase.from('usuarios_codigos').select('*').eq('codigo', codigo).single();
         if (error || !data) return alert("❌ Código incorrecto o no existe.");
-        if (data.creditos <= 0) return alert("⚠️ Este código ya no tiene créditos.");
-
+        
         usuarioActual = data;
-        document.getElementById('user-creditos').innerText = usuarioActual.creditos;
-        document.getElementById('input-codigo').value = '';
-        alert(`✅ ¡Código activado! Tienes ${usuarioActual.creditos} créditos disponibles.`);
-        renderizarPlantillas();
+        localStorage.setItem('docufacil_codigo', usuarioActual.codigo); // Guardamos en la memoria del celular
+        
+        actualizarUI();
+        
+        if (usuarioActual.creditos <= 0) {
+            alert("⚠️ Tu código está activo, pero ya no tienes créditos. ¡Recarga para seguir creando!");
+        } else {
+            alert(`✅ ¡Código activado! Tienes ${usuarioActual.creditos} créditos disponibles.`);
+        }
     }
 
     async function descontarCredito() {
@@ -234,8 +314,7 @@
             return false;
         }
         usuarioActual.creditos = nuevoSaldo;
-        document.getElementById('user-creditos').innerText = nuevoSaldo;
-        if (nuevoSaldo === 0) renderizarPlantillas(); // Bloquear tarjetas si se quedó en 0
+        actualizarUI();
         return true;
     }
 
@@ -247,7 +326,7 @@
     // --- LÓGICA: PLANTILLAS PREDEFINIDAS ---
     function clickPlantilla(tpl) {
         if (!usuarioActual || usuarioActual.creditos <= 0) {
-            alert("🔒 Necesitas activar un código con créditos.");
+            alert("🔒 Necesitas tener créditos disponibles para usar esta función.");
             document.getElementById('seccion-compra').scrollIntoView({ behavior: 'smooth' });
             return;
         }
@@ -348,15 +427,18 @@
         }
     }
 
-    // --- LÓGICA: RELLENADO LIBRE (TÁCTIL) ---
+
+
+
+
+        // --- LÓGICA: RELLENADO LIBRE (TÁCTIL) ---
     let freePdfDoc = null;
-    let freePdfPage = null;
-    let freeCanvasScale = 1;
+    let freeCanvasScales = {};
     let inputsFlotantes = [];
 
     function abrirRellenadoLibre() {
         if (!usuarioActual || usuarioActual.creditos <= 0) {
-            alert("🔒 Necesitas activar un código con créditos.");
+            alert("🔒 Necesitas tener créditos disponibles para usar esta función.");
             document.getElementById('seccion-compra').scrollIntoView({ behavior: 'smooth' });
             return;
         }
@@ -364,16 +446,16 @@
         // Limpiar estado anterior
         document.getElementById('free-pdf-upload').value = '';
         document.getElementById('free-canvas-container').style.display = 'none';
+        document.getElementById('free-canvas-container').innerHTML = ''; // Limpiar páginas
         document.getElementById('btn-generar-free').style.display = 'none';
         
-        // Eliminar inputs flotantes anteriores
-        inputsFlotantes.forEach(input => input.remove());
         inputsFlotantes = [];
+        freeCanvasScales = {};
         
         showScreen('screen-rellenado-libre');
     }
 
-    // Cargar y renderizar el PDF en el Canvas
+    // Cargar y renderizar TODAS las páginas del PDF
     document.getElementById('free-pdf-upload').addEventListener('change', async function(e) {
         if (!e.target.files.length) return;
         
@@ -386,47 +468,91 @@
         // Cargar para visualización
         const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
         const pdf = await loadingTask.promise;
-        freePdfPage = await pdf.getPage(1); // Solo la primera página por ahora
         
-        const canvas = document.getElementById('free-pdf-canvas');
-        const ctx = canvas.getContext('2d');
+        const container = document.getElementById('free-canvas-container');
+        container.innerHTML = ''; // Limpiar
+        inputsFlotantes = [];
+        freeCanvasScales = {};
         
-        // Ajustar escala al ancho del contenedor móvil
-        const containerWidth = document.getElementById('free-canvas-container').clientWidth;
-        const unscaledViewport = freePdfPage.getViewport({ scale: 1 });
-        freeCanvasScale = containerWidth / unscaledViewport.width;
+        container.style.display = 'flex';
         
-        const viewport = freePdfPage.getViewport({ scale: freeCanvasScale });
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
+        // Renderizar página por página
+        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+            const page = await pdf.getPage(pageNum);
+            
+            const wrapper = document.createElement('div');
+            wrapper.className = 'pdf-page-wrapper';
+            wrapper.dataset.pageNum = pageNum;
+            
+            const canvas = document.createElement('canvas');
+            canvas.className = 'free-pdf-canvas';
+            
+            wrapper.appendChild(canvas);
+            container.appendChild(wrapper);
+            
+            const ctx = canvas.getContext('2d');
+            
+            // El ancho del contenedor menos el padding
+            const containerWidth = container.clientWidth - 20; 
+            const unscaledViewport = page.getViewport({ scale: 1 });
+            const scale = containerWidth / unscaledViewport.width;
+            freeCanvasScales[pageNum] = scale;
+            
+            const viewport = page.getViewport({ scale: scale });
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            
+            await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+            
+            // Evento para crear input al tocar esta página específica
+            wrapper.addEventListener('click', function(ev) {
+                // Evitar crear un input si se hizo clic en un input existente o en el botón de borrar
+                if (ev.target.tagName.toLowerCase() === 'input' || ev.target.tagName.toLowerCase() === 'button') return;
+                
+                const rect = this.getBoundingClientRect();
+                const x = ev.clientX - rect.left;
+                const y = ev.clientY - rect.top;
+                
+                crearInputFlotante(this, x, y, pageNum);
+            });
+        }
         
-        await freePdfPage.render({ canvasContext: ctx, viewport: viewport }).promise;
-        
-        document.getElementById('free-canvas-container').style.display = 'block';
         document.getElementById('btn-generar-free').style.display = 'block';
     });
 
-    // Crear input flotante al tocar el Canvas
-    document.getElementById('free-pdf-canvas').addEventListener('click', function(e) {
-        const rect = this.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+    function crearInputFlotante(parent, x, y, pageNum) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'floating-input-wrapper';
+        wrapper.style.left = `${x}px`;
+        wrapper.style.top = `${y - 15}px`; // Centrar un poco mejor
         
         const input = document.createElement('input');
         input.type = 'text';
         input.className = 'floating-input';
-        input.style.left = `${x}px`;
-        input.style.top = `${y - 10}px`; // Ajuste visual para centrar el texto en el toque
-        input.placeholder = "Escribe...";
+        input.placeholder = "Escribe aquí...";
         
-        // Guardar coordenadas relativas al canvas
-        input.dataset.canvasX = x;
-        input.dataset.canvasY = y;
+        const btnDelete = document.createElement('button');
+        btnDelete.innerText = '✖';
+        btnDelete.className = 'btn-delete-input';
+        btnDelete.onclick = function() {
+            wrapper.remove();
+            inputsFlotantes = inputsFlotantes.filter(i => i.wrapper !== wrapper);
+        };
         
-        document.getElementById('free-canvas-container').appendChild(input);
-        inputsFlotantes.push(input);
+        wrapper.appendChild(input);
+        wrapper.appendChild(btnDelete);
+        parent.appendChild(wrapper);
+        
+        inputsFlotantes.push({
+            wrapper: wrapper,
+            input: input,
+            pageNum: pageNum,
+            canvasX: x,
+            canvasY: y
+        });
+        
         input.focus();
-    });
+    }
 
     async function generarPdfLibre() {
         if (!freePdfDoc) return;
@@ -437,24 +563,21 @@
 
         try {
             const pages = freePdfDoc.getPages();
-            const firstPage = pages[0];
-            const pdfHeight = firstPage.getHeight();
 
-            // Estampar cada input flotante
-            inputsFlotantes.forEach(input => {
-                const texto = input.value.trim();
+            // Estampar cada input flotante en su página correspondiente
+            inputsFlotantes.forEach(item => {
+                const texto = item.input.value.trim();
                 if (texto) {
-                    const canvasX = parseFloat(input.dataset.canvasX);
-                    const canvasY = parseFloat(input.dataset.canvasY);
+                    const targetPage = pages[item.pageNum - 1]; // Las páginas en pdf-lib empiezan en 0
+                    const pdfHeight = targetPage.getHeight();
+                    const scale = freeCanvasScales[item.pageNum];
                     
-                    // Traducir coordenadas del Canvas al PDF real
-                    const pdfX = canvasX / freeCanvasScale;
-                    // El PDF tiene el Y=0 abajo, el Canvas tiene el Y=0 arriba
-                    const pdfY = pdfHeight - (canvasY / freeCanvasScale);
+                    const pdfX = item.canvasX / scale;
+                    const pdfY = pdfHeight - (item.canvasY / scale);
 
-                    firstPage.drawText(texto, {
+                    targetPage.drawText(texto, {
                         x: pdfX,
-                        y: pdfY - 2, // Pequeño ajuste de línea base
+                        y: pdfY - 2,
                         size: 12,
                         color: PDFLib.rgb(0, 0, 0)
                     });
@@ -479,6 +602,18 @@
             btn.disabled = false;
         }
     }
+
+
+
+    
+
+
+    
 </script>
 </body>
 </html>
+
+
+
+    
+
