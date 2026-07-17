@@ -2,348 +2,483 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestor de QR Dinámico - Elegante</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DocuFácil - Generador de Documentos</title>
+    
+    <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <style>
-        /* --- ESTILOS BASE (SIN CAMBIOS ) --- */
-        :root {
-            --color-negro: #0a0a0a;
-            --color-dorado: #d4af37;
-            --color-blanco: #ffffff;
-            --color-gris-claro: #f5f5f5;
-            --color-gris-oscuro: #2a2a2a;
-            --color-rojo: #e74c3c;
-            --color-texto: #333333;
-            --font-family: 'Georgia', serif;
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body { width: 100%; height: 100%; font-family: var(--font-family); }
-        .app-wrapper { width: 100%; min-height: 100vh; background: var(--color-blanco); color: var(--color-texto); overflow-x: hidden; }
-        .video-container, .login-container, .main-container { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: linear-gradient(135deg, var(--color-gris-claro) 0%, var(--color-blanco) 100%); padding: 20px; position: relative; }
-        .login-container, .main-container { display: none; }
-        .video-wrapper { position: relative; width: 90%; max-width: 800px; background-color: var(--color-blanco); border-radius: 8px; overflow: hidden; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15); border: 3px solid var(--color-dorado); }
-        .video-wrapper video { width: 100%; height: auto; display: block; }
-        .skip-button { position: absolute; top: 20px; right: 20px; padding: 12px 24px; font-size: 16px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; color: var(--color-blanco); background: var(--color-negro); border: 2px solid var(--color-dorado); border-radius: 4px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3); z-index: 10; }
-        .skip-button:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(212, 175, 55, 0.5); background: var(--color-gris-oscuro); }
-        .login-box, .main-content, .modal-content { background: var(--color-gris-claro); border: 2px solid var(--color-dorado); border-radius: 8px; padding: 40px; transition: all 0.3s ease; position: relative; overflow: hidden; width: 100%; max-width: 400px; box-shadow: 0 10px 30px rgba(212, 175, 55, 0.1); }
-        .main-content { max-width: 600px; }
-        .login-box h1, .main-header h1, .modal-header h2 { font-size: 28px; font-weight: 300; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 20px; background: linear-gradient(135deg, var(--color-negro) 0%, var(--color-dorado) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; text-align: center; }
-        .main-header p, .modal-header p { color: var(--color-texto); font-size: 14px; text-align: center; }
-        .form-group, .url-section, .settings-item { margin-bottom: 20px; }
-        .form-group label, .url-section label, .settings-item label { display: block; margin-bottom: 8px; color: var(--color-negro); font-weight: 600; }
-        .form-group input, .url-input-wrapper input, .settings-input-wrapper input { width: 100%; padding: 12px; border: 1px solid var(--color-gris-oscuro); border-radius: 4px; background-color: var(--color-blanco); color: var(--color-negro); font-size: 16px; transition: border-color 0.3s ease; }
-        .form-group input:focus, .url-input-wrapper input:focus, .settings-input-wrapper input:focus { outline: none; border-color: var(--color-dorado); box-shadow: 0 0 10px rgba(212, 175, 55, 0.3); }
-        .url-input-wrapper { display: flex; gap: 10px; }
-        .url-input-wrapper input { flex: 1; }
-        .login-button, .btn, .edit-button, .btn-guardar, .btn-cancelar { padding: 14px; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 1px; }
-        .login-button { width: 100%; margin-top: 10px; }
-        .btn-actualizar, .btn-programar, .login-button, .btn-guardar { background-color: var(--color-negro); color: var(--color-blanco); border: 2px solid var(--color-dorado); }
-        .btn-actualizar:hover, .btn-programar:hover, .login-button:hover, .btn-guardar:hover { background-color: var(--color-gris-oscuro); color: var(--color-dorado); transform: translateY(-2px); box-shadow: 0 5px 20px rgba(212, 175, 55, 0.4); }
-        .btn-cerrar { background-color: var(--color-rojo); color: var(--color-blanco); }
-        .btn-cerrar:hover { background-color: #ff6666; transform: translateY(-2px); box-shadow: 0 5px 20px rgba(255, 68, 68, 0.4); }
-        .edit-button { padding: 10px 15px; background-color: var(--color-dorado); color: var(--color-negro); border: none; text-transform: none; letter-spacing: normal; }
-        .edit-button:hover { background-color: #f4d03f; transform: scale(1.05); }
-        .btn-cancelar { background-color: var(--color-gris-claro); color: var(--color-negro); border: 1px solid var(--color-gris-oscuro); }
-        .btn-cancelar:hover { background-color: var(--color-blanco); transform: translateY(-2px); }
-        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0, 0, 0, 0.7); padding-top: 60px; }
-        .modal-content { margin: 5% auto; max-width: 500px; }
-        .modal-buttons { display: flex; gap: 10px; margin-top: 20px; }
-        .modal-buttons button { flex: 1; }
-        .progress-bar { display: none; width: 100%; height: 4px; background-color: var(--color-gris-oscuro); border-radius: 2px; margin-bottom: 15px; overflow: hidden; }
-        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--color-dorado), var(--color-negro)); width: 0%; animation: progress 2s ease-in-out forwards; }
-        @keyframes progress { 0% { width: 0%; } 50% { width: 100%; } 100% { width: 100%; } }
-        .update-message { display: none; text-align: center; color: var(--color-dorado); font-weight: bold; margin-top: 10px; animation: fadeInOut 3s ease-in-out; }
-        @keyframes fadeInOut { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
-        .error-message { color: var(--color-rojo); font-size: 14px; margin-top: 10px; text-align: center; }
-        .success-message { color: var(--color-dorado); font-size: 14px; margin-top: 10px; text-align: center; }
-        .button-group { display: flex; flex-direction: column; gap: 15px; margin-top: 30px; }
-        
-        /* --- INICIO DE NUEVOS ESTILOS (v5.3) --- */
-        .qr-section {
-            text-align: center;
-            margin-bottom: 30px;
-            padding: 20px;
-            background-color: var(--color-blanco);
-            border-radius: 8px;
-            border: 2px solid var(--color-dorado);
-            position: relative;
-            height: 220px; /* Altura fija para el contenedor */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        /* Contenedor para el QR y las estadísticas, se mostrará uno a la vez */
-        #qr-display, #stats-display {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            position: absolute; /* Se superponen */
-            transition: opacity 0.4s ease-in-out; /* Animación de fundido */
-        }
-        #qrCode {
-            padding: 10px;
-            background-color: var(--color-blanco);
-            border-radius: 4px;
-        }
-        #stats-display {
-            opacity: 0; /* Oculto por defecto */
-            pointer-events: none; /* No se puede interactuar con él cuando está oculto */
-        }
-        #stats-display h3 {
-            color: var(--color-texto);
-            font-size: 18px;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-        #stats-display .visits-count {
-            font-size: 64px;
-            font-weight: bold;
-            color: var(--color-dorado);
-            line-height: 1;
-        }
-        /* Botones de navegación */
-        .nav-arrow {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            background-color: rgba(0, 0, 0, 0.5);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            font-size: 24px;
-            cursor: pointer;
-            z-index: 10;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: background-color 0.3s;
-        }
-        .nav-arrow:hover {
-            background-color: rgba(0, 0, 0, 0.8);
-        }
-        #prev-btn { left: 15px; }
-        #next-btn { right: 15px; }
-        /* --- FIN DE NUEVOS ESTILOS --- */
+    <!-- PDF-lib para editar y estampar el PDF -->
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <!-- PDF.js para visualizar el PDF en pantalla -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <!-- Download.js para descargar el archivo -->
+    <script src="https://unpkg.com/downloadjs@1.4.7"></script>
 
-        @media (max-width: 768px) { .login-box, .main-content, .modal-content { padding: 25px; } .url-input-wrapper { flex-direction: column; } .url-input-wrapper input { margin-bottom: 10px; } .modal-buttons { flex-direction: column; } }
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #121212; color: #ffffff; display: flex; justify-content: center; min-height: 100vh; }
+        
+        .app-container { background: #1e1e1e; width: 100%; max-width: 480px; min-height: 100vh; display: flex; flex-direction: column; position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.5 ); }
+        
+        .header { background: #2c3e50; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; border-bottom: 2px solid #34495e; }
+        .header h1 { color: #fff; font-size: 20px; display: flex; align-items: center; gap: 8px; }
+        .creditos-badge { background: #f1c40f; color: #000; padding: 5px 12px; border-radius: 20px; font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 5px; }
+
+        .screen { padding: 20px; display: none; flex-direction: column; gap: 20px; flex: 1; overflow-y: auto; padding-bottom: 40px; }
+        .screen.active { display: flex; }
+
+        /* --- SECCIÓN YAPE Y COMPRA --- */
+        .compra-section { background: linear-gradient(135deg, #742384 0%, #4a1554 100%); border-radius: 12px; padding: 20px; text-align: center; border: 1px solid #8e44ad; }
+        .yape-logo { height: 40px; margin-bottom: 10px; object-fit: contain; }
+        .compra-info { color: #fff; font-size: 14px; margin-bottom: 15px; line-height: 1.5; }
+        .precio-tag { background: #00E4C0; color: #000; font-weight: bold; padding: 3px 8px; border-radius: 5px; font-size: 15px; }
+        .btn-whatsapp { background: #25D366; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; width: 100%; display: flex; justify-content: center; align-items: center; gap: 8px; text-decoration: none; }
+
+        /* --- SECCIÓN ACTIVAR CÓDIGO --- */
+        .activar-section { background: #222; border-radius: 12px; padding: 15px; border: 1px solid #333; }
+        .activar-section h3 { color: #ccc; font-size: 15px; margin-bottom: 10px; }
+        .input-codigo-wrapper { display: flex; gap: 10px; }
+        .input-codigo { flex: 1; padding: 12px; background: #000; color: #f1c40f; border: 2px solid #444; border-radius: 8px; outline: none; font-size: 16px; text-align: center; font-weight: bold; text-transform: uppercase; }
+        .btn-activar { background: #f1c40f; color: #000; border: none; padding: 0 20px; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; }
+
+        /* --- TARJETAS DE DOCUMENTOS --- */
+        .section-title { color: #fff; font-size: 18px; margin-top: 10px; border-bottom: 2px solid #333; padding-bottom: 8px; }
+        .lista-plantillas { display: flex; flex-direction: column; gap: 12px; }
+        
+        .card { background: #2a2a2a; border: 1px solid #444; border-radius: 10px; padding: 15px; cursor: pointer; display: flex; align-items: center; gap: 15px; position: relative; overflow: hidden; transition: 0.2s; }
+        .card-icon { font-size: 30px; }
+        .card-info { flex: 1; }
+        .card-info h3 { color: #fff; font-size: 16px; margin-bottom: 4px; }
+        .card-info p { color: #aaa; font-size: 12px; line-height: 1.3; }
+        
+        .card.locked { opacity: 0.7; border-color: #333; }
+        .card.locked::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 1; }
+        .candado-icon { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); font-size: 24px; z-index: 2; }
+
+        /* --- FORMULARIOS --- */
+        .input-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; }
+        .input-group label { color: #ccc; font-weight: bold; font-size: 14px; }
+        .input-with-mic { display: flex; gap: 10px; }
+        .input-with-mic input, .input-with-mic textarea { flex: 1; padding: 12px; background: #000; color: #fff; border: 1px solid #444; border-radius: 8px; outline: none; font-size: 15px; }
+        .btn-mic { background: #3498db; color: white; border: none; width: 48px; border-radius: 8px; cursor: pointer; font-size: 20px; display: flex; justify-content: center; align-items: center; }
+        
+        .btn-generar { background: #2ecc71; color: #000; border: none; padding: 15px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; width: 100%; margin-top: 10px; }
+        .btn-volver { background: transparent; color: #aaa; border: 1px solid #555; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 13px; width: fit-content; margin-bottom: 10px; }
+
+        /* --- RELLENADO LIBRE --- */
+        .canvas-container { width: 100%; overflow: auto; border: 1px solid #444; border-radius: 8px; background: #222; position: relative; margin-top: 10px; }
+        #free-pdf-canvas { display: block; width: 100%; cursor: crosshair; }
+        
+        /* Inputs flotantes para el rellenado libre */
+        .floating-input { position: absolute; background: rgba(255, 255, 255, 0.9); border: 2px solid #e67e22; color: #000; font-weight: bold; padding: 2px 5px; border-radius: 4px; outline: none; font-size: 14px; z-index: 10; min-width: 100px; }
     </style>
 </head>
 <body>
-    <div class="app-wrapper">
-        <div id="videoScreen" class="video-container">
-            <div class="video-wrapper">
-                <video id="presentationVideo" controls autoplay muted>
-                    <source src="https://github.com/cartasinteractivas-jpg/qrmanager/raw/main/qrdinamicopresentacion.mp4" type="video/mp4">
-                    Tu navegador no soporta el elemento de video.
-                </video>
-                <button class="skip-button" onclick="skipVideo( )">Saltar Video</button>
-            </div>
-        </div>
 
-        <div id="loginScreen" class="login-container">
-            <div class="login-box">
-                <h1>Iniciar Sesión</h1>
-                <form id="loginForm">
-                    <div class="form-group">
-                        <label for="email">Usuario</label>
-                        <input type="text" id="email" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="password">Contraseña</label>
-                        <input type="password" id="password" required>
-                    </div>
-                    <button type="submit" class="login-button">Entrar</button>
-                    <div id="loginError" class="error-message"></div>
-                </form>
-            </div>
-        </div>
-
-        <div id="mainScreen" class="main-container">
-            <div class="main-content">
-                <div class="main-header">
-                    <h1>Tu QR Dinámico</h1>
-                    <p>Gestiona tu código QR y cambios de dirección</p>
-                </div>
-                
-                <!-- ¡AQUÍ ESTÁ EL CAMBIO PRINCIPAL! -->
-                <div class="qr-section">
-                    <!-- Vista para el QR -->
-                    <div id="qr-display">
-                        <div id="qrCode"></div>
-                    </div>
-                    <!-- Vista para las Estadísticas -->
-                    <div id="stats-display">
-                        <h3>Total de Visitas</h3>
-                        <p class="visits-count" id="visitsCount">0</p>
-                    </div>
-                    <!-- Botones de Navegación -->
-                    <button id="prev-btn" class="nav-arrow">‹</button>
-                    <button id="next-btn" class="nav-arrow">›</button>
-                </div>
-                <!-- FIN DEL CAMBIO PRINCIPAL -->
-
-                <div class="url-section">
-                    <label>Dirección Actual</label>
-                    <div class="url-input-wrapper">
-                        <input type="text" id="urlInput" placeholder="https://ejemplo.com" readonly>
-                        <button class="edit-button" onclick="enableEditUrl( )">Editar</button>
-                    </div>
-                </div>
-                <div id="progressBar" class="progress-bar"><div class="progress-fill"></div></div>
-                <div id="updateMessage" class="update-message">✓ Dirección actualizada correctamente</div>
-                <div class="button-group">
-                    <button class="btn btn-actualizar" onclick="updateUrl()">Actualizar</button>
-                    <button class="btn btn-programar" onclick="openScheduleModal()">Programar</button>
-                    <button class="btn btn-programar" onclick="openSettingsModal()">Ajustes</button>
-                    <button class="btn btn-cerrar" onclick="logout()">Cerrar Sesión</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modales (sin cambios) -->
-        <div id="scheduleModal" class="modal"> <!-- ... --> </div>
-        <div id="settingsModal" class="modal"> <!-- ... --> </div>
+<div class="app-container">
+    <div class="header">
+        <h1>📄 DocuFácil</h1>
+        <div class="creditos-badge">🪙 <span id="user-creditos">0</span></div>
     </div>
 
+    <!-- PANTALLA 1: INICIO -->
+    <div id="screen-home" class="screen active">
+        <div class="compra-section" id="seccion-compra">
+            <img src="https://vectorseek.com/wp-content/uploads/2023/09/Yape-App-Logo-Vector.svg-.png" alt="Yape" class="yape-logo" onerror="this.style.display='none'">
+            <div class="compra-info">
+                <p style="font-size: 16px; font-weight: bold; margin-bottom: 5px;">¿Necesitas crear un documento?</p>
+                <p>Adquiere créditos y genera documentos profesionales al instante.</p>
+                <p style="margin-top: 10px; font-size: 15px;">1 Crédito = 1 Hoja = <span class="precio-tag">S/ 0.20</span></p>
+                <p style="margin-top: 10px; font-weight: bold; color: #f1c40f; font-size: 18px;">Yapea al: 967 188 120</p>
+            </div>
+            <a href="https://wa.me/51967188120?text=Hola,%20ya%20yapeé.%20Quiero%20comprar%20créditos%20para%20DocuFácil." target="_blank" class="btn-whatsapp">💬 Enviar captura por WhatsApp</a>
+        </div>
+
+        <div class="activar-section">
+            <h3>🔑 ¿Ya tienes un código? Actívalo aquí:</h3>
+            <div class="input-codigo-wrapper">
+                <input type="text" id="input-codigo" class="input-codigo" placeholder="EJ: MANU-123" oninput="this.value = this.value.toUpperCase( ).replace(/[^A-Z0-9-]/g, '')">
+                <button class="btn-activar" onclick="activarCodigo()">Activar</button>
+            </div>
+        </div>
+
+        <h2 class="section-title">📚 Documentos Disponibles</h2>
+        <div id="lista-plantillas" class="lista-plantillas">
+            <!-- Se llena con JS -->
+        </div>
+    </div>
+
+    <!-- PANTALLA 2: FORMULARIO DE PLANTILLAS -->
+    <div id="screen-formulario" class="screen">
+        <button class="btn-volver" onclick="volverAHome()">⬅ Volver al inicio</button>
+        <div style="background: #222; padding: 15px; border-radius: 10px; border-left: 4px solid #3498db; margin-bottom: 10px;">
+            <h3 id="form-titulo" style="color: #3498db; margin-bottom: 5px;">Nombre</h3>
+            <p id="form-desc" style="color: #aaa; font-size: 13px;">Descripción</p>
+        </div>
+        <div class="input-group" style="background: #2a2a2a; padding: 15px; border-radius: 8px; border: 1px dashed #555;">
+            <label style="color: #f1c40f;">📄 Sube el PDF base (Plantilla)</label>
+            <input type="file" id="user-pdf-upload" accept="application/pdf" style="width: 100%; color: #fff;">
+        </div>
+        <div id="form-campos" style="display: flex; flex-direction: column; gap: 5px;"></div>
+        <button class="btn-generar" id="btn-generar" onclick="generarDocumento()">✨ Generar Documento (1 Crédito)</button>
+    </div>
+
+    <!-- PANTALLA 3: RELLENADO LIBRE (NUEVO) -->
+    <div id="screen-rellenado-libre" class="screen">
+        <button class="btn-volver" onclick="volverAHome()">⬅ Volver al inicio</button>
+        <div style="background: #222; padding: 15px; border-radius: 10px; border-left: 4px solid #e67e22; margin-bottom: 10px;">
+            <h3 style="color: #e67e22; margin-bottom: 5px;">✍️ Rellenar mi propio PDF</h3>
+            <p style="color: #aaa; font-size: 13px;">Sube tu documento, <strong>toca en la pantalla</strong> donde quieras escribir y descárgalo lleno.</p>
+        </div>
+        
+        <input type="file" id="free-pdf-upload" accept="application/pdf" style="width: 100%; color: #fff; background: #2a2a2a; padding: 10px; border-radius: 8px;">
+        
+        <div class="canvas-container" id="free-canvas-container" style="display: none;">
+            <canvas id="free-pdf-canvas"></canvas>
+            <!-- Los inputs flotantes aparecerán aquí -->
+        </div>
+
+        <button class="btn-generar" id="btn-generar-free" onclick="generarPdfLibre()" style="display: none; background: #e67e22;">✨ Descargar PDF Lleno (1 Crédito)</button>
+    </div>
+</div>
 <script>
-    // --- INICIO DEL SCRIPT ---
-
-    // 1. CONFIGURACIÓN E INICIALIZACIÓN (SIN CAMBIOS)
-    const SUPABASE_URL = 'https://flcxihzwyexgigavztce.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZsY3hpaHp3eWV4Z2lnYXZ6dGNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyODI0MzAsImV4cCI6MjA3OTg1ODQzMH0.7Ur3LcihnR6wIEM7QjFxNIe4ci2TmIVVt8ZcvekFSqA';
+    // 1. CONFIGURACIÓN SUPABASE
+    const supabaseUrl = 'https://wpzddhmllctdsiuxenss.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwemRkaG1sbGN0ZHNpdXhlbnNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5NjUyNzQsImV4cCI6MjA5OTU0MTI3NH0.hwSxJ3Sk_RlgbvFyr8S64XRuxW7j55BU4gaIneFTuhY';
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey );
     
-    let supabase;
-    let currentUserData = null;
+    // Configurar PDF.js worker
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-    window.addEventListener('load', ( ) => {
-        const { createClient } = window.supabase;
-        supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    let usuarioActual = null;
+    let plantillaSeleccionada = null;
+    let plantillasGlobales = [];
+
+    document.addEventListener('DOMContentLoaded', ( ) => cargarPlantillas());
+
+    function showScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+        window.scrollTo(0, 0);
+    }
+
+    // --- CARGA Y RENDERIZADO DE PLANTILLAS ---
+    async function cargarPlantillas() {
+        const { data, error } = await supabase.from('plantillas').select('*');
+        plantillasGlobales = data || [];
+        renderizarPlantillas();
+    }
+
+    function renderizarPlantillas() {
+        const contenedor = document.getElementById('lista-plantillas');
+        contenedor.innerHTML = '';
         
-        const lastUser = localStorage.getItem('lastUser');
-        if (lastUser) {
-            document.getElementById('email').value = lastUser;
+        const tieneCreditos = usuarioActual && usuarioActual.creditos > 0;
+        const claseBloqueado = tieneCreditos ? '' : 'locked';
+        const candadoHtml = tieneCreditos ? '' : '<div class="candado-icon">🔒</div>';
+
+        // 1. TARJETA FIJA: RELLENADO LIBRE
+        contenedor.innerHTML += `
+            <div class="card ${claseBloqueado}" onclick="abrirRellenadoLibre()" style="border-color: #e67e22;">
+                <div class="card-icon">✍️</div>
+                <div class="card-info">
+                    <h3 style="color: #e67e22;">Rellenar mi propio PDF</h3>
+                    <p>Sube cualquier documento, toca donde quieras escribir y descárgalo.</p>
+                </div>
+                ${candadoHtml}
+            </div>
+        `;
+
+        // 2. TARJETAS DE LA BASE DE DATOS
+        if (plantillasGlobales.length === 0) {
+            contenedor.innerHTML += '<p style="text-align: center; color:#888; margin-top: 15px;">No hay más documentos disponibles.</p>';
+        } else {
+            plantillasGlobales.forEach(tpl => {
+                const icono = tpl.tipo === 'rellenado' ? '📝' : '🤖';
+                contenedor.innerHTML += `
+                    <div class="card ${claseBloqueado}" onclick='clickPlantilla(${JSON.stringify(tpl)})'>
+                        <div class="card-icon">${icono}</div>
+                        <div class="card-info">
+                            <h3>${tpl.nombre}</h3>
+                            <p>${tpl.descripcion || 'Documento listo para generar'}</p>
+                        </div>
+                        ${candadoHtml}
+                    </div>
+                `;
+            });
         }
-        
-        document.getElementById('loginForm').addEventListener('submit', handleLogin);
-        
-        // --- ¡NUEVA LÓGICA DE BOTONES! ---
-        setupToggleButtons();
-    });
+    }
 
-    // 2. NAVEGACIÓN Y UI (SIN CAMBIOS)
-    function skipVideo() { document.getElementById('videoScreen').style.display = 'none'; document.getElementById('loginScreen').style.display = 'flex'; }
-    function showMainScreen() { document.getElementById('loginScreen').style.display = 'none'; document.getElementById('mainScreen').style.display = 'flex'; }
-    function showLoginScreen() { document.getElementById('mainScreen').style.display = 'none'; document.getElementById('loginScreen').style.display = 'flex'; document.getElementById('password').value = ''; }
+    // --- SISTEMA DE CRÉDITOS ---
+    async function activarCodigo() {
+        const codigo = document.getElementById('input-codigo').value.trim();
+        if (!codigo) return alert("Ingresa un código válido.");
 
-    // 3. LÓGICA DE AUTENTICACIÓN Y DATOS
-    async function handleLogin(event) {
-        event.preventDefault();
-        const usuario = document.getElementById('email').value.trim();
-        const clave = document.getElementById('password').value.trim();
-        const errorDiv = document.getElementById('loginError');
-        errorDiv.textContent = '';
+        const { data, error } = await supabase.from('usuarios_codigos').select('*').eq('codigo', codigo).single();
+        if (error || !data) return alert("❌ Código incorrecto o no existe.");
+        if (data.creditos <= 0) return alert("⚠️ Este código ya no tiene créditos.");
+
+        usuarioActual = data;
+        document.getElementById('user-creditos').innerText = usuarioActual.creditos;
+        document.getElementById('input-codigo').value = '';
+        alert(`✅ ¡Código activado! Tienes ${usuarioActual.creditos} créditos disponibles.`);
+        renderizarPlantillas();
+    }
+
+    async function descontarCredito() {
+        if (!usuarioActual || usuarioActual.creditos <= 0) return false;
+        const nuevoSaldo = usuarioActual.creditos - 1;
+        const { error } = await supabase.from('usuarios_codigos').update({ creditos: nuevoSaldo }).eq('id', usuarioActual.id);
+        if (error) {
+            alert("Error al procesar el crédito.");
+            return false;
+        }
+        usuarioActual.creditos = nuevoSaldo;
+        document.getElementById('user-creditos').innerText = nuevoSaldo;
+        if (nuevoSaldo === 0) renderizarPlantillas(); // Bloquear tarjetas si se quedó en 0
+        return true;
+    }
+
+    function volverAHome() {
+        plantillaSeleccionada = null;
+        showScreen('screen-home');
+    }
+
+    // --- LÓGICA: PLANTILLAS PREDEFINIDAS ---
+    function clickPlantilla(tpl) {
+        if (!usuarioActual || usuarioActual.creditos <= 0) {
+            alert("🔒 Necesitas activar un código con créditos.");
+            document.getElementById('seccion-compra').scrollIntoView({ behavior: 'smooth' });
+            return;
+        }
+        abrirFormulario(tpl);
+    }
+
+    function abrirFormulario(tpl) {
+        plantillaSeleccionada = tpl;
+        document.getElementById('form-titulo').innerText = tpl.nombre;
+        document.getElementById('form-desc').innerText = tpl.descripcion || '';
+        document.getElementById('user-pdf-upload').value = '';
+        
+        const contenedorCampos = document.getElementById('form-campos');
+        contenedorCampos.innerHTML = '';
+
+        if (tpl.configuracion && tpl.configuracion.campos) {
+            tpl.configuracion.campos.forEach(campo => {
+                contenedorCampos.innerHTML += `
+                    <div class="input-group">
+                        <label>${campo.nombre.toUpperCase()}</label>
+                        <div class="input-with-mic">
+                            <input type="text" id="campo-${campo.nombre}" placeholder="Escribe aquí...">
+                            <button class="btn-mic" onclick="iniciarReconocimientoVoz('campo-${campo.nombre}')">🎤</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+        showScreen('screen-formulario');
+    }
+
+    function iniciarReconocimientoVoz(inputId) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) return alert("Tu navegador no soporta dictado por voz.");
+        
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'es-ES';
+        recognition.start();
+        
+        const input = document.getElementById(inputId);
+        input.placeholder = "Escuchando...";
+        
+        recognition.onresult = function(event) {
+            input.value = event.results[0][0].transcript;
+            input.placeholder = "Escribe aquí...";
+        };
+        recognition.onerror = function() {
+            input.placeholder = "Error al escuchar. Intenta de nuevo.";
+        };
+    }
+
+    async function generarDocumento() {
+        const fileInput = document.getElementById('user-pdf-upload');
+        if (!fileInput.files.length) return alert("Por favor, sube el PDF base de la plantilla.");
+
+        const btn = document.getElementById('btn-generar');
+        btn.innerText = "⏳ Generando...";
+        btn.disabled = true;
 
         try {
-            const { data, error } = await supabase
-                .from('qrs')
-                .select('*')
-                .eq('usuario', usuario)
-                .eq('clave', clave)
-                .single();
+            const file = fileInput.files[0];
+            const arrayBuffer = await file.arrayBuffer();
+            const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
+            const pages = pdfDoc.getPages();
+            const firstPage = pages[0];
 
-            if (error || !data) {
-                errorDiv.textContent = 'Usuario o contraseña incorrectos.';
-                return;
+            // Estampar los textos en las coordenadas
+            if (plantillaSeleccionada.configuracion && plantillaSeleccionada.configuracion.campos) {
+                plantillaSeleccionada.configuracion.campos.forEach(campo => {
+                    const valor = document.getElementById(`campo-${campo.nombre}`).value;
+                    if (valor) {
+                        firstPage.drawText(valor, {
+                            x: campo.x,
+                            y: campo.y,
+                            size: 12,
+                            color: PDFLib.rgb(0, 0, 0)
+                        });
+                    }
+                });
             }
 
-            currentUserData = data;
-            localStorage.setItem('lastUser', usuario);
+            // Descontar crédito
+            const pagado = await descontarCredito();
+            if (!pagado) throw new Error("No se pudo procesar el pago.");
+
+            // Descargar
+            const pdfBytes = await pdfDoc.save();
+            download(pdfBytes, `DocuFacil_${plantillaSeleccionada.nombre}.pdf`, "application/pdf");
             
-            loadUserData();
-            showMainScreen();
+            alert("✅ ¡Documento generado con éxito!");
+            volverAHome();
 
-        } catch (error) {
-            errorDiv.textContent = 'Error en la autenticación: ' + error.message;
+        } catch (err) {
+            alert("Error: " + err.message);
+        } finally {
+            btn.innerText = "✨ Generar Documento (1 Crédito)";
+            btn.disabled = false;
         }
     }
 
-    // --- FUNCIÓN MODIFICADA PARA CARGAR LAS VISITAS ---
-    function loadUserData() {
-        if (!currentUserData) return;
-        
-        document.getElementById('urlInput').value = currentUserData.url_activo;
-        generateQRCode(currentUserData.qr_imagen);
-        renderScheduleItems();
-        
-        // ¡NUEVO! Actualizamos el contador de visitas
-        document.getElementById('visitsCount').textContent = currentUserData.visitas || 0;
-    }
+    // --- LÓGICA: RELLENADO LIBRE (TÁCTIL) ---
+    let freePdfDoc = null;
+    let freePdfPage = null;
+    let freeCanvasScale = 1;
+    let inputsFlotantes = [];
 
-    function logout() { currentUserData = null; showLoginScreen(); }
-
-    // 4. FUNCIONALIDAD DEL QR Y URL (SIN CAMBIOS)
-    function generateQRCode(imageUrl) {
-        const qrCodeDiv = document.getElementById('qrCode');
-        qrCodeDiv.innerHTML = '';
-        if (imageUrl) {
-            const img = document.createElement('img');
-            img.src = imageUrl; 
-            img.style.width = '180px';
-            img.style.height = '180px';
-            img.style.objectFit = 'contain';
-            qrCodeDiv.appendChild(img);
+    function abrirRellenadoLibre() {
+        if (!usuarioActual || usuarioActual.creditos <= 0) {
+            alert("🔒 Necesitas activar un código con créditos.");
+            document.getElementById('seccion-compra').scrollIntoView({ behavior: 'smooth' });
+            return;
         }
+        
+        // Limpiar estado anterior
+        document.getElementById('free-pdf-upload').value = '';
+        document.getElementById('free-canvas-container').style.display = 'none';
+        document.getElementById('btn-generar-free').style.display = 'none';
+        
+        // Eliminar inputs flotantes anteriores
+        inputsFlotantes.forEach(input => input.remove());
+        inputsFlotantes = [];
+        
+        showScreen('screen-rellenado-libre');
     }
-    function enableEditUrl() { /* ... */ }
-    function formatarUrlInteligente(url) { /* ... */ }
-    async function updateUrl() { /* ... */ }
 
-    // 5. LÓGICA DE MODALES (SIN CAMBIOS)
-    function openScheduleModal() { /* ... */ }
-    function closeScheduleModal() { /* ... */ }
-    function openSettingsModal() { /* ... */ }
-    function closeSettingsModal() { /* ... */ }
-    function renderScheduleItems() { /* ... */ }
-    async function saveSchedule() { /* ... */ }
-    function enableEditSettingsUser() { /* ... */ }
-    function enableEditSettingsPassword() { /* ... */ }
-    async function updateUserSettings() { /* ... */ }
-    window.onclick = function(event) { /* ... */ }
+    // Cargar y renderizar el PDF en el Canvas
+    document.getElementById('free-pdf-upload').addEventListener('change', async function(e) {
+        if (!e.target.files.length) return;
+        
+        const file = e.target.files[0];
+        const arrayBuffer = await file.arrayBuffer();
+        
+        // Cargar para edición final
+        freePdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
+        
+        // Cargar para visualización
+        const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+        const pdf = await loadingTask.promise;
+        freePdfPage = await pdf.getPage(1); // Solo la primera página por ahora
+        
+        const canvas = document.getElementById('free-pdf-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Ajustar escala al ancho del contenedor móvil
+        const containerWidth = document.getElementById('free-canvas-container').clientWidth;
+        const unscaledViewport = freePdfPage.getViewport({ scale: 1 });
+        freeCanvasScale = containerWidth / unscaledViewport.width;
+        
+        const viewport = freePdfPage.getViewport({ scale: freeCanvasScale });
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        
+        await freePdfPage.render({ canvasContext: ctx, viewport: viewport }).promise;
+        
+        document.getElementById('free-canvas-container').style.display = 'block';
+        document.getElementById('btn-generar-free').style.display = 'block';
+    });
 
-    // --- ¡NUEVA SECCIÓN PARA EL INTERCAMBIO DE VISTAS! ---
-    function setupToggleButtons() {
-        const qrDisplay = document.getElementById('qr-display');
-        const statsDisplay = document.getElementById('stats-display');
-        const prevBtn = document.getElementById('prev-btn');
-        const nextBtn = document.getElementById('next-btn');
+    // Crear input flotante al tocar el Canvas
+    document.getElementById('free-pdf-canvas').addEventListener('click', function(e) {
+        const rect = this.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'floating-input';
+        input.style.left = `${x}px`;
+        input.style.top = `${y - 10}px`; // Ajuste visual para centrar el texto en el toque
+        input.placeholder = "Escribe...";
+        
+        // Guardar coordenadas relativas al canvas
+        input.dataset.canvasX = x;
+        input.dataset.canvasY = y;
+        
+        document.getElementById('free-canvas-container').appendChild(input);
+        inputsFlotantes.push(input);
+        input.focus();
+    });
 
-        // Función para mostrar una vista y ocultar la otra
-        const showView = (viewToShow, viewToHide) => {
-            viewToShow.style.opacity = '1';
-            viewToShow.style.pointerEvents = 'auto';
-            viewToHide.style.opacity = '0';
-            viewToHide.style.pointerEvents = 'none';
-        };
+    async function generarPdfLibre() {
+        if (!freePdfDoc) return;
 
-        // Al hacer clic en el botón "siguiente" (›), mostramos las estadísticas
-        nextBtn.addEventListener('click', () => {
-            showView(statsDisplay, qrDisplay);
-        });
+        const btn = document.getElementById('btn-generar-free');
+        btn.innerText = "⏳ Procesando...";
+        btn.disabled = true;
 
-        // Al hacer clic en el botón "anterior" (‹), mostramos el QR
-        prevBtn.addEventListener('click', () => {
-            showView(qrDisplay, statsDisplay);
-        });
+        try {
+            const pages = freePdfDoc.getPages();
+            const firstPage = pages[0];
+            const pdfHeight = firstPage.getHeight();
+
+            // Estampar cada input flotante
+            inputsFlotantes.forEach(input => {
+                const texto = input.value.trim();
+                if (texto) {
+                    const canvasX = parseFloat(input.dataset.canvasX);
+                    const canvasY = parseFloat(input.dataset.canvasY);
+                    
+                    // Traducir coordenadas del Canvas al PDF real
+                    const pdfX = canvasX / freeCanvasScale;
+                    // El PDF tiene el Y=0 abajo, el Canvas tiene el Y=0 arriba
+                    const pdfY = pdfHeight - (canvasY / freeCanvasScale);
+
+                    firstPage.drawText(texto, {
+                        x: pdfX,
+                        y: pdfY - 2, // Pequeño ajuste de línea base
+                        size: 12,
+                        color: PDFLib.rgb(0, 0, 0)
+                    });
+                }
+            });
+
+            // Descontar crédito
+            const pagado = await descontarCredito();
+            if (!pagado) throw new Error("No se pudo procesar el pago.");
+
+            // Descargar
+            const pdfBytes = await freePdfDoc.save();
+            download(pdfBytes, `DocuFacil_Rellenado.pdf`, "application/pdf");
+            
+            alert("✅ ¡Documento rellenado con éxito!");
+            volverAHome();
+
+        } catch (err) {
+            alert("Error: " + err.message);
+        } finally {
+            btn.innerText = "✨ Descargar PDF Lleno (1 Crédito)";
+            btn.disabled = false;
+        }
     }
 </script>
-
 </body>
 </html>
