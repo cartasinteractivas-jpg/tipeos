@@ -214,8 +214,11 @@
     </div>
 </div>
 
+
 <script>
-    // ==========================================
+
+
+        // ==========================================
     // CONFIGURACIÓN DE SUPABASE
     // ==========================================
     const SUPABASE_URL = 'TU_SUPABASE_URL'; // Reemplaza con tu URL
@@ -226,6 +229,10 @@
     // VARIABLES GLOBALES
     // ==========================================
     let usuarioActual = null;
+    let plantillasGlobales = [];
+    let plantillaSeleccionada = null;
+
+    // Variables para Rellenado Libre
     let freePdfDoc = null;
     let freeCanvasScales = {};
     let inputsFlotantes = [];
@@ -239,15 +246,18 @@
     document.addEventListener('DOMContentLoaded', () => {
         const codigoGuardado = localStorage.getItem('docufacil_codigo');
         if (codigoGuardado) {
-            document.getElementById('codigo-input').value = codigoGuardado;
+            const inputCodigo = document.getElementById('codigo-input');
+            if(inputCodigo) inputCodigo.value = codigoGuardado;
             verificarCodigo();
         }
+        cargarPlantillas();
         actualizarDatalist();
     });
 
     function showScreen(screenId) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById(screenId).classList.add('active');
+        const screen = document.getElementById(screenId);
+        if(screen) screen.classList.add('active');
     }
 
     function volverAHome() {
@@ -258,15 +268,17 @@
     // SISTEMA DE CRÉDITOS Y CÓDIGOS
     // ==========================================
     async function verificarCodigo() {
-        const codigo = document.getElementById('codigo-input').value.trim();
+        const inputCodigo = document.getElementById('codigo-input');
+        if(!inputCodigo) return;
+        
+        const codigo = inputCodigo.value.trim();
         if (!codigo) {
             alert("Por favor, ingresa un código.");
             return;
         }
 
         const btn = document.querySelector('button[onclick="verificarCodigo()"]');
-        btn.innerText = "Verificando...";
-        btn.disabled = true;
+        if(btn) { btn.innerText = "Verificando..."; btn.disabled = true; }
 
         try {
             const { data, error } = await supabase
@@ -286,28 +298,75 @@
                 alert(`¡Bienvenido! Tienes ${data.creditos} créditos.`);
             }
         } catch (err) {
-            alert("Error de conexión.");
+            alert("Error de conexión con la base de datos.");
         } finally {
-            btn.innerText = "Ingresar Código";
-            btn.disabled = false;
+            if(btn) { btn.innerText = "Ingresar Código"; btn.disabled = false; }
         }
     }
 
     function actualizarUI() {
         if (usuarioActual) {
-            document.getElementById('user-credits-display').innerText = `Créditos: ${usuarioActual.creditos}`;
+            const display = document.getElementById('user-credits-display');
+            if(display) display.innerText = `Créditos: ${usuarioActual.creditos}`;
             
-            // Lógica de vista bloqueada si no hay créditos
-            if (usuarioActual.creditos > 0) {
-                document.getElementById('templates-container').style.opacity = "1";
-                document.getElementById('templates-container').style.pointerEvents = "auto";
-            } else {
-                document.getElementById('templates-container').style.opacity = "0.5";
-                document.getElementById('templates-container').style.pointerEvents = "none";
+            const container = document.getElementById('templates-container');
+            if(container) {
+                if (usuarioActual.creditos > 0) {
+                    container.style.opacity = "1";
+                    container.style.pointerEvents = "auto";
+                } else {
+                    container.style.opacity = "0.5";
+                    container.style.pointerEvents = "none";
+                }
             }
         }
     }
 
+    // ==========================================
+    // PLANTILLAS (IA / AUTOMATIZADAS)
+    // ==========================================
+    async function cargarPlantillas() {
+        try {
+            const { data, error } = await supabase.from('plantillas').select('*');
+            if (!error && data) {
+                plantillasGlobales = data;
+                renderizarPlantillas();
+            }
+        } catch (err) {
+            console.error("Error cargando plantillas:", err);
+        }
+    }
+
+    function renderizarPlantillas() {
+        const container = document.getElementById('templates-container');
+        if (!container) return;
+        container.innerHTML = '';
+        
+        plantillasGlobales.forEach(plan => {
+            const card = document.createElement('div');
+            card.className = 'template-card';
+            // Ajusta el HTML de la tarjeta según tu diseño original
+            card.innerHTML = `
+                <h3>${plan.nombre}</h3>
+                <p>${plan.descripcion || 'Documento automatizado'}</p>
+                <button onclick="abrirPlantilla('${plan.id}')">Usar Plantilla</button>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    function abrirPlantilla(id) {
+        if (!usuarioActual || usuarioActual.creditos <= 0) {
+            alert("🔒 Necesitas tener créditos disponibles para usar esta función.");
+            document.getElementById('seccion-compra').scrollIntoView({ behavior: 'smooth' });
+            return;
+        }
+        plantillaSeleccionada = plantillasGlobales.find(p => p.id === id);
+        if(plantillaSeleccionada) {
+            // Aquí prepararemos la conexión con OpenRouter en la siguiente fase
+            alert(`Has seleccionado: ${plantillaSeleccionada.nombre}. (La IA se conectará en el próximo paso)`);
+        }
+    }
     // ==========================================
     // HISTORIAL (AUTOCOMPLETADO)
     // ==========================================
@@ -399,7 +458,7 @@
             // Evento para abrir el menú al tocar la hoja
             wrapper.addEventListener('click', function(ev) {
                 // Si tocamos un elemento flotante, ignoramos el clic en la hoja
-                if (ev.target.closest('.floating-input-wrapper') || ev.target.closest('.click-menu')) return;
+                if (ev.target.closest('.floating-input-wrapper') || ev.target.closest('.draggable-signature') || ev.target.closest('.click-menu') || ev.target.closest('.confirmed-text-wrapper')) return;
                 
                 document.querySelectorAll('.click-menu').forEach(m => m.remove());
 
