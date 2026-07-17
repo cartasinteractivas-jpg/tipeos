@@ -2,119 +2,393 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat con la Base de Datos de Recepción</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DocuFácil - Generador de Documentos</title>
+    
+    <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8"></script>
+    <!-- PDF-lib para editar y estampar el PDF -->
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <!-- Download.js para descargar el archivo -->
+    <script src="https://unpkg.com/downloadjs@1.4.7"></script>
+
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
-        .chat-container { width: 90%; max-width: 600px; height: 80vh; background: white; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1 ); display: flex; flex-direction: column; }
-        #chat-window { flex-grow: 1; overflow-y: auto; padding: 20px; }
-        .message { margin-bottom: 15px; padding: 10px 15px; border-radius: 18px; max-width: 80%; line-height: 1.4; }
-        .user-message { background-color: #007bff; color: white; align-self: flex-end; margin-left: auto; }
-        .ia-message { background-color: #e9e9eb; color: #333; align-self: flex-start; }
-        .error-message { background-color: #ffebee; color: #c62828; border: 1px solid #c62828; }
-        #input-area { display: flex; padding: 15px; border-top: 1px solid #ddd; }
-        #user-input { flex-grow: 1; padding: 10px; border: 1px solid #ccc; border-radius: 20px; font-size: 16px; }
-        #send-button { background: #007bff; color: white; border: none; border-radius: 50%; width: 45px; height: 45px; margin-left: 10px; font-size: 20px; cursor: pointer; }
-        pre { background-color: #2d2d2d; color: #f8f8f2; padding: 10px; border-radius: 5px; white-space: pre-wrap; word-wrap: break-word; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #121212; color: #ffffff; display: flex; justify-content: center; min-height: 100vh; }
+        
+        /* Diseño Móvil Centrado */
+        .app-container { background: #1e1e1e; width: 100%; max-width: 480px; min-height: 100vh; display: flex; flex-direction: column; position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.5 ); }
+        
+        .header { background: #2c3e50; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; border-bottom: 2px solid #34495e; }
+        .header h1 { color: #fff; font-size: 20px; display: flex; align-items: center; gap: 8px; }
+        .creditos-badge { background: #f1c40f; color: #000; padding: 5px 12px; border-radius: 20px; font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+
+        .screen { padding: 20px; display: none; flex-direction: column; gap: 20px; flex: 1; overflow-y: auto; padding-bottom: 40px; }
+        .screen.active { display: flex; }
+
+        /* --- SECCIÓN YAPE Y COMPRA --- */
+        .compra-section { background: linear-gradient(135deg, #742384 0%, #4a1554 100%); border-radius: 12px; padding: 20px; text-align: center; border: 1px solid #8e44ad; box-shadow: 0 4px 15px rgba(116, 35, 132, 0.4); }
+        .yape-logo { height: 40px; margin-bottom: 10px; object-fit: contain; }
+        .compra-info { color: #fff; font-size: 14px; margin-bottom: 15px; line-height: 1.5; }
+        .precio-tag { background: #00E4C0; color: #000; font-weight: bold; padding: 3px 8px; border-radius: 5px; font-size: 15px; }
+        .btn-whatsapp { background: #25D366; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; width: 100%; display: flex; justify-content: center; align-items: center; gap: 8px; text-decoration: none; transition: 0.2s; }
+        .btn-whatsapp:active { transform: scale(0.98); }
+
+        /* --- SECCIÓN ACTIVAR CÓDIGO --- */
+        .activar-section { background: #222; border-radius: 12px; padding: 15px; border: 1px solid #333; }
+        .activar-section h3 { color: #ccc; font-size: 15px; margin-bottom: 10px; }
+        .input-codigo-wrapper { display: flex; gap: 10px; }
+        .input-codigo { flex: 1; padding: 12px; background: #000; color: #f1c40f; border: 2px solid #444; border-radius: 8px; outline: none; font-size: 16px; text-align: center; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
+        .input-codigo:focus { border-color: #f1c40f; }
+        .btn-activar { background: #f1c40f; color: #000; border: none; padding: 0 20px; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; transition: 0.2s; }
+        .btn-activar:active { transform: scale(0.95); }
+
+        /* --- TARJETAS DE DOCUMENTOS --- */
+        .section-title { color: #fff; font-size: 18px; margin-top: 10px; border-bottom: 2px solid #333; padding-bottom: 8px; }
+        .lista-plantillas { display: flex; flex-direction: column; gap: 12px; }
+        
+        .card { background: #2a2a2a; border: 1px solid #444; border-radius: 10px; padding: 15px; cursor: pointer; display: flex; align-items: center; gap: 15px; position: relative; overflow: hidden; transition: 0.2s; }
+        .card-icon { font-size: 30px; }
+        .card-info { flex: 1; }
+        .card-info h3 { color: #fff; font-size: 16px; margin-bottom: 4px; }
+        .card-info p { color: #aaa; font-size: 12px; line-height: 1.3; }
+        
+        /* Estado Bloqueado */
+        .card.locked { opacity: 0.7; border-color: #333; }
+        .card.locked::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 1; }
+        .candado-icon { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); font-size: 24px; z-index: 2; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8)); }
+
+        /* --- FORMULARIO --- */
+        .input-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; }
+        .input-group label { color: #ccc; font-weight: bold; font-size: 14px; }
+        .input-with-mic { display: flex; gap: 10px; }
+        .input-with-mic input, .input-with-mic textarea { flex: 1; padding: 12px; background: #000; color: #fff; border: 1px solid #444; border-radius: 8px; outline: none; font-size: 15px; }
+        .input-with-mic input:focus, .input-with-mic textarea:focus { border-color: #3498db; }
+        
+        .btn-mic { background: #3498db; color: white; border: none; width: 48px; border-radius: 8px; cursor: pointer; font-size: 20px; display: flex; justify-content: center; align-items: center; }
+        .btn-mic.recording { background: #e74c3c; animation: pulse 1.5s infinite; }
+        
+        .btn-generar { background: #2ecc71; color: #000; border: none; padding: 15px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; width: 100%; margin-top: 10px; box-shadow: 0 4px 10px rgba(46, 204, 113, 0.3); }
+        .btn-volver { background: transparent; color: #aaa; border: 1px solid #555; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 13px; width: fit-content; margin-bottom: 10px; }
+
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
     </style>
 </head>
 <body>
 
-<div class="chat-container">
-    <div id="chat-window">
-        <div class="message ia-message">Hola, soy tu asistente de base de datos. ¿Qué información necesitas de la tabla de registros?</div>
+<div class="app-container">
+    <!-- CABECERA FIJA -->
+    <div class="header">
+        <h1>📄 DocuFácil</h1>
+        <div class="creditos-badge">
+            🪙 <span id="user-creditos">0</span>
+        </div>
     </div>
-    <div id="input-area">
-        <input type="text" id="user-input" placeholder="Ej: busca al paciente Juan Perez...">
-        <button id="send-button">→</button>
+
+    <!-- PANTALLA 1: INICIO (ESCAPARATE) -->
+    <div id="screen-home" class="screen active">
+        
+        <!-- SECCIÓN 1: COMPRA (YAPE) -->
+        <div class="compra-section" id="seccion-compra">
+            <img src="https://vectorseek.com/wp-content/uploads/2023/09/Yape-App-Logo-Vector.svg-.png" alt="Yape" class="yape-logo" onerror="this.style.display='none'">
+            <div class="compra-info">
+                <p style="font-size: 16px; font-weight: bold; margin-bottom: 5px;">¿Necesitas crear un documento?</p>
+                <p>Adquiere créditos y genera documentos profesionales al instante.</p>
+                <p style="margin-top: 10px; font-size: 15px;">1 Crédito = 1 Hoja = <span class="precio-tag">S/ 0.20</span></p>
+                <p style="margin-top: 10px; font-weight: bold; color: #f1c40f; font-size: 18px;">Yapea al: 967 188 120</p>
+            </div>
+            <a href="https://wa.me/51967188120?text=Hola,%20ya%20yapeé.%20Quiero%20comprar%20créditos%20para%20DocuFácil." target="_blank" class="btn-whatsapp">
+                💬 Enviar captura por WhatsApp
+            </a>
+        </div>
+
+        <!-- SECCIÓN 2: ACTIVAR CÓDIGO -->
+        <div class="activar-section">
+            <h3>🔑 ¿Ya tienes un código? Actívalo aquí:</h3>
+            <div class="input-codigo-wrapper">
+                <input type="text" id="input-codigo" class="input-codigo" placeholder="EJ: MANU-123" oninput="this.value = this.value.toUpperCase( ).replace(/[^A-Z0-9-]/g, '')">
+                <button class="btn-activar" onclick="activarCodigo()">Activar</button>
+            </div>
+        </div>
+
+        <!-- SECCIÓN 3: LISTA DE DOCUMENTOS -->
+        <h2 class="section-title">📚 Documentos Disponibles</h2>
+        <div id="lista-plantillas" class="lista-plantillas">
+            <p style="text-align: center; color: #888;">Cargando documentos...</p>
+        </div>
+    </div>
+
+    <!-- PANTALLA 2: FORMULARIO DE LLENADO -->
+    <div id="screen-formulario" class="screen">
+        <button class="btn-volver" onclick="volverAHome()">⬅ Volver al inicio</button>
+        
+        <div style="background: #222; padding: 15px; border-radius: 10px; border-left: 4px solid #3498db; margin-bottom: 10px;">
+            <h3 id="form-titulo" style="color: #3498db; margin-bottom: 5px;">Nombre del Documento</h3>
+            <p id="form-desc" style="color: #aaa; font-size: 13px;">Descripción</p>
+        </div>
+        
+        <div class="input-group" style="background: #2a2a2a; padding: 15px; border-radius: 8px; border: 1px dashed #555;">
+            <label style="color: #f1c40f;">📄 Sube el PDF base (Plantilla)</label>
+            <p style="font-size: 11px; color: #888; margin-bottom: 8px;">Sube el archivo PDF en blanco que vamos a rellenar.</p>
+            <input type="file" id="user-pdf-upload" accept="application/pdf" style="width: 100%; color: #fff;">
+        </div>
+
+        <div id="form-campos" style="display: flex; flex-direction: column; gap: 5px;">
+            <!-- Los inputs se generan aquí dinámicamente -->
+        </div>
+
+        <button class="btn-generar" id="btn-generar" onclick="generarDocumento()">✨ Generar Documento (1 Crédito)</button>
     </div>
 </div>
 
 <script>
-    // Tus claves de Supabase (¡estas son públicas y seguras de poner aquí!)
-    const supabaseUrl = 'https://esiklpxyectbekxvajnw.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzaWtscHh5ZWN0YmVreHZham53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2OTI1MjEsImV4cCI6MjA3NzI2ODUyMX0.mtQnqUrTmhmN1DQxOAUnGpizhYZobStHDH0cz_XfKGU';
+    // 1. CONFIGURACIÓN DE SUPABASE
+    const supabaseUrl = 'https://wpzddhmllctdsiuxenss.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwemRkaG1sbGN0ZHNpdXhlbnNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5NjUyNzQsImV4cCI6MjA5OTU0MTI3NH0.hwSxJ3Sk_RlgbvFyr8S64XRuxW7j55BU4gaIneFTuhY';
     const supabase = window.supabase.createClient(supabaseUrl, supabaseKey );
 
-    const chatWindow = document.getElementById('chat-window');
-    const userInput = document.getElementById('user-input');
-    const sendButton = document.getElementById('send-button');
+    let usuarioActual = null;
+    let plantillaSeleccionada = null;
+    let plantillasGlobales = [];
 
-    sendButton.addEventListener('click', handleUserMessage);
-    userInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            handleUserMessage();
-        }
+    // --- INICIALIZACIÓN ---
+    document.addEventListener('DOMContentLoaded', () => {
+        cargarPlantillas();
     });
 
-    function addMessage(text, type, isRawJson = false) {
-        const messageDiv = document.createElement('div');
-        messageDiv.classList.add('message', type);
-        if (isRawJson) {
-            messageDiv.innerHTML = `<pre>${text}</pre>`;
-        } else {
-            messageDiv.textContent = text;
-        }
-        chatWindow.appendChild(messageDiv);
-        chatWindow.scrollTop = chatWindow.scrollHeight;
+    function showScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+        window.scrollTo(0, 0);
     }
 
-    async function handleUserMessage() {
-        const pregunta = userInput.value.trim();
-        if (!pregunta) return;
+    // --- CARGAR PLANTILLAS (ESCAPARATE) ---
+    async function cargarPlantillas() {
+        const { data, error } = await supabase.from('plantillas').select('*');
+        const contenedor = document.getElementById('lista-plantillas');
+        
+        if (error || !data || data.length === 0) {
+            contenedor.innerHTML = '<p style="text-align: center; color:#888;">No hay documentos disponibles en este momento.</p>';
+            return;
+        }
 
-        addMessage(pregunta, 'user-message');
-        userInput.value = '';
-        addMessage('Pensando...', 'ia-message', false);
+        plantillasGlobales = data;
+        renderizarPlantillas();
+    }
+
+    function renderizarPlantillas() {
+        const contenedor = document.getElementById('lista-plantillas');
+        contenedor.innerHTML = '';
+        
+        const tieneCreditos = usuarioActual && usuarioActual.creditos > 0;
+
+        plantillasGlobales.forEach(tpl => {
+            const icono = tpl.tipo === 'rellenado' ? '📝' : '🤖';
+            const claseBloqueado = tieneCreditos ? '' : 'locked';
+            const candadoHtml = tieneCreditos ? '' : '<div class="candado-icon">🔒</div>';
+
+            contenedor.innerHTML += `
+                <div class="card ${claseBloqueado}" onclick='clickPlantilla(${JSON.stringify(tpl)})'>
+                    <div class="card-icon">${icono}</div>
+                    <div class="card-info">
+                        <h3>${tpl.nombre}</h3>
+                        <p>${tpl.descripcion || 'Documento listo para generar'}</p>
+                    </div>
+                    ${candadoHtml}
+                </div>
+            `;
+        });
+    }
+
+    // --- LÓGICA DE CLIC EN PLANTILLA ---
+    function clickPlantilla(tpl) {
+        if (!usuarioActual || usuarioActual.creditos <= 0) {
+            // Si no tiene créditos, le avisamos y lo mandamos a la sección de Yape
+            alert("🔒 Necesitas activar un código con créditos para usar este documento.");
+            document.getElementById('seccion-compra').scrollIntoView({ behavior: 'smooth' });
+            // Efecto visual para llamar la atención a la caja de código
+            const cajaCodigo = document.getElementById('input-codigo');
+            cajaCodigo.style.borderColor = '#f1c40f';
+            setTimeout(() => cajaCodigo.style.borderColor = '#444', 1500);
+            return;
+        }
+
+        // Si tiene créditos, abrimos el formulario
+        abrirFormulario(tpl);
+    }
+
+    // --- ACTIVAR CÓDIGO ---
+    async function activarCodigo() {
+        const codigo = document.getElementById('input-codigo').value.trim();
+        const btn = document.querySelector('.btn-activar');
+        
+        if (!codigo) return alert("Ingresa un código válido.");
+
+        btn.innerText = "⏳";
+        btn.disabled = true;
+
+        const { data, error } = await supabase.from('usuarios_codigos').select('*').eq('codigo', codigo).single();
+        
+        btn.innerText = "Activar";
+        btn.disabled = false;
+
+        if (error || !data) {
+            return alert("❌ Código incorrecto o no existe.");
+        }
+
+        if (data.creditos <= 0) {
+            return alert("⚠️ Este código ya no tiene créditos. Por favor, recarga contactando por WhatsApp.");
+        }
+
+        // Login exitoso
+        usuarioActual = data;
+        document.getElementById('user-creditos').innerText = usuarioActual.creditos;
+        document.getElementById('input-codigo').value = '';
+        
+        alert(`✅ ¡Código activado! Tienes ${usuarioActual.creditos} créditos disponibles.`);
+        
+        // Re-renderizar para quitar los candados
+        renderizarPlantillas();
+    }
+
+    // --- ABRIR FORMULARIO DINÁMICO ---
+    function abrirFormulario(tpl) {
+        plantillaSeleccionada = tpl;
+        document.getElementById('form-titulo').innerText = tpl.nombre;
+        document.getElementById('form-desc').innerText = tpl.descripcion || 'Completa los datos solicitados.';
+        
+        const contenedorCampos = document.getElementById('form-campos');
+        contenedorCampos.innerHTML = '';
+
+        const elementos = tpl.configuracion.elementos || [];
+        
+        elementos.forEach((elem, index) => {
+            const isTextArea = elem.alto > 40;
+            const inputHtml = isTextArea 
+                ? `<textarea id="campo-${index}" rows="3" placeholder="Escribe o dicta aquí..."></textarea>`
+                : `<input type="text" id="campo-${index}" placeholder="Escribe o dicta aquí...">`;
+
+            contenedorCampos.innerHTML += `
+                <div class="input-group">
+                    <label>${elem.nombre}</label>
+                    <div class="input-with-mic">
+                        ${inputHtml}
+                        <button class="btn-mic" onclick="iniciarDictado('campo-${index}', this)" title="Dictar por voz">🎤</button>
+                    </div>
+                </div>
+            `;
+        });
+
+        showScreen('screen-formulario');
+    }
+
+    function volverAHome() {
+        plantillaSeleccionada = null;
+        showScreen('screen-home');
+    }
+
+    // --- RECONOCIMIENTO DE VOZ (MICRÓFONO) ---
+    function iniciarDictado(inputId, btnElement) {
+        const input = document.getElementById(inputId);
+        
+        if (!('webkitSpeechRecognition' in window)) {
+            alert("Tu navegador no soporta dictado por voz. Usa Chrome o Edge.");
+            return;
+        }
+
+        const recognition = new webkitSpeechRecognition();
+        recognition.lang = 'es-PE';
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+
+        recognition.onstart = function() {
+            btnElement.classList.add('recording');
+        };
+
+        recognition.onresult = function(event) {
+            const textoDictado = event.results[0][0].transcript;
+            input.value = input.value ? input.value + ' ' + textoDictado : textoDictado;
+        };
+
+        recognition.onerror = function(event) {
+            console.error("Error de voz:", event.error);
+            btnElement.classList.remove('recording');
+        };
+
+        recognition.onend = function() {
+            btnElement.classList.remove('recording');
+        };
+
+        recognition.start();
+    }
+
+    // --- GENERAR Y ESTAMPAR PDF ---
+    async function generarDocumento() {
+        const fileInput = document.getElementById('user-pdf-upload');
+        if (!fileInput.files.length) return alert("Por favor, sube el PDF base (Plantilla) para rellenarlo.");
+        
+        if (!usuarioActual || usuarioActual.creditos <= 0) {
+            alert("No tienes créditos suficientes.");
+            volverAHome();
+            return;
+        }
+
+        const btn = document.getElementById('btn-generar');
+        btn.innerText = "⏳ Procesando documento...";
+        btn.disabled = true;
 
         try {
-            // 1. Llamar a la Edge Function para que la IA convierta la pregunta en un plan JSON
-            const { data: plan, error: planError } = await supabase.functions.invoke('chat-con-ia', {
-                body: { pregunta },
+            const file = fileInput.files[0];
+            const arrayBuffer = await file.arrayBuffer();
+            
+            const { PDFDocument, rgb } = PDFLib;
+            const pdfDoc = await PDFDocument.load(arrayBuffer);
+            const pages = pdfDoc.getPages();
+            const firstPage = pages[0];
+            const { height } = firstPage.getSize();
+
+            const elementos = plantillaSeleccionada.configuracion.elementos || [];
+            
+            elementos.forEach((elem, index) => {
+                const valorUsuario = document.getElementById(`campo-${index}`).value.trim();
+                if (valorUsuario) {
+                    const pdfY = height - elem.y - 12; 
+                    firstPage.drawText(valorUsuario, {
+                        x: elem.x,
+                        y: pdfY,
+                        size: 11,
+                        color: rgb(0, 0, 0),
+                        maxWidth: elem.ancho,
+                        lineHeight: 14
+                    });
+                }
             });
 
-            if (planError) throw planError;
-            if (plan.error) throw new Error(plan.error);
+            const pdfBytes = await pdfDoc.save();
             
-            // Mostramos el plan que generó la IA (muy útil para depurar)
-            document.querySelector('.ia-message:last-child').remove(); // Quita el "Pensando..."
-            addMessage('Plan de la IA:\n' + JSON.stringify(plan, null, 2), 'ia-message', true);
-
-            // 2. Construir y ejecutar la consulta de Supabase basada en el plan de la IA
-            let query = supabase.from(plan.tabla).select(plan.columnas);
-
-            if (plan.filtros && plan.filtros.length > 0) {
-                plan.filtros.forEach(filtro => {
-                    query = query[filtro.operador](filtro.columna, filtro.valor);
-                });
-            }
+            // Descontar 1 crédito
+            const nuevosCreditos = usuarioActual.creditos - 1;
+            await supabase.from('usuarios_codigos').update({ creditos: nuevosCreditos }).eq('id', usuarioActual.id);
             
-            if (plan.accion === 'count') {
-                query = query.select('*', { count: 'exact', head: true });
-            }
+            usuarioActual.creditos = nuevosCreditos;
+            document.getElementById('user-creditos').innerText = nuevosCreditos;
+            
+            // Si se quedó en 0, re-renderizar para poner candados
+            if (nuevosCreditos === 0) renderizarPlantillas();
 
-            const { data: resultados, error: dbError, count } = await query;
+            download(pdfBytes, `Documento_${plantillaSeleccionada.nombre}.pdf`, "application/pdf");
 
-            if (dbError) throw dbError;
-
-            // 3. Mostrar los resultados al usuario
-            if (plan.accion === 'count') {
-                addMessage(`Respuesta: Se encontraron ${count} registros.`, 'ia-message');
-            } else if (resultados.length === 0) {
-                addMessage('No encontré resultados para tu consulta.', 'ia-message');
-            } else {
-                const respuestaFormateada = 'Resultados:\n' + JSON.stringify(resultados, null, 2);
-                addMessage(respuestaFormateada, 'ia-message', true);
-            }
+            alert("✅ ¡Documento generado con éxito! Se ha descontado 1 crédito.");
+            volverAHome();
 
         } catch (error) {
-            console.error('Error en el proceso:', error);
-            document.querySelector('.ia-message:last-child').remove(); // Quita el "Pensando..."
-            addMessage(`Error: ${error.message}`, 'error-message');
+            console.error(error);
+            alert("❌ Error al generar el documento: " + error.message);
+        } finally {
+            btn.innerText = "✨ Generar Documento (1 Crédito)";
+            btn.disabled = false;
         }
     }
 </script>
-
 </body>
 </html>
