@@ -1,0 +1,2 @@
+# tipeos
+Tipeos rapidos 
