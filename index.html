@@ -3,81 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DocuFácil - Generador de Documentos</title>
+    <title>DocuFácil - Cliente</title>
     
-    <!-- Supabase -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8"></script>
-    <!-- PDF-lib para editar y estampar el PDF -->
-    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-    <!-- PDF.js para visualizar el PDF en pantalla -->
+    <!-- Librerías necesarias -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-    <!-- Download.js para descargar el archivo -->
-    <script src="https://unpkg.com/downloadjs@1.4.7"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/downloadjs/1.4.8/download.min.js"></script>
 
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #121212; color: #ffffff; display: flex; justify-content: center; min-height: 100vh; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #121212; color: #ffffff; padding: 20px; }
         
-        .app-container { background: #1e1e1e; width: 100%; max-width: 480px; min-height: 100vh; display: flex; flex-direction: column; position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.5 ); }
+        h1, h2, h3 { color: #f1c40f; text-align: center; margin-bottom: 15px; }
         
-        .header { background: #2c3e50; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; border-bottom: 2px solid #34495e; }
-        .header h1 { color: #fff; font-size: 20px; display: flex; align-items: center; gap: 8px; }
-        .creditos-badge { background: #f1c40f; color: #000; padding: 5px 12px; border-radius: 20px; font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 5px; }
+        .screen { display: none; }
+        .screen.active { display: block; animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        .screen { padding: 20px; display: none; flex-direction: column; gap: 20px; flex: 1; overflow-y: auto; padding-bottom: 40px; }
-        .screen.active { display: flex; }
-
-        /* --- SECCIÓN YAPE Y COMPRA --- */
-        .compra-section { background: linear-gradient(135deg, #742384 0%, #4a1554 100%); border-radius: 12px; padding: 20px; text-align: center; border: 1px solid #8e44ad; }
-        .yape-logo { height: 40px; margin-bottom: 10px; object-fit: contain; }
-        .compra-info { color: #fff; font-size: 14px; margin-bottom: 15px; line-height: 1.5; }
-        .precio-tag { background: #00E4C0; color: #000; font-weight: bold; padding: 3px 8px; border-radius: 5px; font-size: 15px; }
-        .btn-whatsapp { background: #25D366; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; width: 100%; display: flex; justify-content: center; align-items: center; gap: 8px; text-decoration: none; }
-
-        /* --- SECCIÓN ACTIVAR CÓDIGO --- */
-        .activar-section { background: #222; border-radius: 12px; padding: 15px; border: 1px solid #333; }
-        .activar-section h3 { color: #ccc; font-size: 15px; margin-bottom: 10px; }
-        .input-codigo-wrapper { display: flex; gap: 10px; }
-        .input-codigo { flex: 1; padding: 12px; background: #000; color: #f1c40f; border: 2px solid #444; border-radius: 8px; outline: none; font-size: 16px; text-align: center; font-weight: bold; text-transform: uppercase; }
-        .btn-activar { background: #f1c40f; color: #000; border: none; padding: 0 20px; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; }
-
-        /* --- TARJETAS DE DOCUMENTOS --- */
-        .section-title { color: #fff; font-size: 18px; margin-top: 10px; border-bottom: 2px solid #333; padding-bottom: 8px; }
-        .lista-plantillas { display: flex; flex-direction: column; gap: 12px; }
+        .card { background: #1e1e1e; border-radius: 10px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.3 ); border: 1px solid #333; }
         
-        .card { background: #2a2a2a; border: 1px solid #444; border-radius: 10px; padding: 15px; cursor: pointer; display: flex; align-items: center; gap: 15px; position: relative; overflow: hidden; transition: 0.2s; }
-        .card-icon { font-size: 30px; }
-        .card-info { flex: 1; }
-        .card-info h3 { color: #fff; font-size: 16px; margin-bottom: 4px; }
-        .card-info p { color: #aaa; font-size: 12px; line-height: 1.3; }
+        input[type="text"], input[type="file"] { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 6px; border: 1px solid #444; background: #2a2a2a; color: white; font-size: 16px; }
         
-        .card.locked { opacity: 0.7; border-color: #333; }
-        .card.locked::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 1; }
-        .candado-icon { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); font-size: 24px; z-index: 2; }
-
-        /* --- FORMULARIOS --- */
-        .input-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; }
-        .input-group label { color: #ccc; font-weight: bold; font-size: 14px; }
-        .input-with-mic { display: flex; gap: 10px; }
-        .input-with-mic input, .input-with-mic textarea { flex: 1; padding: 12px; background: #000; color: #fff; border: 1px solid #444; border-radius: 8px; outline: none; font-size: 15px; }
-        .btn-mic { background: #3498db; color: white; border: none; width: 48px; border-radius: 8px; cursor: pointer; font-size: 20px; display: flex; justify-content: center; align-items: center; }
+        button { width: 100%; padding: 14px; background: #f1c40f; color: #121212; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-bottom: 10px; }
+        button:hover { background: #d4ac0d; }
+        button:disabled { background: #555; color: #888; cursor: not-allowed; }
         
-        .btn-generar { background: #2ecc71; color: #000; border: none; padding: 15px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; width: 100%; margin-top: 10px; }
-        .btn-volver { background: transparent; color: #aaa; border: 1px solid #555; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 13px; width: fit-content; margin-bottom: 10px; }
+        .btn-secondary { background: #3498db; color: white; }
+        .btn-secondary:hover { background: #2980b9; }
+        .btn-danger { background: #e74c3c; color: white; }
+        .btn-danger:hover { background: #c0392b; }
 
+        .credits-display { text-align: center; font-size: 18px; font-weight: bold; color: #2ecc71; margin-bottom: 15px; background: #1a251f; padding: 10px; border-radius: 6px; border: 1px solid #2ecc71; }
 
+        /* Grid de Plantillas */
+        .templates-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; transition: 0.3s; }
+        .template-card { background: #2a2a2a; padding: 15px; border-radius: 8px; border: 1px solid #444; text-align: center; }
+        .template-card h3 { color: #fff; font-size: 18px; margin-bottom: 10px; }
+        .template-card p { color: #aaa; font-size: 14px; margin-bottom: 15px; }
 
-        
-
-        
-            /* --- RELLENADO LIBRE --- */
+        /* --- RELLENADO LIBRE --- */
         .canvas-container { width: 100%; overflow: auto; border: 1px solid #444; border-radius: 8px; background: #222; position: relative; margin-top: 10px; display: flex; flex-direction: column; gap: 10px; padding: 10px; }
         .pdf-page-wrapper { position: relative; width: 100%; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
         .free-pdf-canvas { display: block; width: 100%; cursor: crosshair; }
         
         /* Menú al hacer clic */
         .click-menu { position: absolute; background: #fff; border-radius: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: flex; flex-direction: column; z-index: 60; overflow: hidden; border: 1px solid #ccc; }
-        .click-menu button { background: none; border: none; padding: 12px 20px; cursor: pointer; font-weight: bold; font-size: 14px; color: #333; text-align: left; border-bottom: 1px solid #eee; transition: 0.2s; }
+        .click-menu button { background: none; border: none; padding: 12px 20px; cursor: pointer; font-weight: bold; font-size: 14px; color: #333; text-align: left; border-bottom: 1px solid #eee; transition: 0.2s; margin: 0; width: 100%; }
         .click-menu button:hover { background: #f1c40f; color: #000; }
         .click-menu button:last-child { border-bottom: none; }
 
@@ -86,16 +58,11 @@
         .drag-handle { cursor: grab; font-size: 18px; padding: 0 5px; color: #888; user-select: none; display: flex; align-items: center; }
         .drag-handle:active { cursor: grabbing; }
         
-        .floating-input { background: transparent; border: 1px solid #e67e22; color: #000; font-weight: bold; padding: 4px 8px; border-radius: 4px; outline: none; font-size: 12px; min-width: 120px; }
+        .floating-input { background: transparent !important; border: 1px solid #e67e22 !important; color: #000 !important; font-weight: bold; padding: 4px 8px !important; border-radius: 4px; outline: none; font-size: 12px; min-width: 120px; margin: 0 !important; }
         
-        .btn-size-input { background: #3498db; color: white; border: none; border-radius: 4px; width: 26px; height: 26px; cursor: pointer; font-size: 16px; font-weight: bold; display: flex; justify-content: center; align-items: center; transition: 0.2s; }
-        .btn-size-input:hover { background: #2980b9; }
-        
-        .btn-confirm-input { background: #2ecc71; color: #000; border: none; border-radius: 4px; width: 26px; height: 26px; cursor: pointer; font-size: 12px; display: flex; justify-content: center; align-items: center; font-weight: bold; transition: 0.2s; }
-        .btn-confirm-input:hover { background: #27ae60; }
-        
-        .btn-delete-input { background: #e74c3c; color: white; border: none; border-radius: 4px; width: 26px; height: 26px; cursor: pointer; font-size: 12px; display: flex; justify-content: center; align-items: center; font-weight: bold; transition: 0.2s; }
-        .btn-delete-input:hover { background: #c0392b; }
+        .btn-size-input { background: #3498db; color: white; border: none; border-radius: 4px; width: 26px; height: 26px; cursor: pointer; font-size: 16px; font-weight: bold; display: flex; justify-content: center; align-items: center; margin: 0; padding: 0; }
+        .btn-confirm-input { background: #2ecc71; color: #000; border: none; border-radius: 4px; width: 26px; height: 26px; cursor: pointer; font-size: 12px; display: flex; justify-content: center; align-items: center; font-weight: bold; margin: 0; padding: 0; }
+        .btn-delete-input { background: #e74c3c; color: white; border: none; border-radius: 4px; width: 26px; height: 26px; cursor: pointer; font-size: 12px; display: flex; justify-content: center; align-items: center; font-weight: bold; margin: 0; padding: 0; }
         
         /* Texto ya confirmado en pantalla (Arrastrable) */
         .confirmed-text-wrapper { position: absolute; display: flex; align-items: center; gap: 5px; z-index: 40; cursor: grab; padding: 2px 6px; border: 1px dashed transparent; border-radius: 4px; }
@@ -110,17 +77,9 @@
         .draggable-signature img { pointer-events: none; }
         .sig-controls { display: none; gap: 5px; background: #222; padding: 4px; border-radius: 4px; }
         .draggable-signature:hover .sig-controls { display: flex; }
-
-        
-    
-
-        
     </style>
-    
 </head>
 <body>
-
-
 
 <!-- Datalist para el autocompletado (Historial) -->
 <datalist id="historial-textos"></datalist>
@@ -131,94 +90,50 @@
         <h3 style="color: #f1c40f; margin-bottom: 15px;">Dibuja tu firma</h3>
         <canvas id="canvas-firma" width="300" height="150" style="background: white; border-radius: 5px; cursor: crosshair; touch-action: none; width: 100%;"></canvas>
         <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-            <button onclick="limpiarFirma()" style="background: #e74c3c; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold;">Limpiar</button>
-            <button onclick="cerrarModalFirma()" style="background: #555; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold;">Cancelar</button>
-            <button onclick="guardarFirma()" style="background: #2ecc71; color: black; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold;">Guardar Firma</button>
+            <button onclick="limpiarFirma()" style="background: #e74c3c; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; width: auto; margin: 0;">Limpiar</button>
+            <button onclick="cerrarModalFirma()" style="background: #555; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; width: auto; margin: 0;">Cancelar</button>
+            <button onclick="guardarFirma()" style="background: #2ecc71; color: black; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; width: auto; margin: 0;">Guardar</button>
         </div>
     </div>
 </div>
 
-
-
-
+<!-- PANTALLA 1: INICIO -->
+<div id="screen-home" class="screen active">
+    <h1>DocuFácil</h1>
     
-    
-<div class="app-container">
-    <div class="header">
-        <h1>📄 DocuFácil</h1>
-        <div class="creditos-badge">🪙 <span id="user-creditos">0</span></div>
+    <div class="card" id="seccion-compra">
+        <h2>Ingresa tu Código</h2>
+        <input type="text" id="codigo-input" placeholder="Ej: ABC-1234">
+        <button onclick="verificarCodigo()">Verificar Código</button>
+        <div id="user-credits-display" class="credits-display" style="display: none;">Créditos: 0</div>
     </div>
 
-
-
-
-    
-    <!-- PANTALLA 1: INICIO -->
-    <div id="screen-home" class="screen active">
-        <div class="compra-section" id="seccion-compra">
-            <img src="https://vectorseek.com/wp-content/uploads/2023/09/Yape-App-Logo-Vector.svg-.png" alt="Yape" class="yape-logo" onerror="this.style.display='none'">
-            <div class="compra-info">
-                <p style="font-size: 16px; font-weight: bold; margin-bottom: 5px;">¿Necesitas crear un documento?</p>
-                <p>Adquiere créditos y genera documentos profesionales al instante.</p>
-                <p style="margin-top: 10px; font-size: 15px;">1 Crédito = 1 Hoja = <span class="precio-tag">S/ 0.20</span></p>
-                <p style="margin-top: 10px; font-weight: bold; color: #f1c40f; font-size: 18px;">Yapea al: 967 188 120</p>
-            </div>
-            <a href="https://wa.me/51967188120?text=Hola,%20ya%20yapeé.%20Quiero%20comprar%20créditos%20para%20DocuFácil." target="_blank" class="btn-whatsapp">💬 Enviar captura por WhatsApp</a>
-        </div>
-
-        <div class="activar-section">
-            <h3>🔑 ¿Ya tienes un código? Actívalo aquí:</h3>
-            <div class="input-codigo-wrapper">
-                <input type="text" id="input-codigo" class="input-codigo" placeholder="EJ: MANU-123" oninput="this.value = this.value.toUpperCase( ).replace(/[^A-Z0-9-]/g, '')">
-                <button class="btn-activar" onclick="activarCodigo()">Activar</button>
-            </div>
-        </div>
-
-        <h2 class="section-title">📚 Documentos Disponibles</h2>
-        <div id="lista-plantillas" class="lista-plantillas">
-            <!-- Se llena con JS -->
-        </div>
+    <div class="card">
+        <h2>Rellenado Libre</h2>
+        <p style="color: #aaa; margin-bottom: 15px; text-align: center; font-size: 14px;">Sube cualquier PDF, añade texto y dibuja tu firma donde quieras.</p>
+        <button class="btn-secondary" onclick="abrirRellenadoLibre()">Abrir Rellenado Libre</button>
     </div>
 
-    <!-- PANTALLA 2: FORMULARIO DE PLANTILLAS -->
-    <div id="screen-formulario" class="screen">
-        <button class="btn-volver" onclick="volverAHome()">⬅ Volver al inicio</button>
-        <div style="background: #222; padding: 15px; border-radius: 10px; border-left: 4px solid #3498db; margin-bottom: 10px;">
-            <h3 id="form-titulo" style="color: #3498db; margin-bottom: 5px;">Nombre</h3>
-            <p id="form-desc" style="color: #aaa; font-size: 13px;">Descripción</p>
+    <div class="card" id="templates-container" style="opacity: 0.5; pointer-events: none;">
+        <h2>Plantillas Inteligentes</h2>
+        <div class="templates-grid" id="grid-plantillas">
+            <!-- Las plantillas se cargarán aquí desde Supabase -->
         </div>
-        <div class="input-group" style="background: #2a2a2a; padding: 15px; border-radius: 8px; border: 1px dashed #555;">
-            <label style="color: #f1c40f;">📄 Sube el PDF base (Plantilla)</label>
-            <input type="file" id="user-pdf-upload" accept="application/pdf" style="width: 100%; color: #fff;">
-        </div>
-        <div id="form-campos" style="display: flex; flex-direction: column; gap: 5px;"></div>
-        <button class="btn-generar" id="btn-generar" onclick="generarDocumento()">✨ Generar Documento (1 Crédito)</button>
-    </div>
-
-    <!-- PANTALLA 3: RELLENADO LIBRE (NUEVO) -->
-    <div id="screen-rellenado-libre" class="screen">
-        <button class="btn-volver" onclick="volverAHome()">⬅ Volver al inicio</button>
-        <div style="background: #222; padding: 15px; border-radius: 10px; border-left: 4px solid #e67e22; margin-bottom: 10px;">
-            <h3 style="color: #e67e22; margin-bottom: 5px;">✍️ Rellenar mi propio PDF</h3>
-            <p style="color: #aaa; font-size: 13px;">Sube tu documento, <strong>toca en la pantalla</strong> donde quieras escribir y descárgalo lleno.</p>
-        </div>
-        
-        <input type="file" id="free-pdf-upload" accept="application/pdf" style="width: 100%; color: #fff; background: #2a2a2a; padding: 10px; border-radius: 8px;">
-        
-        <div class="canvas-container" id="free-canvas-container" style="display: none;">
-            <canvas id="free-pdf-canvas"></canvas>
-            <!-- Los inputs flotantes aparecerán aquí -->
-        </div>
-
-        <button class="btn-generar" id="btn-generar-free" onclick="generarPdfLibre()" style="display: none; background: #e67e22;">✨ Descargar PDF Lleno (1 Crédito)</button>
     </div>
 </div>
 
+<!-- PANTALLA 2: RELLENADO LIBRE -->
+<div id="screen-rellenado-libre" class="screen">
+    <h2>Rellenado Libre</h2>
+    <input type="file" id="free-pdf-upload" accept="application/pdf">
+    <div id="free-canvas-container" class="canvas-container" style="display: none;"></div>
+    <button id="btn-generar-free" class="btn-secondary" style="display: none; margin-top: 15px;" onclick="generarPdfLibre()">✨ Bajar Documento</button>
+    <button class="btn-danger" onclick="volverAHome()">Volver al Inicio</button>
+</div>
 
+<!-- INICIO DEL SCRIPT -->
 <script>
-
-
-        // ==========================================
+    // ==========================================
     // CONFIGURACIÓN DE SUPABASE
     // ==========================================
     const SUPABASE_URL = 'TU_SUPABASE_URL'; // Reemplaza con tu URL
@@ -232,7 +147,6 @@
     let plantillasGlobales = [];
     let plantillaSeleccionada = null;
 
-    // Variables para Rellenado Libre
     let freePdfDoc = null;
     let freeCanvasScales = {};
     let inputsFlotantes = [];
@@ -246,8 +160,7 @@
     document.addEventListener('DOMContentLoaded', () => {
         const codigoGuardado = localStorage.getItem('docufacil_codigo');
         if (codigoGuardado) {
-            const inputCodigo = document.getElementById('codigo-input');
-            if(inputCodigo) inputCodigo.value = codigoGuardado;
+            document.getElementById('codigo-input').value = codigoGuardado;
             verificarCodigo();
         }
         cargarPlantillas();
@@ -256,8 +169,7 @@
 
     function showScreen(screenId) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        const screen = document.getElementById(screenId);
-        if(screen) screen.classList.add('active');
+        document.getElementById(screenId).classList.add('active');
     }
 
     function volverAHome() {
@@ -268,29 +180,19 @@
     // SISTEMA DE CRÉDITOS Y CÓDIGOS
     // ==========================================
     async function verificarCodigo() {
-        const inputCodigo = document.getElementById('codigo-input');
-        if(!inputCodigo) return;
-        
-        const codigo = inputCodigo.value.trim();
-        if (!codigo) {
-            alert("Por favor, ingresa un código.");
-            return;
-        }
+        const codigo = document.getElementById('codigo-input').value.trim();
+        if (!codigo) { alert("Por favor, ingresa un código."); return; }
 
         const btn = document.querySelector('button[onclick="verificarCodigo()"]');
-        if(btn) { btn.innerText = "Verificando..."; btn.disabled = true; }
+        btn.innerText = "Verificando..."; btn.disabled = true;
 
         try {
-            const { data, error } = await supabase
-                .from('usuarios_codigos')
-                .select('*')
-                .eq('codigo', codigo)
-                .single();
-
+            const { data, error } = await supabase.from('usuarios_codigos').select('*').eq('codigo', codigo).single();
             if (error || !data) {
                 alert("Código inválido o no encontrado.");
                 localStorage.removeItem('docufacil_codigo');
                 usuarioActual = null;
+                document.getElementById('user-credits-display').style.display = 'none';
             } else {
                 usuarioActual = data;
                 localStorage.setItem('docufacil_codigo', codigo);
@@ -298,26 +200,25 @@
                 alert(`¡Bienvenido! Tienes ${data.creditos} créditos.`);
             }
         } catch (err) {
-            alert("Error de conexión con la base de datos.");
+            alert("Error de conexión.");
         } finally {
-            if(btn) { btn.innerText = "Ingresar Código"; btn.disabled = false; }
+            btn.innerText = "Verificar Código"; btn.disabled = false;
         }
     }
 
     function actualizarUI() {
         if (usuarioActual) {
             const display = document.getElementById('user-credits-display');
-            if(display) display.innerText = `Créditos: ${usuarioActual.creditos}`;
+            display.innerText = `Créditos: ${usuarioActual.creditos}`;
+            display.style.display = 'block';
             
             const container = document.getElementById('templates-container');
-            if(container) {
-                if (usuarioActual.creditos > 0) {
-                    container.style.opacity = "1";
-                    container.style.pointerEvents = "auto";
-                } else {
-                    container.style.opacity = "0.5";
-                    container.style.pointerEvents = "none";
-                }
+            if (usuarioActual.creditos > 0) {
+                container.style.opacity = "1";
+                container.style.pointerEvents = "auto";
+            } else {
+                container.style.opacity = "0.5";
+                container.style.pointerEvents = "none";
             }
         }
     }
@@ -332,20 +233,17 @@
                 plantillasGlobales = data;
                 renderizarPlantillas();
             }
-        } catch (err) {
-            console.error("Error cargando plantillas:", err);
-        }
+        } catch (err) { console.error("Error cargando plantillas:", err); }
     }
 
     function renderizarPlantillas() {
-        const container = document.getElementById('templates-container');
+        const container = document.getElementById('grid-plantillas');
         if (!container) return;
         container.innerHTML = '';
         
         plantillasGlobales.forEach(plan => {
             const card = document.createElement('div');
             card.className = 'template-card';
-            // Ajusta el HTML de la tarjeta según tu diseño original
             card.innerHTML = `
                 <h3>${plan.nombre}</h3>
                 <p>${plan.descripcion || 'Documento automatizado'}</p>
@@ -363,7 +261,6 @@
         }
         plantillaSeleccionada = plantillasGlobales.find(p => p.id === id);
         if(plantillaSeleccionada) {
-            // Aquí prepararemos la conexión con OpenRouter en la siguiente fase
             alert(`Has seleccionado: ${plantillaSeleccionada.nombre}. (La IA se conectará en el próximo paso)`);
         }
     }
@@ -844,15 +741,5 @@
         }
     }
 </script>
-
-
-
-
-    
 </body>
 </html>
-
-
-
-    
-
