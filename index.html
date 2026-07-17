@@ -214,292 +214,106 @@
     </div>
 </div>
 
-
 <script>
-    // 1. CONFIGURACIÓN SUPABASE
-    const supabaseUrl = 'https://wpzddhmllctdsiuxenss.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwemRkaG1sbGN0ZHNpdXhlbnNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5NjUyNzQsImV4cCI6MjA5OTU0MTI3NH0.hwSxJ3Sk_RlgbvFyr8S64XRuxW7j55BU4gaIneFTuhY';
-    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey );
-    
-    // Configurar PDF.js worker
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    // ==========================================
+    // CONFIGURACIÓN DE SUPABASE
+    // ==========================================
+    const SUPABASE_URL = 'TU_SUPABASE_URL'; // Reemplaza con tu URL
+    const SUPABASE_ANON_KEY = 'TU_SUPABASE_ANON_KEY'; // Reemplaza con tu Key
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    // ==========================================
+    // VARIABLES GLOBALES
+    // ==========================================
     let usuarioActual = null;
-    let plantillaSeleccionada = null;
-    let plantillasGlobales = [];
-
-    document.addEventListener('DOMContentLoaded', async ( ) => {
-        await cargarPlantillas();
-        await verificarSesionGuardada(); // Revisa si el usuario ya había entrado antes
-    });
-
-    function showScreen(screenId) {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById(screenId).classList.add('active');
-        window.scrollTo(0, 0);
-    }
-
-    // --- SESIÓN Y MEMORIA DEL CELULAR ---
-    async function verificarSesionGuardada() {
-        const codigoGuardado = localStorage.getItem('docufacil_codigo');
-        if (codigoGuardado) {
-            // Si hay un código guardado, consultamos a la BD para ver su saldo actual
-            const { data, error } = await supabase.from('usuarios_codigos').select('*').eq('codigo', codigoGuardado).single();
-            if (!error && data) {
-                usuarioActual = data;
-                actualizarUI();
-            } else {
-                // Si el código fue borrado de la BD, limpiamos la memoria
-                localStorage.removeItem('docufacil_codigo');
-                actualizarUI();
-            }
-        } else {
-            actualizarUI();
-        }
-    }
-
-    function cerrarSesion() {
-        localStorage.removeItem('docufacil_codigo');
-        usuarioActual = null;
-        actualizarUI();
-    }
-
-    // --- ACTUALIZAR INTERFAZ (UI) ---
-    function actualizarUI() {
-        const activarSec = document.querySelector('.activar-section');
-        
-        if (usuarioActual) {
-            document.getElementById('user-creditos').innerText = usuarioActual.creditos;
-            // Cambiamos la caja de texto por un panel que muestra su código activo
-            activarSec.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <h3 style="color: #2ecc71; margin-bottom: 5px; font-size: 14px;">✅ Código Activo</h3>
-                        <p style="color: #fff; font-weight: bold; font-size: 18px; letter-spacing: 1px;">${usuarioActual.codigo}</p>
-                    </div>
-                    <button onclick="cerrarSesion()" style="background: transparent; border: 1px solid #e74c3c; color: #e74c3c; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-size: 12px; font-weight: bold;">Desvincular</button>
-                </div>
-            `;
-        } else {
-            document.getElementById('user-creditos').innerText = '0';
-            // Mostramos la caja para ingresar el código
-            activarSec.innerHTML = `
-                <h3>🔑 ¿Ya tienes un código? Actívalo aquí:</h3>
-                <div class="input-codigo-wrapper">
-                    <input type="text" id="input-codigo" class="input-codigo" placeholder="EJ: MANU-123" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9-]/g, '')">
-                    <button class="btn-activar" onclick="activarCodigo()">Activar</button>
-                </div>
-            `;
-        }
-        renderizarPlantillas();
-    }
-
-    // --- CARGA Y RENDERIZADO DE PLANTILLAS ---
-    async function cargarPlantillas() {
-        const { data, error } = await supabase.from('plantillas').select('*');
-        plantillasGlobales = data || [];
-    }
-
-    function renderizarPlantillas() {
-        const contenedor = document.getElementById('lista-plantillas');
-        contenedor.innerHTML = '';
-        
-        const tieneCreditos = usuarioActual && usuarioActual.creditos > 0;
-        const claseBloqueado = tieneCreditos ? '' : 'locked';
-        const candadoHtml = tieneCreditos ? '' : '<div class="candado-icon">🔒</div>';
-
-        // 1. TARJETA FIJA: RELLENADO LIBRE
-        contenedor.innerHTML += `
-            <div class="card ${claseBloqueado}" onclick="abrirRellenadoLibre()" style="border-color: #e67e22;">
-                <div class="card-icon">✍️</div>
-                <div class="card-info">
-                    <h3 style="color: #e67e22;">Rellenar mi propio PDF</h3>
-                    <p>Sube cualquier documento, toca donde quieras escribir y descárgalo.</p>
-                </div>
-                ${candadoHtml}
-            </div>
-        `;
-
-        // 2. TARJETAS DE LA BASE DE DATOS
-        if (plantillasGlobales.length === 0) {
-            contenedor.innerHTML += '<p style="text-align: center; color:#888; margin-top: 15px;">No hay más documentos disponibles.</p>';
-        } else {
-            plantillasGlobales.forEach(tpl => {
-                const icono = tpl.tipo === 'rellenado' ? '📝' : '🤖';
-                contenedor.innerHTML += `
-                    <div class="card ${claseBloqueado}" onclick='clickPlantilla(${JSON.stringify(tpl)})'>
-                        <div class="card-icon">${icono}</div>
-                        <div class="card-info">
-                            <h3>${tpl.nombre}</h3>
-                            <p>${tpl.descripcion || 'Documento listo para generar'}</p>
-                        </div>
-                        ${candadoHtml}
-                    </div>
-                `;
-            });
-        }
-    }
-
-    // --- SISTEMA DE CRÉDITOS ---
-    async function activarCodigo() {
-        const codigo = document.getElementById('input-codigo').value.trim();
-        if (!codigo) return alert("Ingresa un código válido.");
-
-        const { data, error } = await supabase.from('usuarios_codigos').select('*').eq('codigo', codigo).single();
-        if (error || !data) return alert("❌ Código incorrecto o no existe.");
-        
-        usuarioActual = data;
-        localStorage.setItem('docufacil_codigo', usuarioActual.codigo); // Guardamos en la memoria del celular
-        
-        actualizarUI();
-        
-        if (usuarioActual.creditos <= 0) {
-            alert("⚠️ Tu código está activo, pero ya no tienes créditos. ¡Recarga para seguir creando!");
-        } else {
-            alert(`✅ ¡Código activado! Tienes ${usuarioActual.creditos} créditos disponibles.`);
-        }
-    }
-
-    async function descontarCredito() {
-        if (!usuarioActual || usuarioActual.creditos <= 0) return false;
-        const nuevoSaldo = usuarioActual.creditos - 1;
-        const { error } = await supabase.from('usuarios_codigos').update({ creditos: nuevoSaldo }).eq('id', usuarioActual.id);
-        if (error) {
-            alert("Error al procesar el crédito.");
-            return false;
-        }
-        usuarioActual.creditos = nuevoSaldo;
-        actualizarUI();
-        return true;
-    }
-
-    function volverAHome() {
-        plantillaSeleccionada = null;
-        showScreen('screen-home');
-    }
-
-    // --- LÓGICA: PLANTILLAS PREDEFINIDAS ---
-    function clickPlantilla(tpl) {
-        if (!usuarioActual || usuarioActual.creditos <= 0) {
-            alert("🔒 Necesitas tener créditos disponibles para usar esta función.");
-            document.getElementById('seccion-compra').scrollIntoView({ behavior: 'smooth' });
-            return;
-        }
-        abrirFormulario(tpl);
-    }
-
-    function abrirFormulario(tpl) {
-        plantillaSeleccionada = tpl;
-        document.getElementById('form-titulo').innerText = tpl.nombre;
-        document.getElementById('form-desc').innerText = tpl.descripcion || '';
-        document.getElementById('user-pdf-upload').value = '';
-        
-        const contenedorCampos = document.getElementById('form-campos');
-        contenedorCampos.innerHTML = '';
-
-        if (tpl.configuracion && tpl.configuracion.campos) {
-            tpl.configuracion.campos.forEach(campo => {
-                contenedorCampos.innerHTML += `
-                    <div class="input-group">
-                        <label>${campo.nombre.toUpperCase()}</label>
-                        <div class="input-with-mic">
-                            <input type="text" id="campo-${campo.nombre}" placeholder="Escribe aquí...">
-                            <button class="btn-mic" onclick="iniciarReconocimientoVoz('campo-${campo.nombre}')">🎤</button>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-        showScreen('screen-formulario');
-    }
-
-    function iniciarReconocimientoVoz(inputId) {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) return alert("Tu navegador no soporta dictado por voz.");
-        
-        const recognition = new SpeechRecognition();
-        recognition.lang = 'es-ES';
-        recognition.start();
-        
-        const input = document.getElementById(inputId);
-        input.placeholder = "Escuchando...";
-        
-        recognition.onresult = function(event) {
-            input.value = event.results[0][0].transcript;
-            input.placeholder = "Escribe aquí...";
-        };
-        recognition.onerror = function() {
-            input.placeholder = "Error al escuchar. Intenta de nuevo.";
-        };
-    }
-
-    async function generarDocumento() {
-        const fileInput = document.getElementById('user-pdf-upload');
-        if (!fileInput.files.length) return alert("Por favor, sube el PDF base de la plantilla.");
-
-        const btn = document.getElementById('btn-generar');
-        btn.innerText = "⏳ Generando...";
-        btn.disabled = true;
-
-        try {
-            const file = fileInput.files[0];
-            const arrayBuffer = await file.arrayBuffer();
-            const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
-            const pages = pdfDoc.getPages();
-            const firstPage = pages[0];
-
-            // Estampar los textos en las coordenadas
-            if (plantillaSeleccionada.configuracion && plantillaSeleccionada.configuracion.campos) {
-                plantillaSeleccionada.configuracion.campos.forEach(campo => {
-                    const valor = document.getElementById(`campo-${campo.nombre}`).value;
-                    if (valor) {
-                        firstPage.drawText(valor, {
-                            x: campo.x,
-                            y: campo.y,
-                            size: 12,
-                            color: PDFLib.rgb(0, 0, 0)
-                        });
-                    }
-                });
-            }
-
-            // Descontar crédito
-            const pagado = await descontarCredito();
-            if (!pagado) throw new Error("No se pudo procesar el pago.");
-
-            // Descargar
-            const pdfBytes = await pdfDoc.save();
-            download(pdfBytes, `DocuFacil_${plantillaSeleccionada.nombre}.pdf`, "application/pdf");
-            
-            alert("✅ ¡Documento generado con éxito!");
-            volverAHome();
-
-        } catch (err) {
-            alert("Error: " + err.message);
-        } finally {
-            btn.innerText = "✨ Generar Documento (1 Crédito)";
-            btn.disabled = false;
-        }
-    }
-
-
-
-
-    
-
-
-    // --- LÓGICA: RELLENADO LIBRE (TÁCTIL) ---
     let freePdfDoc = null;
     let freeCanvasScales = {};
     let inputsFlotantes = [];
     let firmasFlotantes = [];
     let freePdfPageCount = 0; 
-    
-    // Historial para el autocompletado
     let historialTextos = JSON.parse(localStorage.getItem('docufacil_historial')) || [];
 
+    // ==========================================
+    // INICIALIZACIÓN Y NAVEGACIÓN
+    // ==========================================
+    document.addEventListener('DOMContentLoaded', () => {
+        const codigoGuardado = localStorage.getItem('docufacil_codigo');
+        if (codigoGuardado) {
+            document.getElementById('codigo-input').value = codigoGuardado;
+            verificarCodigo();
+        }
+        actualizarDatalist();
+    });
+
+    function showScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+    }
+
+    function volverAHome() {
+        showScreen('screen-home');
+    }
+
+    // ==========================================
+    // SISTEMA DE CRÉDITOS Y CÓDIGOS
+    // ==========================================
+    async function verificarCodigo() {
+        const codigo = document.getElementById('codigo-input').value.trim();
+        if (!codigo) {
+            alert("Por favor, ingresa un código.");
+            return;
+        }
+
+        const btn = document.querySelector('button[onclick="verificarCodigo()"]');
+        btn.innerText = "Verificando...";
+        btn.disabled = true;
+
+        try {
+            const { data, error } = await supabase
+                .from('usuarios_codigos')
+                .select('*')
+                .eq('codigo', codigo)
+                .single();
+
+            if (error || !data) {
+                alert("Código inválido o no encontrado.");
+                localStorage.removeItem('docufacil_codigo');
+                usuarioActual = null;
+            } else {
+                usuarioActual = data;
+                localStorage.setItem('docufacil_codigo', codigo);
+                actualizarUI();
+                alert(`¡Bienvenido! Tienes ${data.creditos} créditos.`);
+            }
+        } catch (err) {
+            alert("Error de conexión.");
+        } finally {
+            btn.innerText = "Ingresar Código";
+            btn.disabled = false;
+        }
+    }
+
+    function actualizarUI() {
+        if (usuarioActual) {
+            document.getElementById('user-credits-display').innerText = `Créditos: ${usuarioActual.creditos}`;
+            
+            // Lógica de vista bloqueada si no hay créditos
+            if (usuarioActual.creditos > 0) {
+                document.getElementById('templates-container').style.opacity = "1";
+                document.getElementById('templates-container').style.pointerEvents = "auto";
+            } else {
+                document.getElementById('templates-container').style.opacity = "0.5";
+                document.getElementById('templates-container').style.pointerEvents = "none";
+            }
+        }
+    }
+
+    // ==========================================
+    // HISTORIAL (AUTOCOMPLETADO)
+    // ==========================================
     function actualizarDatalist() {
         const datalist = document.getElementById('historial-textos');
+        if (!datalist) return;
         datalist.innerHTML = '';
         historialTextos.forEach(texto => {
             const option = document.createElement('option');
@@ -516,6 +330,9 @@
         }
     }
 
+    // ==========================================
+    // RELLENADO LIBRE: CARGA DE PDF
+    // ==========================================
     function abrirRellenadoLibre() {
         if (!usuarioActual || usuarioActual.creditos <= 0) {
             alert("🔒 Necesitas tener créditos disponibles para usar esta función.");
@@ -532,7 +349,6 @@
         firmasFlotantes = [];
         freeCanvasScales = {};
         freePdfPageCount = 0;
-        actualizarDatalist();
         
         showScreen('screen-rellenado-libre');
     }
@@ -580,12 +396,11 @@
             
             await page.render({ canvasContext: ctx, viewport: viewport }).promise;
             
-            // Evento de clic en la hoja para abrir el menú
+            // Evento para abrir el menú al tocar la hoja
             wrapper.addEventListener('click', function(ev) {
-                // Evitar si se hace clic en un input, botón, o elemento ya creado
-                if (ev.target.closest('.floating-input-wrapper') || ev.target.closest('.confirmed-text-wrapper') || ev.target.closest('.draggable-signature') || ev.target.closest('.click-menu')) return;
+                // Si tocamos un elemento flotante, ignoramos el clic en la hoja
+                if (ev.target.closest('.floating-input-wrapper') || ev.target.closest('.click-menu')) return;
                 
-                // Borrar menús anteriores
                 document.querySelectorAll('.click-menu').forEach(m => m.remove());
 
                 const rect = this.getBoundingClientRect();
@@ -601,11 +416,19 @@
         btnGenerar.style.display = 'block';
     });
 
+    // ==========================================
+    // RELLENADO LIBRE: MENÚ Y CAJAS FLOTANTES
+    // ==========================================
     function mostrarMenuOpciones(parent, x, y, pageNum) {
         const menu = document.createElement('div');
         menu.className = 'click-menu';
         menu.style.left = `${x}px`;
         menu.style.top = `${y}px`;
+
+        // Escudo para el menú
+        menu.addEventListener('click', e => e.stopPropagation());
+        menu.addEventListener('mousedown', e => e.stopPropagation());
+        menu.addEventListener('touchstart', e => e.stopPropagation(), {passive: false});
 
         const btnText = document.createElement('button');
         btnText.innerText = '📝 Añadir Texto';
@@ -631,6 +454,11 @@
         wrapper.style.left = `${x}px`;
         wrapper.style.top = `${y - 15}px`; 
         
+        // ESCUDO GLOBAL: Evita que los clics en la caja pasen al PDF
+        wrapper.addEventListener('click', e => e.stopPropagation());
+        wrapper.addEventListener('mousedown', e => e.stopPropagation());
+        wrapper.addEventListener('touchstart', e => e.stopPropagation(), {passive: false});
+
         let currentFontSize = 12; 
 
         const dragHandle = document.createElement('div');
@@ -641,18 +469,18 @@
         input.type = 'text';
         input.className = 'floating-input';
         input.placeholder = "Escribe aquí...";
-        input.setAttribute('list', 'historial-textos'); // Conectar con el datalist
+        input.setAttribute('list', 'historial-textos');
         input.style.fontSize = `${currentFontSize}px`;
         
         const btnMinus = document.createElement('button');
         btnMinus.innerText = '-';
         btnMinus.className = 'btn-size-input';
-        btnMinus.onclick = () => { currentFontSize--; input.style.fontSize = `${currentFontSize}px`; inputData.fontSize = currentFontSize; };
+        btnMinus.onclick = (e) => { e.stopPropagation(); currentFontSize--; input.style.fontSize = `${currentFontSize}px`; inputData.fontSize = currentFontSize; };
 
         const btnPlus = document.createElement('button');
         btnPlus.innerText = '+';
         btnPlus.className = 'btn-size-input';
-        btnPlus.onclick = () => { currentFontSize++; input.style.fontSize = `${currentFontSize}px`; inputData.fontSize = currentFontSize; };
+        btnPlus.onclick = (e) => { e.stopPropagation(); currentFontSize++; input.style.fontSize = `${currentFontSize}px`; inputData.fontSize = currentFontSize; };
         
         const btnConfirm = document.createElement('button');
         btnConfirm.innerText = '✔️';
@@ -662,27 +490,20 @@
         btnDelete.innerText = '✖';
         btnDelete.className = 'btn-delete-input';
         
-        const inputData = {
-            wrapper: wrapper,
-            input: input,
-            pageNum: pageNum,
-            textoFinal: "",
-            fontSize: currentFontSize
-        };
+        const inputData = { wrapper, input, pageNum, textoFinal: "", fontSize: currentFontSize };
         
-        btnDelete.onclick = function() {
+        btnDelete.onclick = (e) => {
+            e.stopPropagation();
             wrapper.remove();
             inputsFlotantes = inputsFlotantes.filter(i => i !== inputData);
         };
         
-        btnConfirm.onclick = function() {
+        btnConfirm.onclick = (e) => {
+            e.stopPropagation();
             const texto = input.value.trim();
-            if (!texto) {
-                btnDelete.click(); 
-                return;
-            }
+            if (!texto) { btnDelete.click(); return; }
             
-            guardarEnHistorial(texto); // Guardar para la próxima vez
+            guardarEnHistorial(texto);
 
             wrapper.className = 'confirmed-text-wrapper';
             wrapper.innerHTML = ''; 
@@ -705,6 +526,7 @@
             wrapper.appendChild(btnEditDelete);
             
             inputData.textoFinal = texto;
+            hacerArrastrable(wrapper, wrapper); // Ahora toda la palabra es arrastrable
         };
         
         wrapper.appendChild(dragHandle);
@@ -720,7 +542,9 @@
         input.focus();
     }
 
-    // --- LÓGICA DE FIRMA ---
+    // ==========================================
+    // RELLENADO LIBRE: FIRMA DIGITAL
+    // ==========================================
     let sigCanvas, sigCtx, drawing = false;
     let currentSigTarget = null;
 
@@ -736,13 +560,11 @@
         sigCtx.lineCap = 'round';
         sigCtx.lineJoin = 'round';
 
-        // Eventos Mouse
         sigCanvas.onmousedown = (e) => { drawing = true; sigCtx.beginPath(); sigCtx.moveTo(e.offsetX, e.offsetY); };
         sigCanvas.onmousemove = (e) => { if(drawing) { sigCtx.lineTo(e.offsetX, e.offsetY); sigCtx.stroke(); } };
         sigCanvas.onmouseup = () => drawing = false;
         sigCanvas.onmouseout = () => drawing = false;
 
-        // Eventos Táctiles (Celular)
         sigCanvas.ontouchstart = (e) => { 
             e.preventDefault(); drawing = true; 
             const pos = getTouchPos(sigCanvas, e);
@@ -766,13 +588,8 @@
         };
     }
 
-    function limpiarFirma() {
-        sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
-    }
-
-    function cerrarModalFirma() {
-        document.getElementById('modal-firma').style.display = 'none';
-    }
+    function limpiarFirma() { sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height); }
+    function cerrarModalFirma() { document.getElementById('modal-firma').style.display = 'none'; }
 
     function guardarFirma() {
         const dataUrl = sigCanvas.toDataURL('image/png');
@@ -787,6 +604,11 @@
         wrapper.style.left = `${x}px`;
         wrapper.style.top = `${y - 30}px`; 
         
+        // ESCUDO GLOBAL
+        wrapper.addEventListener('click', e => e.stopPropagation());
+        wrapper.addEventListener('mousedown', e => e.stopPropagation());
+        wrapper.addEventListener('touchstart', e => e.stopPropagation(), {passive: false});
+
         let currentWidth = 150; 
 
         const img = document.createElement('img');
@@ -799,12 +621,12 @@
         const btnMinus = document.createElement('button');
         btnMinus.innerText = '-';
         btnMinus.className = 'btn-size-input';
-        btnMinus.onclick = () => { currentWidth -= 10; img.style.width = `${currentWidth}px`; sigData.width = currentWidth; };
+        btnMinus.onclick = (e) => { e.stopPropagation(); currentWidth -= 10; img.style.width = `${currentWidth}px`; sigData.width = currentWidth; };
 
         const btnPlus = document.createElement('button');
         btnPlus.innerText = '+';
         btnPlus.className = 'btn-size-input';
-        btnPlus.onclick = () => { currentWidth += 10; img.style.width = `${currentWidth}px`; sigData.width = currentWidth; };
+        btnPlus.onclick = (e) => { e.stopPropagation(); currentWidth += 10; img.style.width = `${currentWidth}px`; sigData.width = currentWidth; };
         
         const btnDelete = document.createElement('button');
         btnDelete.innerText = '✖';
@@ -812,7 +634,7 @@
         
         const sigData = { wrapper, dataUrl, pageNum, width: currentWidth };
         
-        btnDelete.onclick = () => { wrapper.remove(); firmasFlotantes = firmasFlotantes.filter(f => f !== sigData); };
+        btnDelete.onclick = (e) => { e.stopPropagation(); wrapper.remove(); firmasFlotantes = firmasFlotantes.filter(f => f !== sigData); };
         
         controls.appendChild(btnMinus);
         controls.appendChild(btnPlus);
@@ -823,63 +645,61 @@
         parent.appendChild(wrapper);
         
         firmasFlotantes.push(sigData);
-        hacerArrastrable(wrapper, wrapper); // Toda la firma es arrastrable
+        hacerArrastrable(wrapper, wrapper); 
         cerrarModalFirma();
     }
 
-    // --- MOTOR DE ARRASTRE CORREGIDO ---
-    function hacerArrastrable(elmnt, handle) {
-        let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-        
-        handle.onmousedown = dragMouseDown;
-        handle.ontouchstart = dragTouchStart;
-        
-        if (elmnt.className.includes('confirmed-text-wrapper')) {
-            elmnt.onmousedown = function(e) { if(e.target.tagName !== 'BUTTON') dragMouseDown(e); };
-            elmnt.ontouchstart = function(e) { if(e.target.tagName !== 'BUTTON') dragTouchStart(e); };
-        }
+    // ==========================================
+    // MOTOR DE ARRASTRE BLINDADO
+    // ==========================================
+    function hacerArrastrable(wrapper, handle) {
+        let isDragging = false;
+        let startX, startY, initialLeft, initialTop;
 
-        function dragMouseDown(e) {
+        const startDrag = (e) => {
             if(e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
             e.preventDefault();
-            e.stopPropagation(); // EVITA QUE SE DUPLIQUE AL SOLTAR
-            pos3 = e.clientX;
-            pos4 = e.clientY;
-            document.onmouseup = closeDragElement;
-            document.onmousemove = elementDrag;
-        }
+            e.stopPropagation(); // ESCUDO
+            isDragging = true;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            startX = clientX;
+            startY = clientY;
+            initialLeft = parseInt(wrapper.style.left || wrapper.offsetLeft);
+            initialTop = parseInt(wrapper.style.top || wrapper.offsetTop);
+        };
 
-        function dragTouchStart(e) {
-            if(e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
-            e.stopPropagation(); // EVITA QUE SE DUPLIQUE AL SOLTAR
-            pos3 = e.touches[0].clientX;
-            pos4 = e.touches[0].clientY;
-            document.ontouchend = closeDragElement;
-            document.ontouchmove = elementDrag;
-        }
-
-        function elementDrag(e) {
+        const doDrag = (e) => {
+            if (!isDragging) return;
             e.preventDefault();
-            let clientX = e.clientX || (e.touches && e.touches[0].clientX);
-            let clientY = e.clientY || (e.touches && e.touches[0].clientY);
-            
-            pos1 = pos3 - clientX;
-            pos2 = pos4 - clientY;
-            pos3 = clientX;
-            pos4 = clientY;
-            
-            elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
-            elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
-        }
+            e.stopPropagation(); // ESCUDO
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const dx = clientX - startX;
+            const dy = clientY - startY;
+            wrapper.style.left = (initialLeft + dx) + 'px';
+            wrapper.style.top = (initialTop + dy) + 'px';
+        };
 
-        function closeDragElement() {
-            document.onmouseup = null;
-            document.onmousemove = null;
-            document.ontouchend = null;
-            document.ontouchmove = null;
-        }
+        const stopDrag = (e) => {
+            if (isDragging) {
+                e.stopPropagation(); // ESCUDO
+                isDragging = false;
+            }
+        };
+
+        handle.addEventListener('mousedown', startDrag);
+        document.addEventListener('mousemove', doDrag);
+        document.addEventListener('mouseup', stopDrag);
+
+        handle.addEventListener('touchstart', startDrag, {passive: false});
+        document.addEventListener('touchmove', doDrag, {passive: false});
+        document.addEventListener('touchend', stopDrag);
     }
 
+    // ==========================================
+    // GENERACIÓN FINAL DEL PDF
+    // ==========================================
     async function generarPdfLibre() {
         if (!freePdfDoc) return;
 
@@ -924,7 +744,6 @@
                 const pdfHeight = targetPage.getHeight();
                 const scale = freeCanvasScales[item.pageNum];
 
-                // Incrustar la imagen PNG en el PDF
                 const pngImage = await freePdfDoc.embedPng(item.dataUrl);
                 const pngDims = pngImage.scale(1);
                 const ratio = pngDims.height / pngDims.width;
@@ -943,7 +762,7 @@
                 });
             }
 
-            // Descontar créditos
+            // 3. Descontar créditos
             const nuevoSaldo = usuarioActual.creditos - freePdfPageCount;
             const { error } = await supabase.from('usuarios_codigos').update({ creditos: nuevoSaldo }).eq('id', usuarioActual.id);
             if (error) throw new Error("No se pudo procesar el pago.");
@@ -951,6 +770,7 @@
             usuarioActual.creditos = nuevoSaldo;
             actualizarUI();
 
+            // 4. Descargar
             const pdfBytes = await freePdfDoc.save();
             download(pdfBytes, `DocuFacil_Rellenado.pdf`, "application/pdf");
             
@@ -964,16 +784,12 @@
             btn.disabled = false;
         }
     }
-
-
-    
-
-    
-    
-
-
-    
 </script>
+
+
+
+
+    
 </body>
 </html>
 
