@@ -80,6 +80,9 @@
         
         .btn-confirm-input { background: #2ecc71; color: #000; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 12px; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3); font-weight: bold; transition: 0.2s; }
         .btn-confirm-input:hover { background: #27ae60; transform: scale(1.1); }
+        .btn-size-input { background: #3498db; color: white; border: none; border-radius: 4px; width: 24px; height: 28px; cursor: pointer; font-size: 14px; font-weight: bold; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: 0.2s; }
+        .btn-size-input:hover { background: #2980b9; }
+
         
         .btn-delete-input { background: #e74c3c; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 12px; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3); font-weight: bold; transition: 0.2s; }
         .btn-delete-input:hover { background: #c0392b; transform: scale(1.1); }
@@ -521,16 +524,34 @@
         btnGenerar.style.display = 'block';
     });
 
+
+
+
+    
     function crearInputFlotante(parent, x, y, pageNum) {
         const wrapper = document.createElement('div');
         wrapper.className = 'floating-input-wrapper';
         wrapper.style.left = `${x}px`;
         wrapper.style.top = `${y - 15}px`; 
         
+        let currentFontSize = 12; // Tamaño de letra inicial
+
         const input = document.createElement('input');
         input.type = 'text';
         input.className = 'floating-input';
         input.placeholder = "Escribe aquí...";
+        input.style.fontSize = `${currentFontSize}px`;
+        
+        // Botones para achicar y agrandar la letra
+        const btnMinus = document.createElement('button');
+        btnMinus.innerText = '-';
+        btnMinus.className = 'btn-size-input';
+        btnMinus.onclick = () => { currentFontSize--; input.style.fontSize = `${currentFontSize}px`; };
+
+        const btnPlus = document.createElement('button');
+        btnPlus.innerText = '+';
+        btnPlus.className = 'btn-size-input';
+        btnPlus.onclick = () => { currentFontSize++; input.style.fontSize = `${currentFontSize}px`; };
         
         const btnConfirm = document.createElement('button');
         btnConfirm.innerText = '✔️';
@@ -546,7 +567,8 @@
             pageNum: pageNum,
             canvasX: x,
             canvasY: y,
-            textoFinal: ""
+            textoFinal: "",
+            fontSize: currentFontSize
         };
         
         btnDelete.onclick = function() {
@@ -554,22 +576,27 @@
             inputsFlotantes = inputsFlotantes.filter(i => i !== inputData);
         };
         
-        // Al confirmar, la caja se vuelve texto plano
         btnConfirm.onclick = function() {
             const texto = input.value.trim();
             if (!texto) {
-                btnDelete.click(); // Si está vacío, lo borra
+                btnDelete.click(); 
                 return;
             }
             wrapper.innerHTML = ''; 
             wrapper.className = 'confirmed-text';
             wrapper.style.left = `${x}px`;
-            wrapper.style.top = `${y - 8}px`; 
+            // Ajuste visual para que la base de la letra quede exactamente donde hiciste clic
+            wrapper.style.top = `${y - currentFontSize}px`; 
+            wrapper.style.fontSize = `${currentFontSize}px`;
             wrapper.innerText = texto;
+            
             inputData.textoFinal = texto;
+            inputData.fontSize = currentFontSize; // Guardamos el tamaño que eligió el usuario
         };
         
         wrapper.appendChild(input);
+        wrapper.appendChild(btnMinus);
+        wrapper.appendChild(btnPlus);
         wrapper.appendChild(btnConfirm);
         wrapper.appendChild(btnDelete);
         parent.appendChild(wrapper);
@@ -581,7 +608,6 @@
     async function generarPdfLibre() {
         if (!freePdfDoc) return;
 
-        // Validar si tiene suficientes créditos para la cantidad de hojas
         if (usuarioActual.creditos < freePdfPageCount) {
             alert(`⚠️ Necesitas ${freePdfPageCount} créditos para descargar este documento de ${freePdfPageCount} hojas. Tienes ${usuarioActual.creditos}.`);
             return;
@@ -595,7 +621,6 @@
             const pages = freePdfDoc.getPages();
 
             inputsFlotantes.forEach(item => {
-                // Toma el texto confirmado, o lo que haya en el input si olvidó darle al check
                 const texto = item.textoFinal || item.input.value.trim();
                 if (texto) {
                     const targetPage = pages[item.pageNum - 1]; 
@@ -603,18 +628,18 @@
                     const scale = freeCanvasScales[item.pageNum];
                     
                     const pdfX = item.canvasX / scale;
+                    // Matemática exacta: La base de la letra en el PDF será exactamente donde hizo clic
                     const pdfY = pdfHeight - (item.canvasY / scale);
 
                     targetPage.drawText(texto, {
                         x: pdfX,
-                        y: pdfY - 2,
-                        size: 12,
+                        y: pdfY, 
+                        size: item.fontSize, // Usa el tamaño que el usuario ajustó
                         color: PDFLib.rgb(0, 0, 0)
                     });
                 }
             });
 
-            // Descontar créditos según la cantidad de hojas
             const nuevoSaldo = usuarioActual.creditos - freePdfPageCount;
             const { error } = await supabase.from('usuarios_codigos').update({ creditos: nuevoSaldo }).eq('id', usuarioActual.id);
             if (error) throw new Error("No se pudo procesar el pago.");
@@ -622,7 +647,6 @@
             usuarioActual.creditos = nuevoSaldo;
             actualizarUI();
 
-            // Descargar
             const pdfBytes = await freePdfDoc.save();
             download(pdfBytes, `DocuFacil_Rellenado.pdf`, "application/pdf");
             
