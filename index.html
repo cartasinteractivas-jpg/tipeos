@@ -69,13 +69,18 @@
 
         
 
-               /* --- RELLENADO LIBRE --- */
-        .canvas-container { width: 100%; overflow: auto; border: 1px solid #444; border-radius: 8px; background: #222; position: relative; margin-top: 10px; display: flex; flex-direction: column; gap: 10px; padding: 10px; }
         
-        /* ¡IMPORTANTE! Quitamos el overflow: hidden para que los botones no se corten */
+            /* --- RELLENADO LIBRE --- */
+        .canvas-container { width: 100%; overflow: auto; border: 1px solid #444; border-radius: 8px; background: #222; position: relative; margin-top: 10px; display: flex; flex-direction: column; gap: 10px; padding: 10px; }
         .pdf-page-wrapper { position: relative; width: 100%; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
         .free-pdf-canvas { display: block; width: 100%; cursor: crosshair; }
         
+        /* Menú al hacer clic */
+        .click-menu { position: absolute; background: #fff; border-radius: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: flex; flex-direction: column; z-index: 60; overflow: hidden; border: 1px solid #ccc; }
+        .click-menu button { background: none; border: none; padding: 12px 20px; cursor: pointer; font-weight: bold; font-size: 14px; color: #333; text-align: left; border-bottom: 1px solid #eee; transition: 0.2s; }
+        .click-menu button:hover { background: #f1c40f; color: #000; }
+        .click-menu button:last-child { border-bottom: none; }
+
         /* Inputs flotantes y Arrastre */
         .floating-input-wrapper { position: absolute; display: flex; align-items: center; gap: 5px; z-index: 50; background: rgba(255, 255, 255, 0.95); padding: 4px; border-radius: 6px; box-shadow: 0 4px 10px rgba(0,0,0,0.4); border: 1px solid #ccc; }
         .drag-handle { cursor: grab; font-size: 18px; padding: 0 5px; color: #888; user-select: none; display: flex; align-items: center; }
@@ -98,6 +103,14 @@
         .confirmed-text-wrapper:active { cursor: grabbing; }
         .confirmed-text { color: #000; font-family: sans-serif; font-weight: bold; white-space: nowrap; pointer-events: none; }
 
+        /* Firma Arrastrable */
+        .draggable-signature { position: absolute; z-index: 40; cursor: grab; border: 1px dashed transparent; padding: 2px; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        .draggable-signature:hover { border: 1px dashed #3498db; background: rgba(255,255,255,0.8); }
+        .draggable-signature:active { cursor: grabbing; }
+        .draggable-signature img { pointer-events: none; }
+        .sig-controls { display: none; gap: 5px; background: #222; padding: 4px; border-radius: 4px; }
+        .draggable-signature:hover .sig-controls { display: flex; }
+
         
     
 
@@ -107,6 +120,29 @@
 </head>
 <body>
 
+
+
+<!-- Datalist para el autocompletado (Historial) -->
+<datalist id="historial-textos"></datalist>
+
+<!-- Modal de Firma -->
+<div id="modal-firma" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center;">
+    <div style="background: #222; padding: 20px; border-radius: 10px; text-align: center; border: 1px solid #555; width: 90%; max-width: 400px;">
+        <h3 style="color: #f1c40f; margin-bottom: 15px;">Dibuja tu firma</h3>
+        <canvas id="canvas-firma" width="300" height="150" style="background: white; border-radius: 5px; cursor: crosshair; touch-action: none; width: 100%;"></canvas>
+        <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+            <button onclick="limpiarFirma()" style="background: #e74c3c; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold;">Limpiar</button>
+            <button onclick="cerrarModalFirma()" style="background: #555; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold;">Cancelar</button>
+            <button onclick="guardarFirma()" style="background: #2ecc71; color: black; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold;">Guardar Firma</button>
+        </div>
+    </div>
+</div>
+
+
+
+
+    
+    
 <div class="app-container">
     <div class="header">
         <h1>📄 DocuFácil</h1>
@@ -449,12 +485,36 @@
 
 
 
+    
+
 
     // --- LÓGICA: RELLENADO LIBRE (TÁCTIL) ---
     let freePdfDoc = null;
     let freeCanvasScales = {};
     let inputsFlotantes = [];
-    let freePdfPageCount = 0; // Guardará cuántas hojas tiene el PDF
+    let firmasFlotantes = [];
+    let freePdfPageCount = 0; 
+    
+    // Historial para el autocompletado
+    let historialTextos = JSON.parse(localStorage.getItem('docufacil_historial')) || [];
+
+    function actualizarDatalist() {
+        const datalist = document.getElementById('historial-textos');
+        datalist.innerHTML = '';
+        historialTextos.forEach(texto => {
+            const option = document.createElement('option');
+            option.value = texto;
+            datalist.appendChild(option);
+        });
+    }
+
+    function guardarEnHistorial(texto) {
+        if (texto && !historialTextos.includes(texto)) {
+            historialTextos.push(texto);
+            localStorage.setItem('docufacil_historial', JSON.stringify(historialTextos));
+            actualizarDatalist();
+        }
+    }
 
     function abrirRellenadoLibre() {
         if (!usuarioActual || usuarioActual.creditos <= 0) {
@@ -469,13 +529,14 @@
         document.getElementById('btn-generar-free').style.display = 'none';
         
         inputsFlotantes = [];
+        firmasFlotantes = [];
         freeCanvasScales = {};
         freePdfPageCount = 0;
+        actualizarDatalist();
         
         showScreen('screen-rellenado-libre');
     }
 
-    // Cargar y renderizar TODAS las páginas del PDF
     document.getElementById('free-pdf-upload').addEventListener('change', async function(e) {
         if (!e.target.files.length) return;
         
@@ -486,11 +547,12 @@
         const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
         const pdf = await loadingTask.promise;
         
-        freePdfPageCount = pdf.numPages; // Guardamos la cantidad de hojas
+        freePdfPageCount = pdf.numPages; 
         
         const container = document.getElementById('free-canvas-container');
         container.innerHTML = ''; 
         inputsFlotantes = [];
+        firmasFlotantes = [];
         freeCanvasScales = {};
         container.style.display = 'flex';
         
@@ -518,27 +580,50 @@
             
             await page.render({ canvasContext: ctx, viewport: viewport }).promise;
             
+            // Evento de clic en la hoja para abrir el menú
             wrapper.addEventListener('click', function(ev) {
-                if (ev.target.tagName.toLowerCase() === 'input' || ev.target.tagName.toLowerCase() === 'button') return;
+                // Evitar si se hace clic en un input, botón, o elemento ya creado
+                if (ev.target.closest('.floating-input-wrapper') || ev.target.closest('.confirmed-text-wrapper') || ev.target.closest('.draggable-signature') || ev.target.closest('.click-menu')) return;
+                
+                // Borrar menús anteriores
+                document.querySelectorAll('.click-menu').forEach(m => m.remove());
+
                 const rect = this.getBoundingClientRect();
                 const x = ev.clientX - rect.left;
                 const y = ev.clientY - rect.top;
-                crearInputFlotante(this, x, y, pageNum);
+                
+                mostrarMenuOpciones(this, x, y, pageNum);
             });
         }
         
-        // Actualizamos el botón con la cantidad de créditos a cobrar
         const btnGenerar = document.getElementById('btn-generar-free');
         btnGenerar.innerText = `✨ Bajar Documento (${freePdfPageCount} Créditos)`;
         btnGenerar.style.display = 'block';
     });
 
+    function mostrarMenuOpciones(parent, x, y, pageNum) {
+        const menu = document.createElement('div');
+        menu.className = 'click-menu';
+        menu.style.left = `${x}px`;
+        menu.style.top = `${y}px`;
 
+        const btnText = document.createElement('button');
+        btnText.innerText = '📝 Añadir Texto';
+        btnText.onclick = (e) => { e.stopPropagation(); menu.remove(); crearInputFlotante(parent, x, y, pageNum); };
 
+        const btnSig = document.createElement('button');
+        btnSig.innerText = '✍️ Añadir Firma';
+        btnSig.onclick = (e) => { e.stopPropagation(); menu.remove(); abrirModalFirma(parent, x, y, pageNum); };
 
+        const btnCancel = document.createElement('button');
+        btnCancel.innerText = '❌ Cancelar';
+        btnCancel.onclick = (e) => { e.stopPropagation(); menu.remove(); };
 
-    
-    
+        menu.appendChild(btnText);
+        menu.appendChild(btnSig);
+        menu.appendChild(btnCancel);
+        parent.appendChild(menu);
+    }
 
     function crearInputFlotante(parent, x, y, pageNum) {
         const wrapper = document.createElement('div');
@@ -548,7 +633,6 @@
         
         let currentFontSize = 12; 
 
-        // Icono de arrastre
         const dragHandle = document.createElement('div');
         dragHandle.className = 'drag-handle';
         dragHandle.innerHTML = '✥';
@@ -557,6 +641,7 @@
         input.type = 'text';
         input.className = 'floating-input';
         input.placeholder = "Escribe aquí...";
+        input.setAttribute('list', 'historial-textos'); // Conectar con el datalist
         input.style.fontSize = `${currentFontSize}px`;
         
         const btnMinus = document.createElement('button');
@@ -597,7 +682,8 @@
                 return;
             }
             
-            // Cambiar a modo texto confirmado
+            guardarEnHistorial(texto); // Guardar para la próxima vez
+
             wrapper.className = 'confirmed-text-wrapper';
             wrapper.innerHTML = ''; 
             
@@ -606,7 +692,6 @@
             spanText.style.fontSize = `${currentFontSize}px`;
             spanText.innerText = texto;
             
-            // Botón de borrar oculto que aparece al pasar el mouse
             const btnEditDelete = document.createElement('button');
             btnEditDelete.innerText = '✖';
             btnEditDelete.className = 'btn-delete-input';
@@ -631,26 +716,133 @@
         parent.appendChild(wrapper);
         
         inputsFlotantes.push(inputData);
-        
-        // Activar el motor de arrastre
         hacerArrastrable(wrapper, dragHandle);
-        
         input.focus();
     }
 
-    // Motor de arrastre para Mouse y Táctil (Celulares)
+    // --- LÓGICA DE FIRMA ---
+    let sigCanvas, sigCtx, drawing = false;
+    let currentSigTarget = null;
+
+    function abrirModalFirma(parent, x, y, pageNum) {
+        currentSigTarget = { parent, x, y, pageNum };
+        document.getElementById('modal-firma').style.display = 'flex';
+        
+        sigCanvas = document.getElementById('canvas-firma');
+        sigCtx = sigCanvas.getContext('2d');
+        sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+        sigCtx.lineWidth = 3;
+        sigCtx.strokeStyle = '#000';
+        sigCtx.lineCap = 'round';
+        sigCtx.lineJoin = 'round';
+
+        // Eventos Mouse
+        sigCanvas.onmousedown = (e) => { drawing = true; sigCtx.beginPath(); sigCtx.moveTo(e.offsetX, e.offsetY); };
+        sigCanvas.onmousemove = (e) => { if(drawing) { sigCtx.lineTo(e.offsetX, e.offsetY); sigCtx.stroke(); } };
+        sigCanvas.onmouseup = () => drawing = false;
+        sigCanvas.onmouseout = () => drawing = false;
+
+        // Eventos Táctiles (Celular)
+        sigCanvas.ontouchstart = (e) => { 
+            e.preventDefault(); drawing = true; 
+            const pos = getTouchPos(sigCanvas, e);
+            sigCtx.beginPath(); sigCtx.moveTo(pos.x, pos.y); 
+        };
+        sigCanvas.ontouchmove = (e) => { 
+            e.preventDefault(); 
+            if(drawing) { 
+                const pos = getTouchPos(sigCanvas, e);
+                sigCtx.lineTo(pos.x, pos.y); sigCtx.stroke(); 
+            } 
+        };
+        sigCanvas.ontouchend = () => drawing = false;
+    }
+
+    function getTouchPos(canvasDom, touchEvent) {
+        const rect = canvasDom.getBoundingClientRect();
+        return {
+            x: touchEvent.touches[0].clientX - rect.left,
+            y: touchEvent.touches[0].clientY - rect.top
+        };
+    }
+
+    function limpiarFirma() {
+        sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+    }
+
+    function cerrarModalFirma() {
+        document.getElementById('modal-firma').style.display = 'none';
+    }
+
+    function guardarFirma() {
+        const dataUrl = sigCanvas.toDataURL('image/png');
+        colocarFirmaEnPdf(dataUrl);
+    }
+
+    function colocarFirmaEnPdf(dataUrl) {
+        const { parent, x, y, pageNum } = currentSigTarget;
+        
+        const wrapper = document.createElement('div');
+        wrapper.className = 'draggable-signature';
+        wrapper.style.left = `${x}px`;
+        wrapper.style.top = `${y - 30}px`; 
+        
+        let currentWidth = 150; 
+
+        const img = document.createElement('img');
+        img.src = dataUrl;
+        img.style.width = `${currentWidth}px`;
+        
+        const controls = document.createElement('div');
+        controls.className = 'sig-controls';
+        
+        const btnMinus = document.createElement('button');
+        btnMinus.innerText = '-';
+        btnMinus.className = 'btn-size-input';
+        btnMinus.onclick = () => { currentWidth -= 10; img.style.width = `${currentWidth}px`; sigData.width = currentWidth; };
+
+        const btnPlus = document.createElement('button');
+        btnPlus.innerText = '+';
+        btnPlus.className = 'btn-size-input';
+        btnPlus.onclick = () => { currentWidth += 10; img.style.width = `${currentWidth}px`; sigData.width = currentWidth; };
+        
+        const btnDelete = document.createElement('button');
+        btnDelete.innerText = '✖';
+        btnDelete.className = 'btn-delete-input';
+        
+        const sigData = { wrapper, dataUrl, pageNum, width: currentWidth };
+        
+        btnDelete.onclick = () => { wrapper.remove(); firmasFlotantes = firmasFlotantes.filter(f => f !== sigData); };
+        
+        controls.appendChild(btnMinus);
+        controls.appendChild(btnPlus);
+        controls.appendChild(btnDelete);
+        
+        wrapper.appendChild(img);
+        wrapper.appendChild(controls);
+        parent.appendChild(wrapper);
+        
+        firmasFlotantes.push(sigData);
+        hacerArrastrable(wrapper, wrapper); // Toda la firma es arrastrable
+        cerrarModalFirma();
+    }
+
+    // --- MOTOR DE ARRASTRE CORREGIDO ---
     function hacerArrastrable(elmnt, handle) {
         let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
         
         handle.onmousedown = dragMouseDown;
         handle.ontouchstart = dragTouchStart;
         
-        // Si ya está confirmado, todo el texto sirve para arrastrar
-        elmnt.onmousedown = function(e) { if(elmnt.className === 'confirmed-text-wrapper' && e.target.tagName !== 'BUTTON') dragMouseDown(e); };
-        elmnt.ontouchstart = function(e) { if(elmnt.className === 'confirmed-text-wrapper' && e.target.tagName !== 'BUTTON') dragTouchStart(e); };
+        if (elmnt.className.includes('confirmed-text-wrapper')) {
+            elmnt.onmousedown = function(e) { if(e.target.tagName !== 'BUTTON') dragMouseDown(e); };
+            elmnt.ontouchstart = function(e) { if(e.target.tagName !== 'BUTTON') dragTouchStart(e); };
+        }
 
         function dragMouseDown(e) {
+            if(e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
             e.preventDefault();
+            e.stopPropagation(); // EVITA QUE SE DUPLIQUE AL SOLTAR
             pos3 = e.clientX;
             pos4 = e.clientY;
             document.onmouseup = closeDragElement;
@@ -658,6 +850,8 @@
         }
 
         function dragTouchStart(e) {
+            if(e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
+            e.stopPropagation(); // EVITA QUE SE DUPLIQUE AL SOLTAR
             pos3 = e.touches[0].clientX;
             pos4 = e.touches[0].clientY;
             document.ontouchend = closeDragElement;
@@ -701,6 +895,7 @@
         try {
             const pages = freePdfDoc.getPages();
 
+            // 1. Estampar Textos
             inputsFlotantes.forEach(item => {
                 const texto = item.textoFinal || item.input.value.trim();
                 if (texto) {
@@ -708,9 +903,8 @@
                     const pdfHeight = targetPage.getHeight();
                     const scale = freeCanvasScales[item.pageNum];
                     
-                    // Calculamos la posición exacta leyendo dónde quedó la caja después de arrastrarla
-                    const isConfirmed = item.wrapper.className === 'confirmed-text-wrapper';
-                    const offsetX = isConfirmed ? 4 : 28; // Compensar el ancho del icono de arrastre
+                    const isConfirmed = item.wrapper.className.includes('confirmed-text-wrapper');
+                    const offsetX = isConfirmed ? 4 : 28; 
                     
                     const pdfX = (item.wrapper.offsetLeft + offsetX) / scale;
                     const pdfY = pdfHeight - ((item.wrapper.offsetTop + item.fontSize + 8) / scale);
@@ -724,6 +918,32 @@
                 }
             });
 
+            // 2. Estampar Firmas
+            for (const item of firmasFlotantes) {
+                const targetPage = pages[item.pageNum - 1];
+                const pdfHeight = targetPage.getHeight();
+                const scale = freeCanvasScales[item.pageNum];
+
+                // Incrustar la imagen PNG en el PDF
+                const pngImage = await freePdfDoc.embedPng(item.dataUrl);
+                const pngDims = pngImage.scale(1);
+                const ratio = pngDims.height / pngDims.width;
+
+                const pdfWidth = item.width / scale;
+                const pdfImgHeight = pdfWidth * ratio;
+
+                const pdfX = item.wrapper.offsetLeft / scale;
+                const pdfY = pdfHeight - ((item.wrapper.offsetTop / scale) + pdfImgHeight);
+
+                targetPage.drawImage(pngImage, {
+                    x: pdfX,
+                    y: pdfY,
+                    width: pdfWidth,
+                    height: pdfImgHeight
+                });
+            }
+
+            // Descontar créditos
             const nuevoSaldo = usuarioActual.creditos - freePdfPageCount;
             const { error } = await supabase.from('usuarios_codigos').update({ creditos: nuevoSaldo }).eq('id', usuarioActual.id);
             if (error) throw new Error("No se pudo procesar el pago.");
@@ -734,7 +954,7 @@
             const pdfBytes = await freePdfDoc.save();
             download(pdfBytes, `DocuFacil_Rellenado.pdf`, "application/pdf");
             
-            alert("✅ ¡Documento rellenado con éxito!");
+            alert("✅ ¡Documento rellenado y firmado con éxito!");
             volverAHome();
 
         } catch (err) {
