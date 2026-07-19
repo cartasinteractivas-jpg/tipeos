@@ -238,21 +238,60 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
         </div>
     </div>
 
-    <!-- PANTALLA 2: FORMULARIO DE PLANTILLAS -->
+
+    
+
+
+
+        <!-- PANTALLA 2: FORMULARIO DE PLANTILLAS -->
     <div id="screen-formulario" class="screen">
         <button class="btn-volver" onclick="volverAHome()">⬅ Volver al inicio</button>
         <div style="background: #222; padding: 15px; border-radius: 10px; border-left: 4px solid #3498db; margin-bottom: 10px;">
             <h3 id="form-titulo" style="color: #3498db; margin-bottom: 5px;">Nombre</h3>
             <p id="form-desc" style="color: #aaa; font-size: 13px;">Descripción</p>
         </div>
-        <div class="input-group" style="background: #2a2a2a; padding: 15px; border-radius: 8px; border: 1px dashed #555;">
+
+        <!-- SECCIÓN A: PARA PLANTILLAS DE RELLENADO (PDF FIJO) -->
+        <div id="grupo-upload-pdf" class="input-group" style="background: #2a2a2a; padding: 15px; border-radius: 8px; border: 1px dashed #555;">
             <label style="color: #f1c40f;">📄 Sube el PDF base (Plantilla)</label>
             <input type="file" id="user-pdf-upload" accept="application/pdf" style="width: 100%; color: #fff;">
         </div>
         <div id="form-campos" style="display: flex; flex-direction: column; gap: 5px;"></div>
-        <button class="btn-generar" id="btn-generar" onclick="generarDocumento()">✨ Generar Documento (1 Crédito)</button>
+
+        <!-- SECCIÓN B: PARA PLANTILLAS DE INTELIGENCIA ARTIFICIAL -->
+        <div id="form-campos-ia" style="display: none; flex-direction: column; gap: 15px;">
+            <div class="input-group">
+                <label>Tu Nombre (Remitente)</label>
+                <input type="text" id="ia-remitente" placeholder="Ej: Juan Pérez">
+            </div>
+            <div class="input-group">
+                <label>Dirigido a (Destinatario)</label>
+                <input type="text" id="ia-destinatario" placeholder="Ej: Empresa XYZ / Sr. Director">
+            </div>
+            <div class="input-group">
+                <label>¿De qué trata el documento? (Explica brevemente)</label>
+                <div class="input-with-mic">
+                    <textarea id="ia-motivo" rows="3" placeholder="Ej: Solicito mis vacaciones del 10 al 20 de agosto por motivos familiares..."></textarea>
+                    <button class="btn-mic" onclick="iniciarReconocimientoVoz('ia-motivo')">🎤</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- BOTÓN PRINCIPAL -->
+        <button class="btn-generar" id="btn-generar" onclick="procesarFormulario()">✨ Generar Documento</button>
+
+        <!-- PREVISUALIZACIÓN DE LA IA -->
+        <div id="preview-ia" style="display: none; margin-top: 10px; background: #222; padding: 15px; border-radius: 8px; border: 1px solid #3498db;">
+            <h3 style="color: #3498db; margin-bottom: 5px;">👀 Previsualización del Borrador</h3>
+            <p style="font-size: 12px; color: #aaa; margin-bottom: 10px;">Puedes editar el texto directamente aquí antes de descargarlo.</p>
+            <textarea id="texto-preview-ia" rows="15" style="width: 100%; padding: 10px; background: #111; color: #fff; border: 1px solid #444; border-radius: 5px; font-family: Arial, sans-serif; line-height: 1.5; outline: none;"></textarea>
+            <button class="btn-generar" id="btn-descargar-ia" onclick="descargarPdfIA()" style="background: #2ecc71; margin-top: 15px;">📄 Aceptar y Descargar PDF (1 Crédito)</button>
+        </div>
     </div>
 
+
+
+    
     <!-- PANTALLA 3: RELLENADO LIBRE -->
     <div id="screen-rellenado-libre" class="screen">
         <button class="btn-volver" onclick="volverAHome()">⬅ Volver al inicio</button>
@@ -413,8 +452,13 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
             });
         }
     }
-    // ==========================================
-    // 6. LÓGICA: PLANTILLAS PREDEFINIDAS
+
+
+
+
+
+        // ==========================================
+    // 6. LÓGICA: PLANTILLAS PREDEFINIDAS E IA
     // ==========================================
     function clickPlantilla(tpl) {
         if (!usuarioActual || usuarioActual.creditos <= 0) {
@@ -429,23 +473,44 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
         plantillaSeleccionada = tpl;
         document.getElementById('form-titulo').innerText = tpl.nombre;
         document.getElementById('form-desc').innerText = tpl.descripcion || '';
-        document.getElementById('user-pdf-upload').value = '';
         
-        const contenedorCampos = document.getElementById('form-campos');
-        contenedorCampos.innerHTML = '';
+        // Resetear vistas
+        document.getElementById('preview-ia').style.display = 'none';
+        document.getElementById('btn-generar').style.display = 'block';
+        document.getElementById('btn-generar').innerText = "✨ Generar Documento";
 
-        if (tpl.configuracion && tpl.configuracion.campos) {
-            tpl.configuracion.campos.forEach(campo => {
-                contenedorCampos.innerHTML += `
-                    <div class="input-group">
-                        <label>${campo.nombre.toUpperCase()}</label>
-                        <div class="input-with-mic">
-                            <input type="text" id="campo-${campo.nombre}" placeholder="Escribe aquí...">
-                            <button class="btn-mic" onclick="iniciarReconocimientoVoz('campo-${campo.nombre}')">🎤</button>
+        if (tpl.tipo === 'ia') {
+            // --- MODO INTELIGENCIA ARTIFICIAL ---
+            document.getElementById('grupo-upload-pdf').style.display = 'none';
+            document.getElementById('form-campos').style.display = 'none';
+            document.getElementById('form-campos-ia').style.display = 'flex';
+            
+            document.getElementById('ia-remitente').value = '';
+            document.getElementById('ia-destinatario').value = '';
+            document.getElementById('ia-motivo').value = '';
+        } else {
+            // --- MODO RELLENADO CLÁSICO ---
+            document.getElementById('grupo-upload-pdf').style.display = 'flex';
+            document.getElementById('form-campos-ia').style.display = 'none';
+            document.getElementById('form-campos').style.display = 'flex';
+            document.getElementById('user-pdf-upload').value = '';
+            
+            const contenedorCampos = document.getElementById('form-campos');
+            contenedorCampos.innerHTML = '';
+
+            if (tpl.configuracion && tpl.configuracion.elementos) {
+                tpl.configuracion.elementos.forEach(campo => {
+                    contenedorCampos.innerHTML += `
+                        <div class="input-group">
+                            <label>${campo.nombre.toUpperCase()}</label>
+                            <div class="input-with-mic">
+                                <input type="text" id="campo-${campo.nombre}" placeholder="Escribe aquí...">
+                                <button class="btn-mic" onclick="iniciarReconocimientoVoz('campo-${campo.nombre}')">🎤</button>
+                            </div>
                         </div>
-                    </div>
-                `;
-            });
+                    `;
+                });
+            }
         }
         showScreen('screen-formulario');
     }
@@ -470,6 +535,149 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
         };
     }
 
+    function procesarFormulario() {
+        if (plantillaSeleccionada.tipo === 'ia') {
+            generarTextoIA();
+        } else {
+            generarDocumento(); // El clásico de rellenado
+        }
+    }
+
+    // --------------------------------------------------
+    // MOTOR 1: INTELIGENCIA ARTIFICIAL (VÍA SUPABASE EDGE FUNCTION)
+    // --------------------------------------------------
+    async function generarTextoIA() {
+        const remitente = document.getElementById('ia-remitente').value.trim();
+        const destinatario = document.getElementById('ia-destinatario').value.trim();
+        const motivo = document.getElementById('ia-motivo').value.trim();
+
+        if (!remitente || !destinatario || !motivo) {
+            return alert("Por favor, llena todos los campos para que la IA pueda redactar el documento.");
+        }
+
+        const btn = document.getElementById('btn-generar');
+        btn.innerText = "🤖 Redactando documento...";
+        btn.disabled = true;
+
+        // El prompt que le enviaremos a tu Edge Function
+        const promptTexto = `Redacta un documento formal del tipo "${plantillaSeleccionada.nombre}".
+Datos:
+- Remitente: ${remitente}
+- Destinatario: ${destinatario}
+- Motivo/Asunto: ${motivo}
+
+Instrucciones:
+- Escribe solo el contenido del documento, sin saludos iniciales ni explicaciones tuyas.
+- Usa un tono formal, claro y directo.
+- Incluye la fecha actual al inicio.
+- Deja el espacio al final para la firma del remitente.`;
+
+        try {
+            // Llamamos a tu función segura en Supabase
+            const { data, error } = await supabase.functions.invoke('generar-documento', {
+                body: { prompt: promptTexto }
+            });
+
+            // Manejo de errores
+            if (error) throw new Error("Error de conexión con Supabase: " + error.message);
+            if (data.error) throw new Error("Error de la IA: " + data.error);
+
+            // Mostrar el resultado en la caja de previsualización
+            const textoGenerado = data.resultado.trim();
+            
+            document.getElementById('texto-preview-ia').value = textoGenerado;
+            document.getElementById('preview-ia').style.display = 'block';
+            btn.style.display = 'none'; // Ocultar el botón porque ya se generó
+
+        } catch (err) {
+            alert("Error al generar el documento: " + err.message);
+        } finally {
+            btn.innerText = "✨ Generar Documento";
+            btn.disabled = false;
+        }
+    }
+
+    async function descargarPdfIA() {
+        const textoFinal = document.getElementById('texto-preview-ia').value.trim();
+        if (!textoFinal) return alert("El documento está vacío.");
+
+        const btn = document.getElementById('btn-descargar-ia');
+        btn.innerText = "⏳ Creando PDF...";
+        btn.disabled = true;
+
+        try {
+            // Crear un PDF en blanco desde cero
+            const pdfDoc = await PDFLib.PDFDocument.create();
+            let page = pdfDoc.addPage([595.28, 841.89]); // Tamaño A4 estándar
+            const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+            
+            const fontSize = 12;
+            const margin = 50;
+            let y = page.getHeight() - margin;
+            const maxWidth = page.getWidth() - (margin * 2);
+
+            // Motor de envoltura de texto (Word Wrap)
+            const lineas = textoFinal.split('\n');
+            
+            for (let i = 0; i < lineas.length; i++) {
+                let parrafo = lineas[i];
+                if (parrafo === '') {
+                    y -= fontSize * 1.5; // Salto de línea
+                    continue;
+                }
+
+                const words = parrafo.split(' ');
+                let currentLine = '';
+
+                for (let j = 0; j < words.length; j++) {
+                    const testLine = currentLine + words[j] + ' ';
+                    const textWidth = font.widthOfTextAtSize(testLine, fontSize);
+                    
+                    if (textWidth > maxWidth && j > 0) {
+                        page.drawText(currentLine, { x: margin, y: y, size: fontSize, font: font });
+                        y -= fontSize * 1.5;
+                        currentLine = words[j] + ' ';
+                        
+                        // Si llegamos al final de la hoja, crear una nueva
+                        if (y < margin) {
+                            page = pdfDoc.addPage([595.28, 841.89]);
+                            y = page.getHeight() - margin;
+                        }
+                    } else {
+                        currentLine = testLine;
+                    }
+                }
+                page.drawText(currentLine, { x: margin, y: y, size: fontSize, font: font });
+                y -= fontSize * 1.5;
+                
+                if (y < margin) {
+                    page = pdfDoc.addPage([595.28, 841.89]);
+                    y = page.getHeight() - margin;
+                }
+            }
+
+            // Descontar crédito
+            const pagado = await descontarCredito(1);
+            if (!pagado) throw new Error("No se pudo procesar el pago.");
+
+            // Descargar
+            const pdfBytes = await pdfDoc.save();
+            download(pdfBytes, `DocuFacil_${plantillaSeleccionada.nombre.replace(/\s+/g, '_')}.pdf`, "application/pdf");
+            
+            alert("✅ ¡Documento generado y descargado con éxito!");
+            volverAHome();
+
+        } catch (err) {
+            alert("Error: " + err.message);
+        } finally {
+            btn.innerText = "📄 Aceptar y Descargar PDF (1 Crédito)";
+            btn.disabled = false;
+        }
+    }
+
+    // --------------------------------------------------
+    // MOTOR 2: RELLENADO CLÁSICO (PDF DE FONDO)
+    // --------------------------------------------------
     async function generarDocumento() {
         const fileInput = document.getElementById('user-pdf-upload');
         if (!fileInput.files.length) return alert("Por favor, sube el PDF base de la plantilla.");
@@ -485,13 +693,13 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
             const pages = pdfDoc.getPages();
             const firstPage = pages[0];
 
-            if (plantillaSeleccionada.configuracion && plantillaSeleccionada.configuracion.campos) {
-                plantillaSeleccionada.configuracion.campos.forEach(campo => {
+            if (plantillaSeleccionada.configuracion && plantillaSeleccionada.configuracion.elementos) {
+                plantillaSeleccionada.configuracion.elementos.forEach(campo => {
                     const valor = document.getElementById(`campo-${campo.nombre}`).value;
                     if (valor) {
                         firstPage.drawText(valor, {
                             x: campo.x,
-                            y: campo.y,
+                            y: firstPage.getHeight() - campo.y - 12, // Ajuste de coordenadas Y
                             size: 12,
                             color: PDFLib.rgb(0, 0, 0)
                         });
@@ -511,11 +719,15 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
         } catch (err) {
             alert("Error: " + err.message);
         } finally {
-            btn.innerText = "✨ Generar Documento (1 Crédito)";
+            btn.innerText = "✨ Generar Documento";
             btn.disabled = false;
         }
     }
 
+
+
+
+    
     // ==========================================
     // 7. HISTORIAL (AUTOCOMPLETADO)
     // ==========================================
