@@ -912,16 +912,22 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
                 const currentDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
                 const scale = currentDistance / initialDistance;
                 let newSize = initialSize * scale;
-                
+
+
+                // --- NUEVO LÍMITE MÁS PEQUEÑO (Dedos) ---
                 if (elData.type === 'text' || elData.type === 'symbol') {
-                    newSize = Math.max(8, Math.min(newSize, 100));
+                    newSize = Math.max(4, Math.min(newSize, 100)); // Bajamos el mínimo de 8 a 4
                     elData.element.style.fontSize = `${newSize}px`;
                 } else {
-                    newSize = Math.max(30, Math.min(newSize, 500));
+                    newSize = Math.max(15, Math.min(newSize, 500)); // Bajamos el mínimo de 30 a 15
                     elData.element.style.width = `${newSize}px`;
                 }
                 elData.size = newSize;
                 return;
+
+
+
+                
             }
 
             if (!isDragging) return;
@@ -953,18 +959,25 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
             e.preventDefault(); e.stopPropagation();
             const clientX = e.clientX || (e.touches && e.touches[0].clientX);
             const dx = clientX - startX;
-            
+
+
+// --- NUEVO LÍMITE MÁS PEQUEÑO (Mouse) ---
             let newSize = initialSize + dx;
             if (elData.type === 'text' || elData.type === 'symbol') {
-                newSize = Math.max(8, Math.min(newSize, 100));
+                newSize = Math.max(4, Math.min(newSize, 100)); // Bajamos el mínimo de 8 a 4
                 elData.element.style.fontSize = `${newSize}px`;
             } else {
-                newSize = Math.max(30, Math.min(newSize, 500));
+                newSize = Math.max(15, Math.min(newSize, 500)); // Bajamos el mínimo de 30 a 15
                 elData.element.style.width = `${newSize}px`;
             }
             elData.size = newSize;
+
+            
+           
         };
 
+
+        
         const stopResize = () => { isResizing = false; };
 
         wrapper.addEventListener('mousedown', startDrag);
