@@ -18,7 +18,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: #121212; color: #ffffff; display: flex; justify-content: center; min-height: 100vh; }
         
-        .app-container { background: #1e1e1e; width: 100%; max-width: 480px; min-height: 100vh; display: flex; flex-direction: column; position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.5 ); }
+        .app-container { background: #1e1e1e; width: 100%; max-width: 480px; min-height: 100vh; display: flex; flex-direction: column; position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.5  ); }
         
         .header { background: #2c3e50; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; border-bottom: 2px solid #34495e; }
         .header h1 { color: #fff; font-size: 20px; display: flex; align-items: center; gap: 8px; }
@@ -65,15 +65,60 @@
         .btn-generar { background: #2ecc71; color: #000; border: none; padding: 15px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; width: 100%; margin-top: 10px; }
         .btn-volver { background: transparent; color: #aaa; border: 1px solid #555; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 13px; width: fit-content; margin-bottom: 10px; }
 
-        /* --- RELLENADO LIBRE --- */
-        .canvas-container { width: 100%; overflow: auto; border: 1px solid #444; border-radius: 8px; background: #222; position: relative; margin-top: 10px; }
-        #free-pdf-canvas { display: block; width: 100%; cursor: crosshair; }
+        /* --- RELLENADO LIBRE (ACTUALIZADO) --- */
+        .canvas-container { width: 100%; overflow: auto; border: 1px solid #444; border-radius: 8px; background: #222; position: relative; margin-top: 10px; display: flex; flex-direction: column; gap: 10px; padding: 10px; }
+        .pdf-page-wrapper { position: relative; width: 100%; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+        .free-pdf-canvas { display: block; width: 100%; cursor: crosshair; }
         
-        /* Inputs flotantes para el rellenado libre */
-        .floating-input { position: absolute; background: rgba(255, 255, 255, 0.9); border: 2px solid #e67e22; color: #000; font-weight: bold; padding: 2px 5px; border-radius: 4px; outline: none; font-size: 14px; z-index: 10; min-width: 100px; }
+        /* Menú al hacer clic */
+        .click-menu { position: absolute; background: #fff; border-radius: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: flex; flex-direction: column; z-index: 60; overflow: hidden; border: 1px solid #ccc; }
+        .click-menu button { background: none; border: none; padding: 12px 20px; cursor: pointer; font-weight: bold; font-size: 14px; color: #333; text-align: left; border-bottom: 1px solid #eee; transition: 0.2s; margin: 0; width: 100%; }
+        .click-menu button:hover { background: #f1c40f; color: #000; }
+        .click-menu button:last-child { border-bottom: none; }
+
+        /* Inputs flotantes y Arrastre */
+        .floating-input-wrapper { position: absolute; display: flex; align-items: center; gap: 5px; z-index: 50; background: rgba(255, 255, 255, 0.95); padding: 4px; border-radius: 6px; box-shadow: 0 4px 10px rgba(0,0,0,0.4); border: 1px solid #ccc; }
+        .drag-handle { cursor: grab; font-size: 18px; padding: 0 5px; color: #888; user-select: none; display: flex; align-items: center; }
+        .drag-handle:active { cursor: grabbing; }
+        
+        .floating-input { background: transparent !important; border: 1px solid #e67e22 !important; color: #000 !important; font-weight: bold; padding: 4px 8px !important; border-radius: 4px; outline: none; font-size: 12px; min-width: 120px; margin: 0 !important; }
+        
+        .btn-size-input { background: #3498db; color: white; border: none; border-radius: 4px; width: 26px; height: 26px; cursor: pointer; font-size: 16px; font-weight: bold; display: flex; justify-content: center; align-items: center; margin: 0; padding: 0; }
+        .btn-confirm-input { background: #2ecc71; color: #000; border: none; border-radius: 4px; width: 26px; height: 26px; cursor: pointer; font-size: 12px; display: flex; justify-content: center; align-items: center; font-weight: bold; margin: 0; padding: 0; }
+        .btn-delete-input { background: #e74c3c; color: white; border: none; border-radius: 4px; width: 26px; height: 26px; cursor: pointer; font-size: 12px; display: flex; justify-content: center; align-items: center; font-weight: bold; margin: 0; padding: 0; }
+        
+        /* Texto ya confirmado en pantalla (Arrastrable) */
+        .confirmed-text-wrapper { position: absolute; display: flex; align-items: center; gap: 5px; z-index: 40; cursor: grab; padding: 2px 6px; border: 1px dashed transparent; border-radius: 4px; }
+        .confirmed-text-wrapper:hover { border: 1px dashed #3498db; background: rgba(255,255,255,0.9); }
+        .confirmed-text-wrapper:active { cursor: grabbing; }
+        .confirmed-text { color: #000; font-family: sans-serif; font-weight: bold; white-space: nowrap; pointer-events: none; }
+
+        /* Firma Arrastrable */
+        .draggable-signature { position: absolute; z-index: 40; cursor: grab; border: 1px dashed transparent; padding: 2px; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        .draggable-signature:hover { border: 1px dashed #3498db; background: rgba(255,255,255,0.8); }
+        .draggable-signature:active { cursor: grabbing; }
+        .draggable-signature img { pointer-events: none; }
+        .sig-controls { display: none; gap: 5px; background: #222; padding: 4px; border-radius: 4px; }
+        .draggable-signature:hover .sig-controls { display: flex; }
     </style>
 </head>
 <body>
+
+<!-- Datalist para el autocompletado (Historial) -->
+<datalist id="historial-textos"></datalist>
+
+<!-- Modal de Firma -->
+<div id="modal-firma" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center;">
+    <div style="background: #222; padding: 20px; border-radius: 10px; text-align: center; border: 1px solid #555; width: 90%; max-width: 400px;">
+        <h3 style="color: #f1c40f; margin-bottom: 15px;">Dibuja tu firma</h3>
+        <canvas id="canvas-firma" width="300" height="150" style="background: white; border-radius: 5px; cursor: crosshair; touch-action: none; width: 100%;"></canvas>
+        <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+            <button onclick="limpiarFirma()" style="background: #e74c3c; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; width: auto; margin: 0;">Limpiar</button>
+            <button onclick="cerrarModalFirma()" style="background: #555; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; width: auto; margin: 0;">Cancelar</button>
+            <button onclick="guardarFirma()" style="background: #2ecc71; color: black; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; width: auto; margin: 0;">Guardar</button>
+        </div>
+    </div>
+</div>
 
 <div class="app-container">
     <div class="header">
@@ -123,26 +168,27 @@
         <button class="btn-generar" id="btn-generar" onclick="generarDocumento()">✨ Generar Documento (1 Crédito)</button>
     </div>
 
-    <!-- PANTALLA 3: RELLENADO LIBRE (NUEVO) -->
+    <!-- PANTALLA 3: RELLENADO LIBRE (ACTUALIZADO) -->
     <div id="screen-rellenado-libre" class="screen">
         <button class="btn-volver" onclick="volverAHome()">⬅ Volver al inicio</button>
         <div style="background: #222; padding: 15px; border-radius: 10px; border-left: 4px solid #e67e22; margin-bottom: 10px;">
             <h3 style="color: #e67e22; margin-bottom: 5px;">✍️ Rellenar mi propio PDF</h3>
-            <p style="color: #aaa; font-size: 13px;">Sube tu documento, <strong>toca en la pantalla</strong> donde quieras escribir y descárgalo lleno.</p>
+            <p style="color: #aaa; font-size: 13px;">Sube tu documento, <strong>toca en la pantalla</strong> donde quieras escribir o firmar.</p>
         </div>
         
         <input type="file" id="free-pdf-upload" accept="application/pdf" style="width: 100%; color: #fff; background: #2a2a2a; padding: 10px; border-radius: 8px;">
         
         <div class="canvas-container" id="free-canvas-container" style="display: none;">
-            <canvas id="free-pdf-canvas"></canvas>
-            <!-- Los inputs flotantes aparecerán aquí -->
+            <!-- Las hojas del PDF se generarán aquí dinámicamente -->
         </div>
 
-        <button class="btn-generar" id="btn-generar-free" onclick="generarPdfLibre()" style="display: none; background: #e67e22;">✨ Descargar PDF Lleno (1 Crédito)</button>
+        <button class="btn-generar" id="btn-generar-free" onclick="generarPdfLibre()" style="display: none; background: #e67e22;">✨ Descargar PDF Lleno</button>
     </div>
 </div>
 <script>
-    // 1. CONFIGURACIÓN SUPABASE
+    // ==========================================
+    // 1. CONFIGURACIÓN SUPABASE Y PDF.JS
+    // ==========================================
     const supabaseUrl = 'https://wpzddhmllctdsiuxenss.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwemRkaG1sbGN0ZHNpdXhlbnNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5NjUyNzQsImV4cCI6MjA5OTU0MTI3NH0.hwSxJ3Sk_RlgbvFyr8S64XRuxW7j55BU4gaIneFTuhY';
     const supabase = window.supabase.createClient(supabaseUrl, supabaseKey );
@@ -150,11 +196,35 @@
     // Configurar PDF.js worker
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
+    // ==========================================
+    // 2. VARIABLES GLOBALES
+    // ==========================================
     let usuarioActual = null;
     let plantillaSeleccionada = null;
     let plantillasGlobales = [];
 
-    document.addEventListener('DOMContentLoaded', ( ) => cargarPlantillas());
+    // Variables para Rellenado Libre
+    let freePdfDoc = null;
+    let freeCanvasScales = {};
+    let inputsFlotantes = [];
+    let firmasFlotantes = [];
+    let freePdfPageCount = 0; 
+    let historialTextos = JSON.parse(localStorage.getItem('docufacil_historial' )) || [];
+
+    // ==========================================
+    // 3. INICIALIZACIÓN Y NAVEGACIÓN
+    // ==========================================
+    document.addEventListener('DOMContentLoaded', async () => {
+        cargarPlantillas();
+        actualizarDatalist();
+        
+        // Persistencia: Recordar código si ya ingresó antes
+        const codigoGuardado = localStorage.getItem('docufacil_codigo');
+        if (codigoGuardado) {
+            document.getElementById('input-codigo').value = codigoGuardado;
+            await activarCodigo();
+        }
+    });
 
     function showScreen(screenId) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -162,7 +232,72 @@
         window.scrollTo(0, 0);
     }
 
-    // --- CARGA Y RENDERIZADO DE PLANTILLAS ---
+    function volverAHome() {
+        plantillaSeleccionada = null;
+        showScreen('screen-home');
+    }
+
+    // ==========================================
+    // 4. HISTORIAL (AUTOCOMPLETADO)
+    // ==========================================
+    function actualizarDatalist() {
+        const datalist = document.getElementById('historial-textos');
+        if (!datalist) return;
+        datalist.innerHTML = '';
+        historialTextos.forEach(texto => {
+            const option = document.createElement('option');
+            option.value = texto;
+            datalist.appendChild(option);
+        });
+    }
+
+    function guardarEnHistorial(texto) {
+        if (texto && !historialTextos.includes(texto)) {
+            historialTextos.push(texto);
+            localStorage.setItem('docufacil_historial', JSON.stringify(historialTextos));
+            actualizarDatalist();
+        }
+    }
+
+    // ==========================================
+    // 5. SISTEMA DE CRÉDITOS
+    // ==========================================
+    async function activarCodigo() {
+        const codigo = document.getElementById('input-codigo').value.trim();
+        if (!codigo) return alert("Ingresa un código válido.");
+
+        const { data, error } = await supabase.from('usuarios_codigos').select('*').eq('codigo', codigo).single();
+        if (error || !data) {
+            localStorage.removeItem('docufacil_codigo');
+            return alert("❌ Código incorrecto o no existe.");
+        }
+        if (data.creditos <= 0) return alert("⚠️ Este código ya no tiene créditos.");
+
+        usuarioActual = data;
+        localStorage.setItem('docufacil_codigo', codigo); // Guardar sesión
+        document.getElementById('user-creditos').innerText = usuarioActual.creditos;
+        document.getElementById('input-codigo').value = '';
+        alert(`✅ ¡Código activado! Tienes ${usuarioActual.creditos} créditos disponibles.`);
+        renderizarPlantillas();
+    }
+
+    async function descontarCredito(cantidad = 1) {
+        if (!usuarioActual || usuarioActual.creditos < cantidad) return false;
+        const nuevoSaldo = usuarioActual.creditos - cantidad;
+        const { error } = await supabase.from('usuarios_codigos').update({ creditos: nuevoSaldo }).eq('id', usuarioActual.id);
+        if (error) {
+            alert("Error al procesar el crédito.");
+            return false;
+        }
+        usuarioActual.creditos = nuevoSaldo;
+        document.getElementById('user-creditos').innerText = nuevoSaldo;
+        if (nuevoSaldo === 0) renderizarPlantillas(); // Bloquear tarjetas si se quedó en 0
+        return true;
+    }
+
+    // ==========================================
+    // 6. CARGA Y RENDERIZADO DE PLANTILLAS
+    // ==========================================
     async function cargarPlantillas() {
         const { data, error } = await supabase.from('plantillas').select('*');
         plantillasGlobales = data || [];
@@ -177,19 +312,19 @@
         const claseBloqueado = tieneCreditos ? '' : 'locked';
         const candadoHtml = tieneCreditos ? '' : '<div class="candado-icon">🔒</div>';
 
-        // 1. TARJETA FIJA: RELLENADO LIBRE
+        // TARJETA FIJA: RELLENADO LIBRE
         contenedor.innerHTML += `
             <div class="card ${claseBloqueado}" onclick="abrirRellenadoLibre()" style="border-color: #e67e22;">
                 <div class="card-icon">✍️</div>
                 <div class="card-info">
                     <h3 style="color: #e67e22;">Rellenar mi propio PDF</h3>
-                    <p>Sube cualquier documento, toca donde quieras escribir y descárgalo.</p>
+                    <p>Sube cualquier documento, toca donde quieras escribir o firmar y descárgalo.</p>
                 </div>
                 ${candadoHtml}
             </div>
         `;
 
-        // 2. TARJETAS DE LA BASE DE DATOS
+        // TARJETAS DE LA BASE DE DATOS
         if (plantillasGlobales.length === 0) {
             contenedor.innerHTML += '<p style="text-align: center; color:#888; margin-top: 15px;">No hay más documentos disponibles.</p>';
         } else {
@@ -209,42 +344,9 @@
         }
     }
 
-    // --- SISTEMA DE CRÉDITOS ---
-    async function activarCodigo() {
-        const codigo = document.getElementById('input-codigo').value.trim();
-        if (!codigo) return alert("Ingresa un código válido.");
-
-        const { data, error } = await supabase.from('usuarios_codigos').select('*').eq('codigo', codigo).single();
-        if (error || !data) return alert("❌ Código incorrecto o no existe.");
-        if (data.creditos <= 0) return alert("⚠️ Este código ya no tiene créditos.");
-
-        usuarioActual = data;
-        document.getElementById('user-creditos').innerText = usuarioActual.creditos;
-        document.getElementById('input-codigo').value = '';
-        alert(`✅ ¡Código activado! Tienes ${usuarioActual.creditos} créditos disponibles.`);
-        renderizarPlantillas();
-    }
-
-    async function descontarCredito() {
-        if (!usuarioActual || usuarioActual.creditos <= 0) return false;
-        const nuevoSaldo = usuarioActual.creditos - 1;
-        const { error } = await supabase.from('usuarios_codigos').update({ creditos: nuevoSaldo }).eq('id', usuarioActual.id);
-        if (error) {
-            alert("Error al procesar el crédito.");
-            return false;
-        }
-        usuarioActual.creditos = nuevoSaldo;
-        document.getElementById('user-creditos').innerText = nuevoSaldo;
-        if (nuevoSaldo === 0) renderizarPlantillas(); // Bloquear tarjetas si se quedó en 0
-        return true;
-    }
-
-    function volverAHome() {
-        plantillaSeleccionada = null;
-        showScreen('screen-home');
-    }
-
-    // --- LÓGICA: PLANTILLAS PREDEFINIDAS ---
+    // ==========================================
+    // 7. LÓGICA: PLANTILLAS PREDEFINIDAS
+    // ==========================================
     function clickPlantilla(tpl) {
         if (!usuarioActual || usuarioActual.creditos <= 0) {
             alert("🔒 Necesitas activar un código con créditos.");
@@ -329,8 +431,8 @@
                 });
             }
 
-            // Descontar crédito
-            const pagado = await descontarCredito();
+            // Descontar 1 crédito
+            const pagado = await descontarCredito(1);
             if (!pagado) throw new Error("No se pudo procesar el pago.");
 
             // Descargar
@@ -347,13 +449,9 @@
             btn.disabled = false;
         }
     }
-
-    // --- LÓGICA: RELLENADO LIBRE (TÁCTIL) ---
-    let freePdfDoc = null;
-    let freePdfPage = null;
-    let freeCanvasScale = 1;
-    let inputsFlotantes = [];
-
+    // ==========================================
+    // 8. LÓGICA: RELLENADO LIBRE (MULTIHOJA Y TÁCTIL)
+    // ==========================================
     function abrirRellenadoLibre() {
         if (!usuarioActual || usuarioActual.creditos <= 0) {
             alert("🔒 Necesitas activar un código con créditos.");
@@ -361,75 +459,373 @@
             return;
         }
         
-        // Limpiar estado anterior
         document.getElementById('free-pdf-upload').value = '';
         document.getElementById('free-canvas-container').style.display = 'none';
+        document.getElementById('free-canvas-container').innerHTML = ''; 
         document.getElementById('btn-generar-free').style.display = 'none';
         
-        // Eliminar inputs flotantes anteriores
-        inputsFlotantes.forEach(input => input.remove());
         inputsFlotantes = [];
+        firmasFlotantes = [];
+        freeCanvasScales = {};
+        freePdfPageCount = 0;
         
         showScreen('screen-rellenado-libre');
     }
 
-    // Cargar y renderizar el PDF en el Canvas
     document.getElementById('free-pdf-upload').addEventListener('change', async function(e) {
         if (!e.target.files.length) return;
         
         const file = e.target.files[0];
         const arrayBuffer = await file.arrayBuffer();
         
-        // Cargar para edición final
         freePdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
-        
-        // Cargar para visualización
         const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
         const pdf = await loadingTask.promise;
-        freePdfPage = await pdf.getPage(1); // Solo la primera página por ahora
         
-        const canvas = document.getElementById('free-pdf-canvas');
-        const ctx = canvas.getContext('2d');
+        freePdfPageCount = pdf.numPages; 
         
-        // Ajustar escala al ancho del contenedor móvil
-        const containerWidth = document.getElementById('free-canvas-container').clientWidth;
-        const unscaledViewport = freePdfPage.getViewport({ scale: 1 });
-        freeCanvasScale = containerWidth / unscaledViewport.width;
+        const container = document.getElementById('free-canvas-container');
+        container.innerHTML = ''; 
+        inputsFlotantes = [];
+        firmasFlotantes = [];
+        freeCanvasScales = {};
+        container.style.display = 'flex';
         
-        const viewport = freePdfPage.getViewport({ scale: freeCanvasScale });
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
+        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+            const page = await pdf.getPage(pageNum);
+            const wrapper = document.createElement('div');
+            wrapper.className = 'pdf-page-wrapper';
+            wrapper.dataset.pageNum = pageNum;
+            
+            const canvas = document.createElement('canvas');
+            canvas.className = 'free-pdf-canvas';
+            
+            wrapper.appendChild(canvas);
+            container.appendChild(wrapper);
+            
+            const ctx = canvas.getContext('2d');
+            const containerWidth = container.clientWidth - 20; 
+            const unscaledViewport = page.getViewport({ scale: 1 });
+            const scale = containerWidth / unscaledViewport.width;
+            freeCanvasScales[pageNum] = scale;
+            
+            const viewport = page.getViewport({ scale: scale });
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            
+            await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+            
+            // Evento para abrir el menú al tocar la hoja
+            wrapper.addEventListener('click', function(ev) {
+                // Si tocamos un elemento flotante, ignoramos el clic en la hoja
+                if (ev.target.closest('.floating-input-wrapper') || ev.target.closest('.draggable-signature') || ev.target.closest('.click-menu') || ev.target.closest('.confirmed-text-wrapper')) return;
+                
+                document.querySelectorAll('.click-menu').forEach(m => m.remove());
+
+                const rect = this.getBoundingClientRect();
+                const x = ev.clientX - rect.left;
+                const y = ev.clientY - rect.top;
+                
+                mostrarMenuOpciones(this, x, y, pageNum);
+            });
+        }
         
-        await freePdfPage.render({ canvasContext: ctx, viewport: viewport }).promise;
-        
-        document.getElementById('free-canvas-container').style.display = 'block';
-        document.getElementById('btn-generar-free').style.display = 'block';
+        const btnGenerar = document.getElementById('btn-generar-free');
+        btnGenerar.innerText = `✨ Descargar PDF Lleno (${freePdfPageCount} Créditos)`;
+        btnGenerar.style.display = 'block';
     });
 
-    // Crear input flotante al tocar el Canvas
-    document.getElementById('free-pdf-canvas').addEventListener('click', function(e) {
-        const rect = this.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+    // ==========================================
+    // 9. MENÚ Y CAJAS FLOTANTES (TEXTO)
+    // ==========================================
+    function mostrarMenuOpciones(parent, x, y, pageNum) {
+        const menu = document.createElement('div');
+        menu.className = 'click-menu';
+        menu.style.left = `${x}px`;
+        menu.style.top = `${y}px`;
+
+        // Escudo para el menú
+        menu.addEventListener('click', e => e.stopPropagation());
+        menu.addEventListener('mousedown', e => e.stopPropagation());
+        menu.addEventListener('touchstart', e => e.stopPropagation(), {passive: false});
+
+        const btnText = document.createElement('button');
+        btnText.innerText = '📝 Añadir Texto';
+        btnText.onclick = (e) => { e.stopPropagation(); menu.remove(); crearInputFlotante(parent, x, y, pageNum); };
+
+        const btnSig = document.createElement('button');
+        btnSig.innerText = '✍️ Añadir Firma';
+        btnSig.onclick = (e) => { e.stopPropagation(); menu.remove(); abrirModalFirma(parent, x, y, pageNum); };
+
+        const btnCancel = document.createElement('button');
+        btnCancel.innerText = '❌ Cancelar';
+        btnCancel.onclick = (e) => { e.stopPropagation(); menu.remove(); };
+
+        menu.appendChild(btnText);
+        menu.appendChild(btnSig);
+        menu.appendChild(btnCancel);
+        parent.appendChild(menu);
+    }
+
+    function crearInputFlotante(parent, x, y, pageNum) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'floating-input-wrapper';
+        wrapper.style.left = `${x}px`;
+        wrapper.style.top = `${y - 15}px`; 
         
+        // ESCUDO GLOBAL: Evita que los clics en la caja pasen al PDF
+        wrapper.addEventListener('click', e => e.stopPropagation());
+        wrapper.addEventListener('mousedown', e => e.stopPropagation());
+        wrapper.addEventListener('touchstart', e => e.stopPropagation(), {passive: false});
+
+        let currentFontSize = 12; 
+
+        const dragHandle = document.createElement('div');
+        dragHandle.className = 'drag-handle';
+        dragHandle.innerHTML = '✥';
+
         const input = document.createElement('input');
         input.type = 'text';
         input.className = 'floating-input';
-        input.style.left = `${x}px`;
-        input.style.top = `${y - 10}px`; // Ajuste visual para centrar el texto en el toque
-        input.placeholder = "Escribe...";
+        input.placeholder = "Escribe aquí...";
+        input.setAttribute('list', 'historial-textos');
+        input.style.fontSize = `${currentFontSize}px`;
         
-        // Guardar coordenadas relativas al canvas
-        input.dataset.canvasX = x;
-        input.dataset.canvasY = y;
-        
-        document.getElementById('free-canvas-container').appendChild(input);
-        inputsFlotantes.push(input);
-        input.focus();
-    });
+        const btnMinus = document.createElement('button');
+        btnMinus.innerText = '-';
+        btnMinus.className = 'btn-size-input';
+        btnMinus.onclick = (e) => { e.stopPropagation(); currentFontSize--; input.style.fontSize = `${currentFontSize}px`; inputData.fontSize = currentFontSize; };
 
+        const btnPlus = document.createElement('button');
+        btnPlus.innerText = '+';
+        btnPlus.className = 'btn-size-input';
+        btnPlus.onclick = (e) => { e.stopPropagation(); currentFontSize++; input.style.fontSize = `${currentFontSize}px`; inputData.fontSize = currentFontSize; };
+        
+        const btnConfirm = document.createElement('button');
+        btnConfirm.innerText = '✔️';
+        btnConfirm.className = 'btn-confirm-input';
+        
+        const btnDelete = document.createElement('button');
+        btnDelete.innerText = '✖';
+        btnDelete.className = 'btn-delete-input';
+        
+        const inputData = { wrapper, input, pageNum, textoFinal: "", fontSize: currentFontSize };
+        
+        btnDelete.onclick = (e) => {
+            e.stopPropagation();
+            wrapper.remove();
+            inputsFlotantes = inputsFlotantes.filter(i => i !== inputData);
+        };
+        
+        btnConfirm.onclick = (e) => {
+            e.stopPropagation();
+            const texto = input.value.trim();
+            if (!texto) { btnDelete.click(); return; }
+            
+            guardarEnHistorial(texto);
+
+            wrapper.className = 'confirmed-text-wrapper';
+            wrapper.innerHTML = ''; 
+            
+            const spanText = document.createElement('span');
+            spanText.className = 'confirmed-text';
+            spanText.style.fontSize = `${currentFontSize}px`;
+            spanText.innerText = texto;
+            
+            const btnEditDelete = document.createElement('button');
+            btnEditDelete.innerText = '✖';
+            btnEditDelete.className = 'btn-delete-input';
+            btnEditDelete.style.display = 'none'; 
+            btnEditDelete.onclick = btnDelete.onclick;
+
+            wrapper.onmouseenter = () => btnEditDelete.style.display = 'flex';
+            wrapper.onmouseleave = () => btnEditDelete.style.display = 'none';
+
+            wrapper.appendChild(spanText);
+            wrapper.appendChild(btnEditDelete);
+            
+            inputData.textoFinal = texto;
+            hacerArrastrable(wrapper, wrapper); // Ahora toda la palabra es arrastrable
+        };
+        
+        wrapper.appendChild(dragHandle);
+        wrapper.appendChild(input);
+        wrapper.appendChild(btnMinus);
+        wrapper.appendChild(btnPlus);
+        wrapper.appendChild(btnConfirm);
+        wrapper.appendChild(btnDelete);
+        parent.appendChild(wrapper);
+        
+        inputsFlotantes.push(inputData);
+        hacerArrastrable(wrapper, dragHandle);
+        input.focus();
+    }
+
+    // ==========================================
+    // 10. FIRMA DIGITAL
+    // ==========================================
+    let sigCanvas, sigCtx, drawing = false;
+    let currentSigTarget = null;
+
+    function abrirModalFirma(parent, x, y, pageNum) {
+        currentSigTarget = { parent, x, y, pageNum };
+        document.getElementById('modal-firma').style.display = 'flex';
+        
+        sigCanvas = document.getElementById('canvas-firma');
+        sigCtx = sigCanvas.getContext('2d');
+        sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+        sigCtx.lineWidth = 3;
+        sigCtx.strokeStyle = '#000';
+        sigCtx.lineCap = 'round';
+        sigCtx.lineJoin = 'round';
+
+        sigCanvas.onmousedown = (e) => { drawing = true; sigCtx.beginPath(); sigCtx.moveTo(e.offsetX, e.offsetY); };
+        sigCanvas.onmousemove = (e) => { if(drawing) { sigCtx.lineTo(e.offsetX, e.offsetY); sigCtx.stroke(); } };
+        sigCanvas.onmouseup = () => drawing = false;
+        sigCanvas.onmouseout = () => drawing = false;
+
+        sigCanvas.ontouchstart = (e) => { 
+            e.preventDefault(); drawing = true; 
+            const pos = getTouchPos(sigCanvas, e);
+            sigCtx.beginPath(); sigCtx.moveTo(pos.x, pos.y); 
+        };
+        sigCanvas.ontouchmove = (e) => { 
+            e.preventDefault(); 
+            if(drawing) { 
+                const pos = getTouchPos(sigCanvas, e);
+                sigCtx.lineTo(pos.x, pos.y); sigCtx.stroke(); 
+            } 
+        };
+        sigCanvas.ontouchend = () => drawing = false;
+    }
+
+    function getTouchPos(canvasDom, touchEvent) {
+        const rect = canvasDom.getBoundingClientRect();
+        return {
+            x: touchEvent.touches[0].clientX - rect.left,
+            y: touchEvent.touches[0].clientY - rect.top
+        };
+    }
+
+    function limpiarFirma() { sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height); }
+    function cerrarModalFirma() { document.getElementById('modal-firma').style.display = 'none'; }
+
+    function guardarFirma() {
+        const dataUrl = sigCanvas.toDataURL('image/png');
+        colocarFirmaEnPdf(dataUrl);
+    }
+
+    function colocarFirmaEnPdf(dataUrl) {
+        const { parent, x, y, pageNum } = currentSigTarget;
+        
+        const wrapper = document.createElement('div');
+        wrapper.className = 'draggable-signature';
+        wrapper.style.left = `${x}px`;
+        wrapper.style.top = `${y - 30}px`; 
+        
+        // ESCUDO GLOBAL
+        wrapper.addEventListener('click', e => e.stopPropagation());
+        wrapper.addEventListener('mousedown', e => e.stopPropagation());
+        wrapper.addEventListener('touchstart', e => e.stopPropagation(), {passive: false});
+
+        let currentWidth = 150; 
+
+        const img = document.createElement('img');
+        img.src = dataUrl;
+        img.style.width = `${currentWidth}px`;
+        
+        const controls = document.createElement('div');
+        controls.className = 'sig-controls';
+        
+        const btnMinus = document.createElement('button');
+        btnMinus.innerText = '-';
+        btnMinus.className = 'btn-size-input';
+        btnMinus.onclick = (e) => { e.stopPropagation(); currentWidth -= 10; img.style.width = `${currentWidth}px`; sigData.width = currentWidth; };
+
+        const btnPlus = document.createElement('button');
+        btnPlus.innerText = '+';
+        btnPlus.className = 'btn-size-input';
+        btnPlus.onclick = (e) => { e.stopPropagation(); currentWidth += 10; img.style.width = `${currentWidth}px`; sigData.width = currentWidth; };
+        
+        const btnDelete = document.createElement('button');
+        btnDelete.innerText = '✖';
+        btnDelete.className = 'btn-delete-input';
+        
+        const sigData = { wrapper, dataUrl, pageNum, width: currentWidth };
+        
+        btnDelete.onclick = (e) => { e.stopPropagation(); wrapper.remove(); firmasFlotantes = firmasFlotantes.filter(f => f !== sigData); };
+        
+        controls.appendChild(btnMinus);
+        controls.appendChild(btnPlus);
+        controls.appendChild(btnDelete);
+        
+        wrapper.appendChild(img);
+        wrapper.appendChild(controls);
+        parent.appendChild(wrapper);
+        
+        firmasFlotantes.push(sigData);
+        hacerArrastrable(wrapper, wrapper); 
+        cerrarModalFirma();
+    }
+
+    // ==========================================
+    // 11. MOTOR DE ARRASTRE BLINDADO
+    // ==========================================
+    function hacerArrastrable(wrapper, handle) {
+        let isDragging = false;
+        let startX, startY, initialLeft, initialTop;
+
+        const startDrag = (e) => {
+            if(e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
+            e.preventDefault();
+            e.stopPropagation(); // ESCUDO
+            isDragging = true;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            startX = clientX;
+            startY = clientY;
+            initialLeft = parseInt(wrapper.style.left || wrapper.offsetLeft);
+            initialTop = parseInt(wrapper.style.top || wrapper.offsetTop);
+        };
+
+        const doDrag = (e) => {
+            if (!isDragging) return;
+            e.preventDefault();
+            e.stopPropagation(); // ESCUDO
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const dx = clientX - startX;
+            const dy = clientY - startY;
+            wrapper.style.left = (initialLeft + dx) + 'px';
+            wrapper.style.top = (initialTop + dy) + 'px';
+        };
+
+        const stopDrag = (e) => {
+            if (isDragging) {
+                e.stopPropagation(); // ESCUDO
+                isDragging = false;
+            }
+        };
+
+        handle.addEventListener('mousedown', startDrag);
+        document.addEventListener('mousemove', doDrag);
+        document.addEventListener('mouseup', stopDrag);
+
+        handle.addEventListener('touchstart', startDrag, {passive: false});
+        document.addEventListener('touchmove', doDrag, {passive: false});
+        document.addEventListener('touchend', stopDrag);
+    }
+
+    // ==========================================
+    // 12. GENERACIÓN FINAL DEL PDF LIBRE
+    // ==========================================
     async function generarPdfLibre() {
         if (!freePdfDoc) return;
+
+        if (usuarioActual.creditos < freePdfPageCount) {
+            alert(`⚠️ Necesitas ${freePdfPageCount} créditos para descargar este documento de ${freePdfPageCount} hojas. Tienes ${usuarioActual.creditos}.`);
+            return;
+        }
 
         const btn = document.getElementById('btn-generar-free');
         btn.innerText = "⏳ Procesando...";
@@ -437,45 +833,69 @@
 
         try {
             const pages = freePdfDoc.getPages();
-            const firstPage = pages[0];
-            const pdfHeight = firstPage.getHeight();
 
-            // Estampar cada input flotante
-            inputsFlotantes.forEach(input => {
-                const texto = input.value.trim();
+            // 1. Estampar Textos
+            inputsFlotantes.forEach(item => {
+                const texto = item.textoFinal || item.input.value.trim();
                 if (texto) {
-                    const canvasX = parseFloat(input.dataset.canvasX);
-                    const canvasY = parseFloat(input.dataset.canvasY);
+                    const targetPage = pages[item.pageNum - 1]; 
+                    const pdfHeight = targetPage.getHeight();
+                    const scale = freeCanvasScales[item.pageNum];
                     
-                    // Traducir coordenadas del Canvas al PDF real
-                    const pdfX = canvasX / freeCanvasScale;
-                    // El PDF tiene el Y=0 abajo, el Canvas tiene el Y=0 arriba
-                    const pdfY = pdfHeight - (canvasY / freeCanvasScale);
+                    const isConfirmed = item.wrapper.className.includes('confirmed-text-wrapper');
+                    const offsetX = isConfirmed ? 4 : 28; 
+                    
+                    const pdfX = (item.wrapper.offsetLeft + offsetX) / scale;
+                    const pdfY = pdfHeight - ((item.wrapper.offsetTop + item.fontSize + 8) / scale);
 
-                    firstPage.drawText(texto, {
+                    targetPage.drawText(texto, {
                         x: pdfX,
-                        y: pdfY - 2, // Pequeño ajuste de línea base
-                        size: 12,
+                        y: pdfY, 
+                        size: item.fontSize,
                         color: PDFLib.rgb(0, 0, 0)
                     });
                 }
             });
 
-            // Descontar crédito
-            const pagado = await descontarCredito();
+            // 2. Estampar Firmas
+            for (const item of firmasFlotantes) {
+                const targetPage = pages[item.pageNum - 1];
+                const pdfHeight = targetPage.getHeight();
+                const scale = freeCanvasScales[item.pageNum];
+
+                const pngImage = await freePdfDoc.embedPng(item.dataUrl);
+                const pngDims = pngImage.scale(1);
+                const ratio = pngDims.height / pngDims.width;
+
+                const pdfWidth = item.width / scale;
+                const pdfImgHeight = pdfWidth * ratio;
+
+                const pdfX = item.wrapper.offsetLeft / scale;
+                const pdfY = pdfHeight - ((item.wrapper.offsetTop / scale) + pdfImgHeight);
+
+                targetPage.drawImage(pngImage, {
+                    x: pdfX,
+                    y: pdfY,
+                    width: pdfWidth,
+                    height: pdfImgHeight
+                });
+            }
+
+            // 3. Descontar créditos según la cantidad de hojas
+            const pagado = await descontarCredito(freePdfPageCount);
             if (!pagado) throw new Error("No se pudo procesar el pago.");
 
-            // Descargar
+            // 4. Descargar
             const pdfBytes = await freePdfDoc.save();
             download(pdfBytes, `DocuFacil_Rellenado.pdf`, "application/pdf");
             
-            alert("✅ ¡Documento rellenado con éxito!");
+            alert("✅ ¡Documento rellenado y firmado con éxito!");
             volverAHome();
 
         } catch (err) {
             alert("Error: " + err.message);
         } finally {
-            btn.innerText = "✨ Descargar PDF Lleno (1 Crédito)";
+            btn.innerText = `✨ Descargar PDF Lleno (${freePdfPageCount} Créditos)`;
             btn.disabled = false;
         }
     }
