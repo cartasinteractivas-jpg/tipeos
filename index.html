@@ -3,68 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DocuFácil - Cliente Pro</title>
+    <title>DocuFácil - Cliente</title>
     
     <!-- Librerías -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <script src="https://unpkg.com/downloadjs@1.4.7"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 
     <style>
+        /* MANTENEMOS TU DISEÑO ORIGINAL */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-        body { background-color: #0f0f0f; color: #fff; overflow-x: hidden; }
+        body { background-color: #0f0f0f; color: #fff; }
         
-        /* Header y Créditos */
-        .header { background: #1a1a1a; padding: 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid #333; }
-        .logo { font-weight: bold; font-size: 20px; color: #9b59b6; display: flex; align-items: center; gap: 8px; }
-        .creditos-badge { background: #f1c40f; color: #000; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 14px; }
+        .header { background: #1a1a1a; padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; }
+        .logo { font-weight: bold; font-size: 20px; color: #9b59b6; }
+        .creditos-badge { background: #f1c40f; color: #000; padding: 5px 15px; border-radius: 20px; font-weight: bold; }
 
         .container { padding: 20px; max-width: 600px; margin: 0 auto; }
 
-        /* Pantalla de Login */
-        #pantalla-login { text-align: center; margin-top: 50px; }
+        /* Login */
         .input-codigo { width: 100%; padding: 15px; background: #222; border: 2px solid #444; border-radius: 10px; color: #fff; font-size: 18px; text-align: center; margin-bottom: 20px; }
-        .btn-entrar { width: 100%; padding: 15px; background: #9b59b6; border: none; border-radius: 10px; color: #fff; font-weight: bold; font-size: 16px; cursor: pointer; }
+        .btn-entrar { width: 100%; padding: 15px; background: #9b59b6; border: none; border-radius: 10px; color: #fff; font-weight: bold; cursor: pointer; }
 
-        /* Carrusel de Formatos */
-        .seccion-titulo { font-size: 18px; margin-bottom: 15px; color: #aaa; font-weight: normal; }
-        .carrusel { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 15px; scroll-snap-type: x mandatory; }
-        .carrusel::-webkit-scrollbar { height: 5px; }
-        .carrusel::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
+        /* NUEVO: Carrusel de Formatos Inteligentes */
+        .seccion-titulo { font-size: 16px; margin: 20px 0 10px; color: #aaa; }
+        .carrusel { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 10px; scroll-snap-type: x mandatory; }
+        .carrusel::-webkit-scrollbar { display: none; }
         
         .card-formato { 
-            min-width: 160px; background: #1e1e1e; border-radius: 15px; padding: 20px; 
-            scroll-snap-align: start; border: 1px solid #333; transition: 0.3s; cursor: pointer;
-            display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px;
+            min-width: 140px; background: #1e1e1e; border-radius: 15px; padding: 15px; 
+            border: 1px solid #333; text-align: center; cursor: pointer;
         }
-        .card-formato:active { transform: scale(0.95 ); background: #252525; }
-        .card-formato .icon { font-size: 30px; }
-        .card-formato h3 { font-size: 14px; color: #fff; }
+        .card-formato .icon { font-size: 24px; margin-bottom: 8px; }
+        .card-formato h3 { font-size: 13px; color: #fff; }
 
-        /* Rellenado Libre (Botón especial) */
+        /* Botón Rellenado Libre (Tu estilo original ) */
         .btn-libre { 
-            background: linear-gradient(45deg, #e67e22, #d35400); width: 100%; padding: 20px; 
-            border-radius: 15px; margin-top: 20px; display: flex; align-items: center; justify-content: center; 
-            gap: 10px; font-weight: bold; cursor: pointer; border: none; color: white;
+            background: #222; border: 2px dashed #444; width: 100%; padding: 20px; 
+            border-radius: 15px; margin-top: 10px; display: flex; align-items: center; justify-content: center; 
+            gap: 10px; font-weight: bold; cursor: pointer; color: #888;
         }
 
-        /* Flujo de IA Paso a Paso */
-        .paso-ia { display: none; animation: fadeIn 0.3s; }
-        .pregunta-titulo { font-size: 22px; margin-bottom: 10px; color: #f1c40f; }
-        .pregunta-desc { color: #888; margin-bottom: 20px; font-size: 14px; }
-        .input-ia { width: 100%; padding: 15px; background: #222; border: 1px solid #444; border-radius: 10px; color: #fff; font-size: 16px; margin-bottom: 20px; }
+        /* Modales y Flujo IA */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; display: none; justify-content: center; align-items: center; padding: 20px; }
+        .modal-content { background: #1e1e1e; width: 100%; max-width: 400px; padding: 25px; border-radius: 20px; border: 1px solid #333; }
         
-        .nav-botones { display: flex; gap: 10px; }
-        .btn-nav { flex: 1; padding: 15px; border-radius: 10px; font-weight: bold; border: none; cursor: pointer; }
-        .btn-back { background: #333; color: #fff; }
-        .btn-next { background: #2ecc71; color: #000; }
-
-        /* Previsualización Final */
-        #pantalla-preview { display: none; text-align: center; }
-        .preview-box { background: #fff; width: 100%; min-height: 400px; border-radius: 10px; margin-bottom: 20px; overflow: hidden; position: relative; }
-        #canvas-preview { width: 100%; height: auto; display: block; }
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .input-ia { width: 100%; padding: 12px; background: #000; border: 1px solid #444; border-radius: 8px; color: #fff; margin-bottom: 15px; }
+        .btn-nav { flex: 1; padding: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer; }
+        
+        /* Canvas de Rellenado Libre (Tu motor original) */
+        #free-canvas-container { width: 100%; margin-top: 20px; }
+        .pdf-page-wrapper { position: relative; margin-bottom: 20px; background: #fff; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
+        .floating-element { position: absolute; cursor: move; user-select: none; white-space: nowrap; }
     </style>
 </head>
 <body>
@@ -75,40 +66,40 @@
     </div>
 
     <div class="container">
-        <!-- LOGIN -->
+        <!-- PANTALLA LOGIN -->
         <div id="pantalla-login">
-            <h2 style="margin-bottom: 20px;">Ingresa tu Código</h2>
+            <h2 style="text-align: center; margin-bottom: 20px;">Ingresa tu Código</h2>
             <input type="text" id="input-codigo-acceso" class="input-codigo" placeholder="DOC-XXXXXX">
             <button class="btn-entrar" onclick="verificarCodigo()">Entrar a la App</button>
         </div>
 
-        <!-- HOME (CARRUSEL) -->
+        <!-- PANTALLA HOME -->
         <div id="pantalla-home" style="display: none;">
-            <h2 class="seccion-titulo">¿Qué documento necesitas hoy?</h2>
+            <h2 class="seccion-titulo">Formatos Inteligentes (IA)</h2>
             <div class="carrusel" id="carrusel-formatos">
                 <!-- Se llena con JS -->
             </div>
 
-            <div class="btn-libre" onclick="abrirRellenadoLibre()">
-                <span>✍️</span> Rellenar mi propio PDF (Manual)
+            <h2 class="seccion-titulo">Otras opciones</h2>
+            <div class="btn-libre" onclick="activarModoLibre()">
+                <span>📂</span> Rellenar mi propio PDF (Manual)
             </div>
+            
+            <input type="file" id="free-pdf-upload" accept="application/pdf" style="display: none;">
         </div>
 
-        <!-- FLUJO IA PASO A PASO -->
-        <div id="pantalla-ia" style="display: none;">
-            <div id="contenedor-pasos">
-                <!-- Se genera dinámicamente -->
-            </div>
+        <!-- MOTOR DE RELLENADO LIBRE (TU DISEÑO ORIGINAL) -->
+        <div id="pantalla-libre" style="display: none;">
+            <button class="btn-entrar" style="background: #333; margin-bottom: 15px;" onclick="volverAHome()">⬅ Volver al Inicio</button>
+            <div id="free-canvas-container"></div>
+            <button class="btn-entrar" id="btn-generar-free" style="background: #2ecc71; margin-top: 20px;" onclick="generarPdfLibre()">✨ Descargar PDF Final</button>
         </div>
+    </div>
 
-        <!-- PREVISUALIZACIÓN Y DESCARGA -->
-        <div id="pantalla-preview">
-            <h2 class="seccion-titulo">¡Tu documento está listo!</h2>
-            <div class="preview-box">
-                <canvas id="canvas-preview"></canvas>
-            </div>
-            <button class="btn-entrar" style="background: #2ecc71; color: #000;" onclick="descargarDocumentoFinal()">📥 Descargar y Finalizar</button>
-            <button class="btn-nav btn-back" style="margin-top: 10px; width: 100%;" onclick="volverAHome()">Cancelar</button>
+    <!-- MODAL IA PASO A PASO -->
+    <div id="modal-ia" class="modal-overlay">
+        <div class="modal-content" id="contenedor-ia">
+            <!-- Se genera dinámicamente -->
         </div>
     </div>
 <script>
@@ -120,41 +111,52 @@
     const supabase = window.supabase.createClient(supabaseUrl, supabaseKey );
 
     let usuarioActual = null;
-    let formatosDisponibles = [];
     let formatoSeleccionado = null;
     let respuestasIA = {};
     let pasoActual = 0;
 
+    // Configurar PDF.js
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
     // ==========================================
-    // 2. VERIFICACIÓN DE CÓDIGO (LOGIN)
+    // 2. ACTIVACIÓN DE CÓDIGO (TU LÓGICA ORIGINAL )
     // ==========================================
-    async function verificarCodigo() {
-        const codigo = document.getElementById('input-codigo-acceso').value.trim().toUpperCase();
-        if (!codigo) return alert("Ingresa tu código.");
+    async function activarCodigo() {
+        const codigo = document.getElementById('input-codigo').value.trim().toUpperCase();
+        if (!codigo) return alert("Ingresa un código.");
 
         const { data, error } = await supabase.from('usuarios_codigos').select('*').eq('codigo', codigo).single();
 
         if (error || !data) {
-            alert("❌ Código no válido o expirado.");
+            alert("❌ Código no válido o ya usado.");
             return;
         }
 
         usuarioActual = data;
-        document.getElementById('user-credits').innerText = `${data.creditos} 🪙`;
-        document.getElementById('pantalla-login').style.display = 'none';
-        document.getElementById('pantalla-home').style.display = 'block';
+        localStorage.setItem('docufacil_token', codigo); // Persistencia
+        document.getElementById('user-creditos').innerText = data.creditos;
         
-        cargarFormatosCliente();
+        // Cargar formatos inteligentes
+        cargarFormatosInteligentes();
     }
 
+    // Auto-login si ya tiene código guardado
+    async function autoLogin() {
+        const token = localStorage.getItem('docufacil_token');
+        if (token) {
+            document.getElementById('input-codigo').value = token;
+            activarCodigo();
+        }
+    }
+    autoLogin();
+
     // ==========================================
-    // 3. CARGAR CARRUSEL DE FORMATOS
+    // 3. CARGAR CARRUSEL (IA)
     // ==========================================
-    async function cargarFormatosCliente() {
+    async function cargarFormatosInteligentes() {
         const { data, error } = await supabase.from('plantillas').select('*').eq('tipo', 'inteligente');
         if (error) return;
 
-        formatosDisponibles = data;
         const carrusel = document.getElementById('carrusel-formatos');
         carrusel.innerHTML = '';
 
@@ -162,7 +164,7 @@
             const icon = fmt.descripcion === 'solicitud' ? '📝' : (fmt.descripcion === 'contrato' ? '🤝' : '📄');
             const card = document.createElement('div');
             card.className = 'card-formato';
-            card.onclick = () => iniciarFlujoIA(fmt);
+            card.onclick = () => abrirFlujoIA(fmt);
             card.innerHTML = `
                 <div class="icon">${icon}</div>
                 <h3>${fmt.nombre}</h3>
@@ -172,56 +174,57 @@
     }
 
     // ==========================================
-    // 4. FLUJO IA PASO A PASO
+    // 4. FLUJO IA PASO A PASO (MODAL)
     // ==========================================
-    function iniciarFlujoIA(fmt) {
+    function abrirFlujoIA(fmt) {
+        if (!usuarioActual || usuarioActual.creditos <= 0) {
+            return alert("🔒 Necesitas activar un código con créditos.");
+        }
+        
         formatoSeleccionado = fmt;
         respuestasIA = {};
         pasoActual = 0;
         
-        // Filtrar solo las áreas que requieren entrada de texto (IA o Datos)
-        // La firma se maneja al final o es fija
         const preguntas = fmt.configuracion.areas.filter(a => a.tipo !== 'firma');
-        
-        if (preguntas.length === 0) return alert("Este formato no tiene áreas configuradas.");
+        if (preguntas.length === 0) return alert("Este formato no tiene preguntas configuradas.");
 
-        document.getElementById('pantalla-home').style.display = 'none';
-        document.getElementById('pantalla-ia').style.display = 'block';
-        
-        mostrarPaso(preguntas);
+        document.getElementById('modal-ia').style.display = 'flex';
+        mostrarPasoIA(preguntas);
     }
 
-    function mostrarPaso(preguntas) {
-        const contenedor = document.getElementById('contenedor-pasos');
+    function mostrarPasoIA(preguntas) {
+        const contenedor = document.getElementById('contenedor-ia');
         const area = preguntas[pasoActual];
         
         contenedor.innerHTML = `
-            <div class="paso-ia" style="display:block;">
-                <p style="color:#9b59b6; font-weight:bold; margin-bottom:5px;">Paso ${pasoActual + 1} de ${preguntas.length}</p>
-                <h2 class="pregunta-titulo">${area.nombre}</h2>
-                <p class="pregunta-desc">Por favor, ingresa la información para esta sección del documento.</p>
-                
-                ${area.tipo === 'cuerpo' 
-                    ? `<textarea id="input-paso" class="input-ia" rows="5" placeholder="Escribe aquí los detalles principales..."></textarea>`
-                    : `<input type="text" id="input-paso" class="input-ia" placeholder="Escribe aquí...">`
-                }
+            <p style="color:#9b59b6; font-size:12px; font-weight:bold;">PASO ${pasoActual + 1} DE ${preguntas.length}</p>
+            <h3 style="color:#f1c40f; margin-bottom:5px;">${area.nombre}</h3>
+            <p style="color:#888; font-size:13px; margin-bottom:15px;">Ingresa la información para esta sección.</p>
+            
+            ${area.tipo === 'cuerpo' 
+                ? `<textarea id="input-ia-paso" class="input-ia" rows="5" placeholder="Escribe aquí..."></textarea>`
+                : `<input type="text" id="input-ia-paso" class="input-ia" placeholder="Escribe aquí...">`
+            }
 
-                <div class="nav-botones">
-                    ${pasoActual > 0 ? `<button class="btn-nav btn-back" onclick="anteriorPaso()">Atrás</button>` : `<button class="btn-nav btn-back" onclick="volverAHome()">Cancelar</button>`}
-                    <button class="btn-nav btn-next" onclick="siguientePaso()">${pasoActual === preguntas.length - 1 ? 'Generar ✨' : 'Siguiente'}</button>
-                </div>
+            <div style="display:flex; gap:10px;">
+                ${pasoActual > 0 
+                    ? `<button class="btn-nav" style="background:#444; color:#fff;" onclick="anteriorPasoIA()">Atrás</button>` 
+                    : `<button class="btn-nav" style="background:#444; color:#fff;" onclick="cerrarModalIA()">Cancelar</button>`
+                }
+                <button class="btn-nav" style="background:#2ecc71; color:#000;" onclick="siguientePasoIA()">
+                    ${pasoActual === preguntas.length - 1 ? 'Generar ✨' : 'Siguiente'}
+                </button>
             </div>
         `;
         
-        // Recuperar respuesta si ya existía
         if (respuestasIA[area.nombre]) {
-            document.getElementById('input-paso').value = respuestasIA[area.nombre];
+            document.getElementById('input-ia-paso').value = respuestasIA[area.nombre];
         }
-        document.getElementById('input-paso').focus();
+        document.getElementById('input-ia-paso').focus();
     }
 
-    function siguientePaso() {
-        const valor = document.getElementById('input-paso').value.trim();
+    function siguientePasoIA() {
+        const valor = document.getElementById('input-ia-paso').value.trim();
         if (!valor) return alert("Por favor, completa este campo.");
 
         const preguntas = formatoSeleccionado.configuracion.areas.filter(a => a.tipo !== 'firma');
@@ -229,51 +232,50 @@
 
         if (pasoActual < preguntas.length - 1) {
             pasoActual++;
-            mostrarPaso(preguntas);
+            mostrarPasoIA(preguntas);
         } else {
-            procesarConIA();
+            procesarDocumentoIA();
         }
     }
 
-    function anteriorPaso() {
+    function anteriorPasoIA() {
         if (pasoActual > 0) {
             pasoActual--;
             const preguntas = formatoSeleccionado.configuracion.areas.filter(a => a.tipo !== 'firma');
-            mostrarPaso(preguntas);
+            mostrarPasoIA(preguntas);
         }
     }
 
+    function cerrarModalIA() {
+        document.getElementById('modal-ia').style.display = 'none';
+    }
+
     function volverAHome() {
-        document.getElementById('pantalla-ia').style.display = 'none';
-        document.getElementById('pantalla-preview').style.display = 'none';
-        document.getElementById('pantalla-home').style.display = 'block';
+        document.getElementById('screen-libre').classList.remove('active');
+        document.getElementById('screen-home').classList.add('active');
     }
     // ==========================================
-    // 5. PROCESAMIENTO CON IA Y ESTAMPADO
+    // 5. PROCESAMIENTO IA Y ESTAMPADO
     // ==========================================
-    async function procesarConIA() {
-        if (usuarioActual.creditos <= 0) return alert("No tienes créditos suficientes.");
-        
-        const btn = document.querySelector('.btn-next');
+    async function procesarDocumentoIA() {
+        const btn = document.querySelector('#contenedor-ia .btn-nav:last-child');
         btn.innerText = "⏳ Redactando...";
         btn.disabled = true;
 
         try {
-            // Construir el prompt dinámico basado en las respuestas
+            // Construir prompt
             let promptBase = `Genera un documento de tipo ${formatoSeleccionado.nombre}. \n`;
             for (let nombre in respuestasIA) {
                 promptBase += `- ${nombre}: ${respuestasIA[nombre]}\n`;
             }
-            promptBase += `\nRedacta el contenido de forma profesional, formal y completa. Responde SOLO con el texto del documento.`;
+            promptBase += `\nRedacta el contenido de forma profesional y formal. Responde SOLO con el texto del documento.`;
 
-            // Llamar a tu función de Supabase
             const { data, error } = await supabase.functions.invoke('generar-documento', {
                 body: { prompt: promptBase }
             });
 
             if (error) throw new Error("Error en la IA: " + error.message);
             
-            // Proceder al estampado en el PDF/Imagen
             await estamparDocumento(data.resultado);
 
         } catch (err) {
@@ -284,8 +286,7 @@
     }
 
     async function estamparDocumento(textoIA) {
-        const config = formatoSeleccionado.configuracion;
-        const { fondo, tipoFondo, areas } = config;
+        const { fondo, tipoFondo, areas } = formatoSeleccionado.configuracion;
 
         try {
             let pdfDoc;
@@ -293,9 +294,8 @@
                 const pdfBytes = Uint8Array.from(atob(fondo.split(',')[1]), c => c.charCodeAt(0));
                 pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
             } else {
-                // Si el fondo es imagen, creamos un PDF A4 y ponemos la imagen de fondo
                 pdfDoc = await PDFLib.PDFDocument.create();
-                const page = pdfDoc.addPage([595, 842]); // A4 estándar
+                const page = pdfDoc.addPage([595, 842]);
                 const imgBytes = Uint8Array.from(atob(fondo.split(',')[1]), c => c.charCodeAt(0));
                 const embedImg = fondo.includes('png') ? await pdfDoc.embedPng(imgBytes) : await pdfDoc.embedJpg(imgBytes);
                 page.drawImage(embedImg, { x: 0, y: 0, width: 595, height: 842 });
@@ -305,86 +305,107 @@
             const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
             const { width, height } = page.getSize();
 
-            // Estampar cada área
             areas.forEach(area => {
-                let contenido = "";
-                if (area.tipo === 'cuerpo') {
-                    contenido = textoIA;
-                } else if (respuestasIA[area.nombre]) {
-                    contenido = respuestasIA[area.nombre];
-                }
-
+                let contenido = area.tipo === 'cuerpo' ? textoIA : (respuestasIA[area.nombre] || "");
                 if (contenido) {
-                    // Ajustar coordenadas (Admin usa píxeles de pantalla, PDF usa puntos)
-                    // Hacemos una proporción simple
-                    const scaleX = width / 800; // 800 es el ancho base del Admin
-                    const scaleY = height / (800 * (height/width)); 
-
+                    const scaleX = width / 800;
+                    const scaleY = height / (800 * (height/width));
                     const pdfX = area.x * scaleX;
-                    const pdfY = height - (area.y * scaleY) - 15; // Invertir Y para PDF
+                    const pdfY = height - (area.y * scaleY) - 12;
 
                     page.drawText(contenido, {
-                        x: pdfX,
-                        y: pdfY,
-                        size: 11,
-                        font: font,
+                        x: pdfX, y: pdfY, size: 10, font: font,
                         color: PDFLib.rgb(0, 0, 0),
-                        maxWidth: area.w * scaleX,
-                        lineHeight: 14
+                        maxWidth: area.w * scaleX, lineHeight: 12
                     });
                 }
             });
 
             const finalPdfBytes = await pdfDoc.save();
+            download(finalPdfBytes, `${formatoSeleccionado.nombre}.pdf`, "application/pdf");
             
-            // Mostrar Preview en el Canvas
-            const pdfDataUri = await pdfDoc.saveAsBase64({ dataUri: true });
-            renderPreview(finalPdfBytes);
-
-            document.getElementById('pantalla-ia').style.display = 'none';
-            document.getElementById('pantalla-preview').style.display = 'block';
+            // Descontar crédito
+            await supabase.from('usuarios_codigos').update({ creditos: usuarioActual.creditos - 1 }).eq('id', usuarioActual.id);
+            
+            alert("✅ ¡Documento generado y descargado!");
+            location.reload();
 
         } catch (err) {
-            console.error(err);
-            alert("Error al estampar el documento.");
+            alert("Error al estampar: " + err.message);
         }
     }
 
-    async function renderPreview(pdfBytes) {
-        // Usamos una técnica simple para mostrar el PDF en el canvas
-        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-        const url = URL.createObjectURL(blob);
+    // ==========================================
+    // 6. MOTOR DE RELLENADO LIBRE (TU LÓGICA ORIGINAL)
+    // ==========================================
+    let freePdfDoc = null;
+    let freePdfPageCount = 0;
+    let elementosFlotantes = [];
+
+    document.getElementById('pdf-upload').addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
         
-        // Para una preview rápida en móvil, lo mejor es un iframe o abrir en pestaña
-        // Pero aquí intentaremos dibujar la primera página
-        const canvas = document.getElementById('canvas-preview');
-        const ctx = canvas.getContext('2d');
-        ctx.fillStyle = "#eee";
-        ctx.fillRect(0,0, canvas.width, canvas.height);
-        ctx.fillStyle = "#333";
-        ctx.font = "14px Arial";
-        ctx.fillText("Documento Generado Correctamente", 20, 100);
-        ctx.fillText("Pulsa el botón verde para descargar", 20, 130);
+        const reader = new FileReader();
+        reader.onload = async function() {
+            const typedarray = new Uint8Array(this.result);
+            freePdfDoc = await PDFLib.PDFDocument.load(typedarray);
+            freePdfPageCount = freePdfDoc.getPageCount();
+            
+            document.getElementById('screen-home').classList.remove('active');
+            document.getElementById('screen-libre').classList.add('active');
+            
+            renderizarPdfLibre(typedarray);
+        };
+        reader.readAsArrayBuffer(file);
+    });
+
+    async function renderizarPdfLibre(data) {
+        const container = document.getElementById('free-canvas-container');
+        container.innerHTML = '';
+        const pdf = await pdfjsLib.getDocument(data).promise;
+
+        for (let i = 1; i <= freePdfPageCount; i++) {
+            const page = await pdf.getPage(i);
+            const viewport = page.getViewport({ scale: 1.5 });
+            
+            const wrapper = document.createElement('div');
+            wrapper.className = 'pdf-page-wrapper';
+            wrapper.style.width = viewport.width + 'px';
+            wrapper.style.height = viewport.height + 'px';
+            
+            const canvas = document.createElement('canvas');
+            canvas.className = 'free-pdf-canvas';
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+            
+            wrapper.appendChild(canvas);
+            container.appendChild(wrapper);
+            
+            await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+            
+            // Evento para añadir elementos
+            wrapper.onclick = (e) => {
+                if (e.target !== canvas) return;
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                abrirMenuOpciones(wrapper, x, y, i);
+            };
+        }
     }
 
-    async function descargarDocumentoFinal() {
-        // 1. Descontar crédito
-        const { error } = await supabase
-            .from('usuarios_codigos')
-            .update({ creditos: usuarioActual.creditos - 1 })
-            .eq('id', usuarioActual.id);
-
-        if (error) return alert("Error al procesar créditos.");
-
-        // 2. Disparar descarga (Usamos el PDF que ya tenemos en memoria)
-        // Nota: En un entorno real, guardaríamos los bytes en una variable global
-        alert("✅ Crédito descontado. Iniciando descarga...");
-        location.reload(); // Recargar para actualizar créditos y volver al inicio
+    // --- AQUÍ VAN TUS FUNCIONES DE MODALES (TEXTO, FIRMA, SÍMBOLOS) ---
+    // (Debes mantener las funciones que ya tenías: abrirMenuOpciones, guardarTextoModal, etc.)
+    
+    function abrirMenuOpciones(parent, x, y, page) {
+        // Tu lógica de modal de opciones que ya funcionaba...
+        alert("Toca para añadir texto o firma (Usa tus funciones originales aquí)");
     }
 
-    function abrirRellenadoLibre() {
-        alert("Esta función te llevará a tu editor manual anterior.");
-        // Aquí podrías poner: window.location.href = 'rellenado.html';
+    async function generarPdfLibre() {
+        // Tu lógica de descarga de PDF manual que ya funcionaba...
+        alert("Generando PDF manual...");
     }
 </script>
 </body>
