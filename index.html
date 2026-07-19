@@ -122,16 +122,23 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
 </head>
 <body>
 
+
+    
 <!-- MODAL DE TEXTO -->
 <div id="modal-texto" class="modal-overlay">
     <div class="modal-content">
         <h3>Añadir Texto</h3>
         
-        <div class="format-toolbar">
+                <div class="format-toolbar">
             <button type="button" id="btn-bold" class="btn-format" onclick="toggleFormat('bold')"><b>B</b></button>
             <button type="button" id="btn-italic" class="btn-format" onclick="toggleFormat('italic')"><i>I</i></button>
+            <!-- NUEVO: Selector numérico de tamaño -->
+            <input type="number" id="input-size-texto" value="14" min="4" max="100" style="width: 60px; padding: 5px; border-radius: 6px; border: 1px solid #444; background: #111; color: white; text-align: center; outline: none; font-size: 16px;" title="Tamaño del texto">
         </div>
 
+
+
+        
         <input type="text" id="input-texto-modal" placeholder="Escribe aquí..." style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #444; background: #111; color: white; font-size: 16px; outline: none;">
         
         <div id="chips-historial" class="chips-container">
@@ -158,11 +165,18 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
     </div>
 </div>
 
+
+    
     
 <!-- MODAL DE SÍMBOLOS -->
 <div id="modal-simbolos" class="modal-overlay">
     <div class="modal-content">
         <h3>Añadir Símbolo</h3>
+        <!-- NUEVO: Selector numérico de tamaño -->
+        <div style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 10px;">
+            <label style="color: #ccc; font-size: 14px;">Tamaño:</label>
+            <input type="number" id="input-size-simbolo" value="24" min="4" max="100" style="width: 60px; padding: 5px; border-radius: 6px; border: 1px solid #444; background: #111; color: white; text-align: center; outline: none; font-size: 16px;">
+        </div>
         <div class="symbol-grid">
             <button type="button" class="btn-symbol" onclick="guardarSimbolo('✔')">✔</button>
             <button type="button" class="btn-symbol" onclick="guardarSimbolo('✘')">✘</button>
@@ -174,6 +188,10 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
     </div>
 </div>
 
+    
+
+
+    
 <!-- MODAL DE OPCIONES (Reemplaza al menú flotante) -->
 <div id="modal-opciones" class="modal-overlay">
     <div class="modal-content" style="gap: 10px;">
@@ -686,6 +704,10 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
     // ==========================================
     let currentTarget = null;
     let textFormat = { bold: false, italic: false };
+    
+    // NUEVO: Memoria para recordar el último tamaño usado
+    let lastTextSize = 14;
+    let lastSymbolSize = 24;
 
     // --- MODAL TEXTO ---
     function abrirModalTexto(parent, x, y, pageNum) {
@@ -698,6 +720,9 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
         input.value = '';
         input.style.fontWeight = 'normal';
         input.style.fontStyle = 'normal';
+        
+        // NUEVO: Cargar el último tamaño que el usuario eligió
+        document.getElementById('input-size-texto').value = lastTextSize;
         
         renderizarChipsHistorial();
         document.getElementById('modal-texto').style.display = 'flex';
@@ -735,10 +760,19 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
         const texto = document.getElementById('input-texto-modal').value.trim();
         if (!texto) return cerrarModalTexto();
 
+        // NUEVO: Guardar el tamaño elegido en la memoria
+        lastTextSize = parseInt(document.getElementById('input-size-texto').value) || 14;
+
         guardarEnHistorial(texto);
-        crearElementoFlotante(currentTarget.parent, currentTarget.x, currentTarget.y, currentTarget.pageNum, 'text', texto, { ...textFormat });
+        // NUEVO: Enviamos el tamaño (lastTextSize) a la función creadora
+        crearElementoFlotante(currentTarget.parent, currentTarget.x, currentTarget.y, currentTarget.pageNum, 'text', texto, { ...textFormat }, lastTextSize);
         cerrarModalTexto();
     }
+
+
+
+
+    
 
     // --- MODAL FIRMA ---
     let sigCanvas, sigCtx, drawing = false;
@@ -790,27 +824,32 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
         cerrarModalFirma();
     }
 
-    // --- MODAL SÍMBOLOS ---
+
+
+     // --- MODAL SÍMBOLOS ---
     function abrirModalSimbolos(parent, x, y, pageNum) {
         currentTarget = { parent, x, y, pageNum };
+        // NUEVO: Cargar el último tamaño usado
+        document.getElementById('input-size-simbolo').value = lastSymbolSize;
         document.getElementById('modal-simbolos').style.display = 'flex';
     }
 
     function cerrarModalSimbolos() { document.getElementById('modal-simbolos').style.display = 'none'; }
 
     function guardarSimbolo(simbolo) {
-        crearElementoFlotante(currentTarget.parent, currentTarget.x, currentTarget.y, currentTarget.pageNum, 'symbol', simbolo);
+        // NUEVO: Guardar el tamaño elegido en la memoria
+        lastSymbolSize = parseInt(document.getElementById('input-size-simbolo').value) || 24;
+        
+        // NUEVO: Enviamos el tamaño (lastSymbolSize) a la función creadora
+        crearElementoFlotante(currentTarget.parent, currentTarget.x, currentTarget.y, currentTarget.pageNum, 'symbol', simbolo, null, lastSymbolSize);
         cerrarModalSimbolos();
     }
 
-
-    
-
-
-        // ==========================================
+    // ==========================================
     // 11. CREADOR DE ELEMENTOS Y MOTOR INTERACTIVO
     // ==========================================
-    function crearElementoFlotante(parent, x, y, pageNum, tipo, contenido, formato = null) {
+    // NUEVO: Añadimos "customSize" como último parámetro
+    function crearElementoFlotante(parent, x, y, pageNum, tipo, contenido, formato = null, customSize = null) {
         const wrapper = document.createElement('div');
         wrapper.className = 'floating-element';
         wrapper.style.left = `${x}px`;
@@ -832,7 +871,8 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
             domElement.className = 'floating-text';
             domElement.innerText = contenido;
             
-            let initialSize = tipo === 'symbol' ? 24 : 14;
+            // NUEVO: Usar el tamaño personalizado si existe
+            let initialSize = customSize ? customSize : (tipo === 'symbol' ? 24 : 14);
             domElement.style.fontSize = `${initialSize}px`;
             
             if (formato) {
@@ -863,15 +903,13 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
         wrapper.appendChild(resizeHandle);
         parent.appendChild(wrapper);
 
-        // --- NUEVA LÓGICA DE SELECCIÓN (RECUADRO AZUL) ---
         const seleccionarEsteElemento = () => {
             document.querySelectorAll('.floating-element').forEach(el => el.classList.remove('selected'));
             wrapper.classList.add('selected');
         };
         wrapper.addEventListener('mousedown', seleccionarEsteElemento);
         wrapper.addEventListener('touchstart', seleccionarEsteElemento, {passive: true});
-        seleccionarEsteElemento(); // Seleccionarlo automáticamente al crearlo
-        // -------------------------------------------------
+        seleccionarEsteElemento(); 
 
         elementosFlotantes.push(elData);
         hacerInteractivo(wrapper, elData, resizeHandle);
@@ -880,6 +918,9 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
 
 
 
+
+
+    
     
     function hacerInteractivo(wrapper, elData, resizeHandle) {
         let isDragging = false, isResizing = false;
