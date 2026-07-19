@@ -469,6 +469,10 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
         abrirFormulario(tpl);
     }
 
+
+
+
+        // --- ABRIR FORMULARIO (ACTUALIZADO PARA PREGUNTAS DINÁMICAS) ---
     function abrirFormulario(tpl) {
         plantillaSeleccionada = tpl;
         document.getElementById('form-titulo').innerText = tpl.nombre;
@@ -479,28 +483,44 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
         document.getElementById('btn-generar').style.display = 'block';
         document.getElementById('btn-generar').innerText = "✨ Generar Documento";
 
+        const contenedorCamposIA = document.getElementById('form-campos-ia');
+        const contenedorCamposRellenado = document.getElementById('form-campos');
+        const grupoUpload = document.getElementById('grupo-upload-pdf');
+
         if (tpl.tipo === 'ia') {
-            // --- MODO INTELIGENCIA ARTIFICIAL ---
-            document.getElementById('grupo-upload-pdf').style.display = 'none';
-            document.getElementById('form-campos').style.display = 'none';
-            document.getElementById('form-campos-ia').style.display = 'flex';
-            
-            document.getElementById('ia-remitente').value = '';
-            document.getElementById('ia-destinatario').value = '';
-            document.getElementById('ia-motivo').value = '';
+            // --- MODO INTELIGENCIA ARTIFICIAL DINÁMICA ---
+            grupoUpload.style.display = 'none';
+            contenedorCamposRellenado.style.display = 'none';
+            contenedorCamposIA.style.display = 'flex';
+            contenedorCamposIA.innerHTML = ''; // Limpiar preguntas anteriores
+
+            // Si la plantilla tiene preguntas configuradas en el Admin, las creamos aquí
+            if (tpl.configuracion && tpl.configuracion.preguntas) {
+                tpl.configuracion.preguntas.forEach((pregunta, index) => {
+                    contenedorCamposIA.innerHTML += `
+                        <div class="input-group">
+                            <label>${pregunta}</label>
+                            <div class="input-with-mic">
+                                <input type="text" class="input-pregunta-ia" data-pregunta="${pregunta}" placeholder="Tu respuesta...">
+                                <button class="btn-mic" onclick="iniciarReconocimientoVozDinamico(this)">🎤</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                contenedorCamposIA.innerHTML = '<p style="color: #e74c3c; font-size: 13px;">⚠️ Esta plantilla no tiene preguntas configuradas.</p>';
+            }
         } else {
             // --- MODO RELLENADO CLÁSICO ---
-            document.getElementById('grupo-upload-pdf').style.display = 'flex';
-            document.getElementById('form-campos-ia').style.display = 'none';
-            document.getElementById('form-campos').style.display = 'flex';
+            grupoUpload.style.display = 'flex';
+            contenedorCamposIA.style.display = 'none';
+            contenedorCamposRellenado.style.display = 'flex';
             document.getElementById('user-pdf-upload').value = '';
             
-            const contenedorCampos = document.getElementById('form-campos');
-            contenedorCampos.innerHTML = '';
-
+            contenedorCamposRellenado.innerHTML = '';
             if (tpl.configuracion && tpl.configuracion.elementos) {
                 tpl.configuracion.elementos.forEach(campo => {
-                    contenedorCampos.innerHTML += `
+                    contenedorCamposRellenado.innerHTML += `
                         <div class="input-group">
                             <label>${campo.nombre.toUpperCase()}</label>
                             <div class="input-with-mic">
@@ -515,79 +535,63 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
         showScreen('screen-formulario');
     }
 
-    function iniciarReconocimientoVoz(inputId) {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) return alert("Tu navegador no soporta dictado por voz.");
-        
-        const recognition = new SpeechRecognition();
-        recognition.lang = 'es-ES';
-        recognition.start();
-        
-        const input = document.getElementById(inputId);
+    // Función auxiliar para el micro en campos dinámicos
+    function iniciarReconocimientoVozDinamico(btn) {
+        const input = btn.previousElementSibling;
+        const SpeechRecognition = window.SpeechRecognition || window.webkitRecognition;
+        if (!SpeechRecognition) return alert("Dictado no soportado.");
+        const rec = new SpeechRecognition();
+        rec.lang = 'es-ES';
+        rec.start();
         input.placeholder = "Escuchando...";
-        
-        recognition.onresult = function(event) {
-            input.value = event.results[0][0].transcript;
-            input.placeholder = "Escribe aquí...";
-        };
-        recognition.onerror = function() {
-            input.placeholder = "Error al escuchar. Intenta de nuevo.";
-        };
+        rec.onresult = (e) => { input.value = e.results[0][0].transcript; input.placeholder = "Tu respuesta..."; };
     }
 
-    function procesarFormulario() {
-        if (plantillaSeleccionada.tipo === 'ia') {
-            generarTextoIA();
-        } else {
-            generarDocumento(); // El clásico de rellenado
-        }
-    }
-
-    // --------------------------------------------------
-    // MOTOR 1: INTELIGENCIA ARTIFICIAL (VÍA SUPABASE EDGE FUNCTION)
-    // --------------------------------------------------
+    // --- GENERAR TEXTO IA (ACTUALIZADO PARA PROMPT DINÁMICO) ---
     async function generarTextoIA() {
-        const remitente = document.getElementById('ia-remitente').value.trim();
-        const destinatario = document.getElementById('ia-destinatario').value.trim();
-        const motivo = document.getElementById('ia-motivo').value.trim();
+        const inputs = document.querySelectorAll('.input-pregunta-ia');
+        let datosRecopilados = "";
+        let faltaDato = false;
 
-        if (!remitente || !destinatario || !motivo) {
-            return alert("Por favor, llena todos los campos para que la IA pueda redactar el documento.");
+        // Recopilamos todas las respuestas del usuario
+        inputs.forEach(input => {
+            const pregunta = input.getAttribute('data-pregunta');
+            const respuesta = input.value.trim();
+            if (!respuesta) faltaDato = true;
+            datosRecopilados += `- ${pregunta}: ${respuesta}\n`;
+        });
+
+        if (faltaDato) {
+            return alert("Por favor, responde todas las preguntas para que la IA pueda redactar el documento.");
         }
 
         const btn = document.getElementById('btn-generar');
         btn.innerText = "🤖 Redactando documento...";
         btn.disabled = true;
 
-        // El prompt que le enviaremos a tu Edge Function
+        // Construimos el prompt dinámico basado en las preguntas del Admin
         const promptTexto = `Redacta un documento formal del tipo "${plantillaSeleccionada.nombre}".
-Datos:
-- Remitente: ${remitente}
-- Destinatario: ${destinatario}
-- Motivo/Asunto: ${motivo}
+Usa los siguientes datos proporcionados por el usuario:
+${datosRecopilados}
 
 Instrucciones:
 - Escribe solo el contenido del documento, sin saludos iniciales ni explicaciones tuyas.
-- Usa un tono formal, claro y directo.
+- Usa un tono formal, profesional y legalmente adecuado para Perú.
 - Incluye la fecha actual al inicio.
-- Deja el espacio al final para la firma del remitente.`;
+- Al final, deja un espacio claro para la firma.`;
 
         try {
-            // Llamamos a tu función segura en Supabase
             const { data, error } = await supabase.functions.invoke('generar-documento', {
                 body: { prompt: promptTexto }
             });
 
-            // Manejo de errores
             if (error) throw new Error("Error de conexión con Supabase: " + error.message);
             if (data.error) throw new Error("Error de la IA: " + data.error);
 
-            // Mostrar el resultado en la caja de previsualización
             const textoGenerado = data.resultado.trim();
-            
             document.getElementById('texto-preview-ia').value = textoGenerado;
             document.getElementById('preview-ia').style.display = 'block';
-            btn.style.display = 'none'; // Ocultar el botón porque ya se generó
+            btn.style.display = 'none';
 
         } catch (err) {
             alert("Error al generar el documento: " + err.message);
@@ -597,6 +601,10 @@ Instrucciones:
         }
     }
 
+
+
+
+    
     async function descargarPdfIA() {
         const textoFinal = document.getElementById('texto-preview-ia').value.trim();
         if (!textoFinal) return alert("El documento está vacío.");
@@ -1248,8 +1256,11 @@ Instrucciones:
         document.addEventListener('touchend', stopResize);
     }
 
-    // ==========================================
-    // 12. GENERACIÓN FINAL DEL PDF LIBRE
+
+
+
+        // ==========================================
+    // 12. GENERACIÓN FINAL DEL PDF LIBRE (HÍBRIDO)
     // ==========================================
     async function generarPdfLibre() {
         if (!freePdfDoc) return;
@@ -1270,6 +1281,9 @@ Instrucciones:
             const fontBold = await freePdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
             const fontItalic = await freePdfDoc.embedFont(PDFLib.StandardFonts.HelveticaOblique);
             const fontBoldItalic = await freePdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBoldOblique);
+            
+            // Fuente especial SOLO para el check
+            const fontDingbats = await freePdfDoc.embedFont(PDFLib.StandardFonts.ZapfDingbats);
 
             for (const item of elementosFlotantes) {
                 const targetPage = pages[item.pageNum - 1]; 
@@ -1282,11 +1296,29 @@ Instrucciones:
                     const pdfY = pdfHeight - ((item.wrapper.offsetTop + item.size + 4) / scale);
                     
                     let selectedFont = fontNormal;
-                    if (item.format && item.format.bold && item.format.italic) selectedFont = fontBoldItalic;
-                    else if (item.format && item.format.bold) selectedFont = fontBold;
-                    else if (item.format && item.format.italic) selectedFont = fontItalic;
+                    let textoParaPdf = item.texto;
 
-                    targetPage.drawText(item.texto, {
+                    if (item.type === 'symbol') {
+                        if (textoParaPdf === '✔') {
+                            selectedFont = fontDingbats; // Solo el check usa fuente especial
+                            textoParaPdf = '4'; // El código '4' en esta fuente es un check real
+                        } else if (textoParaPdf === '✘') {
+                            selectedFont = fontBold; // La equis usa la letra X normal en negrita
+                            textoParaPdf = 'X';
+                        } else {
+                            selectedFont = fontNormal;
+                            textoParaPdf = '-';
+                        }
+                    } else {
+                        if (item.format && item.format.bold && item.format.italic) selectedFont = fontBoldItalic;
+                        else if (item.format && item.format.bold) selectedFont = fontBold;
+                        else if (item.format && item.format.italic) selectedFont = fontItalic;
+                        
+                        // Limpieza por si acaso
+                        textoParaPdf = textoParaPdf.replace(/✔/g, 'V').replace(/✘/g, 'X');
+                    }
+
+                    targetPage.drawText(textoParaPdf, {
                         x: pdfX,
                         y: pdfY, 
                         size: item.size,
@@ -1328,6 +1360,12 @@ Instrucciones:
             btn.disabled = false;
         }
     }
+
+
+
+
+
+    
 </script>
 </body>
 </html>
