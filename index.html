@@ -65,7 +65,7 @@
         .btn-generar { background: #2ecc71; color: #000; border: none; padding: 15px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; width: 100%; margin-top: 10px; }
         .btn-volver { background: transparent; color: #aaa; border: 1px solid #555; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 13px; width: fit-content; margin-bottom: 10px; }
 
-        /* --- RELLENADO LIBRE (ACTUALIZADO) --- */
+        /* --- RELLENADO LIBRE --- */
         .canvas-container { width: 100%; overflow: auto; border: 1px solid #444; border-radius: 8px; background: #222; position: relative; margin-top: 10px; display: flex; flex-direction: column; gap: 10px; padding: 10px; }
         .pdf-page-wrapper { position: relative; width: 100%; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
         .free-pdf-canvas { display: block; width: 100%; cursor: crosshair; }
@@ -74,48 +74,72 @@
         .click-menu { position: absolute; background: #fff; border-radius: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: flex; flex-direction: column; z-index: 60; overflow: hidden; border: 1px solid #ccc; }
         .click-menu button { background: none; border: none; padding: 12px 20px; cursor: pointer; font-weight: bold; font-size: 14px; color: #333; text-align: left; border-bottom: 1px solid #eee; transition: 0.2s; margin: 0; width: 100%; }
         .click-menu button:hover { background: #f1c40f; color: #000; }
-        .click-menu button:last-child { border-bottom: none; }
 
-        /* Inputs flotantes y Arrastre */
-        .floating-input-wrapper { position: absolute; display: flex; align-items: center; gap: 5px; z-index: 50; background: rgba(255, 255, 255, 0.95); padding: 4px; border-radius: 6px; box-shadow: 0 4px 10px rgba(0,0,0,0.4); border: 1px solid #ccc; }
-        .drag-handle { cursor: grab; font-size: 18px; padding: 0 5px; color: #888; user-select: none; display: flex; align-items: center; }
-        .drag-handle:active { cursor: grabbing; }
+        /* Elementos Flotantes (Texto y Firma) */
+        .floating-element { position: absolute; z-index: 40; cursor: grab; padding: 4px; border: 1px dashed transparent; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
+        .floating-element:hover, .floating-element:active { border: 1px dashed #3498db; background: rgba(255,255,255,0.8); }
+        .floating-element:active { cursor: grabbing; }
         
-        .floating-input { background: transparent !important; border: 1px solid #e67e22 !important; color: #000 !important; font-weight: bold; padding: 4px 8px !important; border-radius: 4px; outline: none; font-size: 12px; min-width: 120px; margin: 0 !important; }
+        .floating-text { color: #000; font-family: sans-serif; white-space: nowrap; pointer-events: none; user-select: none; }
+        .floating-img { pointer-events: none; user-select: none; }
         
-        .btn-size-input { background: #3498db; color: white; border: none; border-radius: 4px; width: 26px; height: 26px; cursor: pointer; font-size: 16px; font-weight: bold; display: flex; justify-content: center; align-items: center; margin: 0; padding: 0; }
-        .btn-confirm-input { background: #2ecc71; color: #000; border: none; border-radius: 4px; width: 26px; height: 26px; cursor: pointer; font-size: 12px; display: flex; justify-content: center; align-items: center; font-weight: bold; margin: 0; padding: 0; }
-        .btn-delete-input { background: #e74c3c; color: white; border: none; border-radius: 4px; width: 26px; height: 26px; cursor: pointer; font-size: 12px; display: flex; justify-content: center; align-items: center; font-weight: bold; margin: 0; padding: 0; }
-        
-        /* Texto ya confirmado en pantalla (Arrastrable) */
-        .confirmed-text-wrapper { position: absolute; display: flex; align-items: center; gap: 5px; z-index: 40; cursor: grab; padding: 2px 6px; border: 1px dashed transparent; border-radius: 4px; }
-        .confirmed-text-wrapper:hover { border: 1px dashed #3498db; background: rgba(255,255,255,0.9); }
-        .confirmed-text-wrapper:active { cursor: grabbing; }
-        .confirmed-text { color: #000; font-family: sans-serif; font-weight: bold; white-space: nowrap; pointer-events: none; }
+        /* Botón de borrar y tirador de tamaño */
+        .btn-delete-float { position: absolute; top: -10px; right: -10px; background: #e74c3c; color: white; border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 10px; font-weight: bold; cursor: pointer; display: none; justify-content: center; align-items: center; z-index: 50; }
+        .resize-handle { position: absolute; bottom: -8px; right: -8px; width: 16px; height: 16px; background: #3498db; border-radius: 50%; cursor: nwse-resize; display: none; z-index: 50; border: 2px solid white; }
+        .floating-element:hover .btn-delete-float, .floating-element:hover .resize-handle { display: flex; }
 
-        /* Firma Arrastrable */
-        .draggable-signature { position: absolute; z-index: 40; cursor: grab; border: 1px dashed transparent; padding: 2px; display: flex; flex-direction: column; align-items: center; gap: 5px; }
-        .draggable-signature:hover { border: 1px dashed #3498db; background: rgba(255,255,255,0.8); }
-        .draggable-signature:active { cursor: grabbing; }
-        .draggable-signature img { pointer-events: none; }
-        .sig-controls { display: none; gap: 5px; background: #222; padding: 4px; border-radius: 4px; }
-        .draggable-signature:hover .sig-controls { display: flex; }
+        /* --- MODALES (Texto y Firma) --- */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center; padding: 20px; }
+        .modal-content { background: #222; padding: 20px; border-radius: 10px; border: 1px solid #555; width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 15px; }
+        .modal-content h3 { color: #f1c40f; text-align: center; margin-bottom: 5px; }
+        
+        /* Formato de texto */
+        .format-toolbar { display: flex; gap: 10px; justify-content: center; }
+        .btn-format { background: #333; color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; font-size: 16px; cursor: pointer; }
+        .btn-format.active { background: #3498db; border-color: #2980b9; }
+        
+        /* Historial Chips */
+        .chips-container { display: flex; flex-wrap: wrap; gap: 8px; max-height: 80px; overflow-y: auto; }
+        .chip { background: #444; color: #fff; padding: 6px 12px; border-radius: 15px; font-size: 12px; cursor: pointer; border: none; }
+        .chip:hover { background: #f1c40f; color: #000; }
+
+        .modal-actions { display: flex; gap: 10px; justify-content: center; margin-top: 10px; }
+        .modal-actions button { margin: 0; width: auto; padding: 10px 20px; }
     </style>
 </head>
 <body>
+<!-- MODAL DE TEXTO -->
+<div id="modal-texto" class="modal-overlay">
+    <div class="modal-content">
+        <h3>Añadir Texto</h3>
+        
+        <div class="format-toolbar">
+            <button id="btn-bold" class="btn-format" onclick="toggleFormat('bold')"><b>B</b></button>
+            <button id="btn-italic" class="btn-format" onclick="toggleFormat('italic')"><i>I</i></button>
+        </div>
 
-<!-- Datalist para el autocompletado (Historial) -->
-<datalist id="historial-textos"></datalist>
+        <input type="text" id="input-texto-modal" placeholder="Escribe aquí..." style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #444; background: #111; color: white; font-size: 16px; outline: none;">
+        
+        <div id="chips-historial" class="chips-container">
+            <!-- Los chips de historial aparecerán aquí -->
+        </div>
 
-<!-- Modal de Firma -->
-<div id="modal-firma" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center;">
-    <div style="background: #222; padding: 20px; border-radius: 10px; text-align: center; border: 1px solid #555; width: 90%; max-width: 400px;">
-        <h3 style="color: #f1c40f; margin-bottom: 15px;">Dibuja tu firma</h3>
+        <div class="modal-actions">
+            <button onclick="cerrarModalTexto()" style="background: #555; color: white; border: none; border-radius: 5px;">Cancelar</button>
+            <button onclick="guardarTextoModal()" style="background: #2ecc71; color: black; border: none; border-radius: 5px;">Aceptar</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL DE FIRMA -->
+<div id="modal-firma" class="modal-overlay">
+    <div class="modal-content">
+        <h3>Dibuja tu firma</h3>
         <canvas id="canvas-firma" width="300" height="150" style="background: white; border-radius: 5px; cursor: crosshair; touch-action: none; width: 100%;"></canvas>
-        <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-            <button onclick="limpiarFirma()" style="background: #e74c3c; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; width: auto; margin: 0;">Limpiar</button>
-            <button onclick="cerrarModalFirma()" style="background: #555; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; width: auto; margin: 0;">Cancelar</button>
-            <button onclick="guardarFirma()" style="background: #2ecc71; color: black; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; width: auto; margin: 0;">Guardar</button>
+        <div class="modal-actions">
+            <button onclick="limpiarFirma()" style="background: #e74c3c; color: white; border: none; border-radius: 5px;">Limpiar</button>
+            <button onclick="cerrarModalFirma()" style="background: #555; color: white; border: none; border-radius: 5px;">Cancelar</button>
+            <button onclick="guardarFirma()" style="background: #2ecc71; color: black; border: none; border-radius: 5px;">Aceptar</button>
         </div>
     </div>
 </div>
@@ -143,7 +167,7 @@
             <h3>🔑 ¿Ya tienes un código? Actívalo aquí:</h3>
             <div class="input-codigo-wrapper">
                 <input type="text" id="input-codigo" class="input-codigo" placeholder="EJ: MANU-123" oninput="this.value = this.value.toUpperCase( ).replace(/[^A-Z0-9-]/g, '')">
-                <button class="btn-activar" onclick="activarCodigo()">Activar</button>
+                <button class="btn-activar" onclick="activarCodigoBoton()">Activar</button>
             </div>
         </div>
 
@@ -168,12 +192,12 @@
         <button class="btn-generar" id="btn-generar" onclick="generarDocumento()">✨ Generar Documento (1 Crédito)</button>
     </div>
 
-    <!-- PANTALLA 3: RELLENADO LIBRE (ACTUALIZADO) -->
+    <!-- PANTALLA 3: RELLENADO LIBRE -->
     <div id="screen-rellenado-libre" class="screen">
         <button class="btn-volver" onclick="volverAHome()">⬅ Volver al inicio</button>
         <div style="background: #222; padding: 15px; border-radius: 10px; border-left: 4px solid #e67e22; margin-bottom: 10px;">
             <h3 style="color: #e67e22; margin-bottom: 5px;">✍️ Rellenar mi propio PDF</h3>
-            <p style="color: #aaa; font-size: 13px;">Sube tu documento, <strong>toca en la pantalla</strong> donde quieras escribir o firmar.</p>
+            <p style="color: #aaa; font-size: 13px;">Sube tu documento, <strong>toca en la pantalla</strong> donde quieras escribir o firmar. Usa dos dedos para ajustar el tamaño.</p>
         </div>
         
         <input type="file" id="free-pdf-upload" accept="application/pdf" style="width: 100%; color: #fff; background: #2a2a2a; padding: 10px; border-radius: 8px;">
@@ -185,6 +209,7 @@
         <button class="btn-generar" id="btn-generar-free" onclick="generarPdfLibre()" style="display: none; background: #e67e22;">✨ Descargar PDF Lleno</button>
     </div>
 </div>
+
 <script>
     // ==========================================
     // 1. CONFIGURACIÓN SUPABASE Y PDF.JS
@@ -193,7 +218,6 @@
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwemRkaG1sbGN0ZHNpdXhlbnNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5NjUyNzQsImV4cCI6MjA5OTU0MTI3NH0.hwSxJ3Sk_RlgbvFyr8S64XRuxW7j55BU4gaIneFTuhY';
     const supabase = window.supabase.createClient(supabaseUrl, supabaseKey );
     
-    // Configurar PDF.js worker
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
     // ==========================================
@@ -206,23 +230,20 @@
     // Variables para Rellenado Libre
     let freePdfDoc = null;
     let freeCanvasScales = {};
-    let inputsFlotantes = [];
-    let firmasFlotantes = [];
+    let elementosFlotantes = []; // Unificamos textos y firmas aquí
     let freePdfPageCount = 0; 
     let historialTextos = JSON.parse(localStorage.getItem('docufacil_historial' )) || [];
 
     // ==========================================
-    // 3. INICIALIZACIÓN Y NAVEGACIÓN
+    // 3. INICIALIZACIÓN Y AUTO-LOGIN
     // ==========================================
     document.addEventListener('DOMContentLoaded', async () => {
         cargarPlantillas();
-        actualizarDatalist();
         
-        // Persistencia: Recordar código si ya ingresó antes
         const codigoGuardado = localStorage.getItem('docufacil_codigo');
         if (codigoGuardado) {
             document.getElementById('input-codigo').value = codigoGuardado;
-            await activarCodigo();
+            await activarCodigo(codigoGuardado, true); // true = es auto-login (silencioso)
         }
     });
 
@@ -238,46 +259,36 @@
     }
 
     // ==========================================
-    // 4. HISTORIAL (AUTOCOMPLETADO)
+    // 4. SISTEMA DE CRÉDITOS
     // ==========================================
-    function actualizarDatalist() {
-        const datalist = document.getElementById('historial-textos');
-        if (!datalist) return;
-        datalist.innerHTML = '';
-        historialTextos.forEach(texto => {
-            const option = document.createElement('option');
-            option.value = texto;
-            datalist.appendChild(option);
-        });
-    }
-
-    function guardarEnHistorial(texto) {
-        if (texto && !historialTextos.includes(texto)) {
-            historialTextos.push(texto);
-            localStorage.setItem('docufacil_historial', JSON.stringify(historialTextos));
-            actualizarDatalist();
-        }
-    }
-
-    // ==========================================
-    // 5. SISTEMA DE CRÉDITOS
-    // ==========================================
-    async function activarCodigo() {
+    async function activarCodigoBoton() {
         const codigo = document.getElementById('input-codigo').value.trim();
         if (!codigo) return alert("Ingresa un código válido.");
+        await activarCodigo(codigo, false);
+    }
 
+    async function activarCodigo(codigo, silencioso = false) {
         const { data, error } = await supabase.from('usuarios_codigos').select('*').eq('codigo', codigo).single();
+        
         if (error || !data) {
             localStorage.removeItem('docufacil_codigo');
-            return alert("❌ Código incorrecto o no existe.");
+            if (!silencioso) alert("❌ Código incorrecto o no existe.");
+            return;
         }
-        if (data.creditos <= 0) return alert("⚠️ Este código ya no tiene créditos.");
+        
+        if (data.creditos <= 0) {
+            if (!silencioso) alert("⚠️ Este código ya no tiene créditos.");
+            return;
+        }
 
         usuarioActual = data;
-        localStorage.setItem('docufacil_codigo', codigo); // Guardar sesión
+        localStorage.setItem('docufacil_codigo', codigo);
         document.getElementById('user-creditos').innerText = usuarioActual.creditos;
-        document.getElementById('input-codigo').value = '';
-        alert(`✅ ¡Código activado! Tienes ${usuarioActual.creditos} créditos disponibles.`);
+        
+        if (!silencioso) {
+            document.getElementById('input-codigo').value = '';
+            alert(`✅ ¡Código activado! Tienes ${usuarioActual.creditos} créditos disponibles.`);
+        }
         renderizarPlantillas();
     }
 
@@ -291,12 +302,12 @@
         }
         usuarioActual.creditos = nuevoSaldo;
         document.getElementById('user-creditos').innerText = nuevoSaldo;
-        if (nuevoSaldo === 0) renderizarPlantillas(); // Bloquear tarjetas si se quedó en 0
+        if (nuevoSaldo === 0) renderizarPlantillas(); 
         return true;
     }
 
     // ==========================================
-    // 6. CARGA Y RENDERIZADO DE PLANTILLAS
+    // 5. CARGA Y RENDERIZADO DE PLANTILLAS
     // ==========================================
     async function cargarPlantillas() {
         const { data, error } = await supabase.from('plantillas').select('*');
@@ -312,7 +323,6 @@
         const claseBloqueado = tieneCreditos ? '' : 'locked';
         const candadoHtml = tieneCreditos ? '' : '<div class="candado-icon">🔒</div>';
 
-        // TARJETA FIJA: RELLENADO LIBRE
         contenedor.innerHTML += `
             <div class="card ${claseBloqueado}" onclick="abrirRellenadoLibre()" style="border-color: #e67e22;">
                 <div class="card-icon">✍️</div>
@@ -324,7 +334,6 @@
             </div>
         `;
 
-        // TARJETAS DE LA BASE DE DATOS
         if (plantillasGlobales.length === 0) {
             contenedor.innerHTML += '<p style="text-align: center; color:#888; margin-top: 15px;">No hay más documentos disponibles.</p>';
         } else {
@@ -345,7 +354,7 @@
     }
 
     // ==========================================
-    // 7. LÓGICA: PLANTILLAS PREDEFINIDAS
+    // 6. LÓGICA: PLANTILLAS PREDEFINIDAS
     // ==========================================
     function clickPlantilla(tpl) {
         if (!usuarioActual || usuarioActual.creditos <= 0) {
@@ -416,7 +425,6 @@
             const pages = pdfDoc.getPages();
             const firstPage = pages[0];
 
-            // Estampar los textos en las coordenadas
             if (plantillaSeleccionada.configuracion && plantillaSeleccionada.configuracion.campos) {
                 plantillaSeleccionada.configuracion.campos.forEach(campo => {
                     const valor = document.getElementById(`campo-${campo.nombre}`).value;
@@ -431,11 +439,9 @@
                 });
             }
 
-            // Descontar 1 crédito
             const pagado = await descontarCredito(1);
             if (!pagado) throw new Error("No se pudo procesar el pago.");
 
-            // Descargar
             const pdfBytes = await pdfDoc.save();
             download(pdfBytes, `DocuFacil_${plantillaSeleccionada.nombre}.pdf`, "application/pdf");
             
@@ -450,7 +456,7 @@
         }
     }
     // ==========================================
-    // 8. LÓGICA: RELLENADO LIBRE (MULTIHOJA Y TÁCTIL)
+    // 8. LÓGICA: RELLENADO LIBRE (CARGA DE PDF)
     // ==========================================
     function abrirRellenadoLibre() {
         if (!usuarioActual || usuarioActual.creditos <= 0) {
@@ -464,8 +470,7 @@
         document.getElementById('free-canvas-container').innerHTML = ''; 
         document.getElementById('btn-generar-free').style.display = 'none';
         
-        inputsFlotantes = [];
-        firmasFlotantes = [];
+        elementosFlotantes = [];
         freeCanvasScales = {};
         freePdfPageCount = 0;
         
@@ -486,8 +491,7 @@
         
         const container = document.getElementById('free-canvas-container');
         container.innerHTML = ''; 
-        inputsFlotantes = [];
-        firmasFlotantes = [];
+        elementosFlotantes = [];
         freeCanvasScales = {};
         container.style.display = 'flex';
         
@@ -517,9 +521,7 @@
             
             // Evento para abrir el menú al tocar la hoja
             wrapper.addEventListener('click', function(ev) {
-                // Si tocamos un elemento flotante, ignoramos el clic en la hoja
-                if (ev.target.closest('.floating-input-wrapper') || ev.target.closest('.draggable-signature') || ev.target.closest('.click-menu') || ev.target.closest('.confirmed-text-wrapper')) return;
-                
+                if (ev.target.closest('.floating-element') || ev.target.closest('.click-menu')) return;
                 document.querySelectorAll('.click-menu').forEach(m => m.remove());
 
                 const rect = this.getBoundingClientRect();
@@ -536,7 +538,7 @@
     });
 
     // ==========================================
-    // 9. MENÚ Y CAJAS FLOTANTES (TEXTO)
+    // 9. MENÚ DE OPCIONES
     // ==========================================
     function mostrarMenuOpciones(parent, x, y, pageNum) {
         const menu = document.createElement('div');
@@ -544,14 +546,13 @@
         menu.style.left = `${x}px`;
         menu.style.top = `${y}px`;
 
-        // Escudo para el menú
         menu.addEventListener('click', e => e.stopPropagation());
         menu.addEventListener('mousedown', e => e.stopPropagation());
         menu.addEventListener('touchstart', e => e.stopPropagation(), {passive: false});
 
         const btnText = document.createElement('button');
         btnText.innerText = '📝 Añadir Texto';
-        btnText.onclick = (e) => { e.stopPropagation(); menu.remove(); crearInputFlotante(parent, x, y, pageNum); };
+        btnText.onclick = (e) => { e.stopPropagation(); menu.remove(); abrirModalTexto(parent, x, y, pageNum); };
 
         const btnSig = document.createElement('button');
         btnSig.innerText = '✍️ Añadir Firma';
@@ -567,102 +568,98 @@
         parent.appendChild(menu);
     }
 
-    function crearInputFlotante(parent, x, y, pageNum) {
+    // ==========================================
+    // 10. MODAL DE TEXTO Y CHIPS (HISTORIAL)
+    // ==========================================
+    let currentTextTarget = null;
+    let textFormat = { bold: false, italic: false };
+
+    function abrirModalTexto(parent, x, y, pageNum) {
+        currentTextTarget = { parent, x, y, pageNum };
+        textFormat = { bold: false, italic: false };
+        document.getElementById('btn-bold').classList.remove('active');
+        document.getElementById('btn-italic').classList.remove('active');
+        
+        const input = document.getElementById('input-texto-modal');
+        input.value = '';
+        input.style.fontWeight = 'normal';
+        input.style.fontStyle = 'normal';
+        
+        renderizarChipsHistorial();
+        document.getElementById('modal-texto').style.display = 'flex';
+        setTimeout(() => input.focus(), 100);
+    }
+
+    function cerrarModalTexto() {
+        document.getElementById('modal-texto').style.display = 'none';
+    }
+
+    function toggleFormat(type) {
+        textFormat[type] = !textFormat[type];
+        const btn = document.getElementById(`btn-${type}`);
+        const input = document.getElementById('input-texto-modal');
+        
+        if (textFormat[type]) btn.classList.add('active');
+        else btn.classList.remove('active');
+
+        if (type === 'bold') input.style.fontWeight = textFormat.bold ? 'bold' : 'normal';
+        if (type === 'italic') input.style.fontStyle = textFormat.italic ? 'italic' : 'normal';
+    }
+
+    function renderizarChipsHistorial() {
+        const container = document.getElementById('chips-historial');
+        container.innerHTML = '';
+        historialTextos.forEach(texto => {
+            const chip = document.createElement('button');
+            chip.className = 'chip';
+            chip.innerText = texto;
+            chip.onclick = () => { document.getElementById('input-texto-modal').value = texto; };
+            container.appendChild(chip);
+        });
+    }
+
+    function guardarTextoModal() {
+        const texto = document.getElementById('input-texto-modal').value.trim();
+        if (!texto) return cerrarModalTexto();
+
+        guardarEnHistorial(texto);
+
+        const { parent, x, y, pageNum } = currentTextTarget;
         const wrapper = document.createElement('div');
-        wrapper.className = 'floating-input-wrapper';
+        wrapper.className = 'floating-element';
         wrapper.style.left = `${x}px`;
-        wrapper.style.top = `${y - 15}px`; 
-        
-        // ESCUDO GLOBAL: Evita que los clics en la caja pasen al PDF
-        wrapper.addEventListener('click', e => e.stopPropagation());
-        wrapper.addEventListener('mousedown', e => e.stopPropagation());
-        wrapper.addEventListener('touchstart', e => e.stopPropagation(), {passive: false});
+        wrapper.style.top = `${y - 15}px`;
 
-        let currentFontSize = 12; 
+        const span = document.createElement('span');
+        span.className = 'floating-text';
+        span.innerText = texto;
+        span.style.fontSize = '14px';
+        if (textFormat.bold) span.style.fontWeight = 'bold';
+        if (textFormat.italic) span.style.fontStyle = 'italic';
 
-        const dragHandle = document.createElement('div');
-        dragHandle.className = 'drag-handle';
-        dragHandle.innerHTML = '✥';
-
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.className = 'floating-input';
-        input.placeholder = "Escribe aquí...";
-        input.setAttribute('list', 'historial-textos');
-        input.style.fontSize = `${currentFontSize}px`;
-        
-        const btnMinus = document.createElement('button');
-        btnMinus.innerText = '-';
-        btnMinus.className = 'btn-size-input';
-        btnMinus.onclick = (e) => { e.stopPropagation(); currentFontSize--; input.style.fontSize = `${currentFontSize}px`; inputData.fontSize = currentFontSize; };
-
-        const btnPlus = document.createElement('button');
-        btnPlus.innerText = '+';
-        btnPlus.className = 'btn-size-input';
-        btnPlus.onclick = (e) => { e.stopPropagation(); currentFontSize++; input.style.fontSize = `${currentFontSize}px`; inputData.fontSize = currentFontSize; };
-        
-        const btnConfirm = document.createElement('button');
-        btnConfirm.innerText = '✔️';
-        btnConfirm.className = 'btn-confirm-input';
-        
         const btnDelete = document.createElement('button');
+        btnDelete.className = 'btn-delete-float';
         btnDelete.innerText = '✖';
-        btnDelete.className = 'btn-delete-input';
         
-        const inputData = { wrapper, input, pageNum, textoFinal: "", fontSize: currentFontSize };
-        
-        btnDelete.onclick = (e) => {
-            e.stopPropagation();
-            wrapper.remove();
-            inputsFlotantes = inputsFlotantes.filter(i => i !== inputData);
-        };
-        
-        btnConfirm.onclick = (e) => {
-            e.stopPropagation();
-            const texto = input.value.trim();
-            if (!texto) { btnDelete.click(); return; }
-            
-            guardarEnHistorial(texto);
+        const resizeHandle = document.createElement('div');
+        resizeHandle.className = 'resize-handle';
 
-            wrapper.className = 'confirmed-text-wrapper';
-            wrapper.innerHTML = ''; 
-            
-            const spanText = document.createElement('span');
-            spanText.className = 'confirmed-text';
-            spanText.style.fontSize = `${currentFontSize}px`;
-            spanText.innerText = texto;
-            
-            const btnEditDelete = document.createElement('button');
-            btnEditDelete.innerText = '✖';
-            btnEditDelete.className = 'btn-delete-input';
-            btnEditDelete.style.display = 'none'; 
-            btnEditDelete.onclick = btnDelete.onclick;
-
-            wrapper.onmouseenter = () => btnEditDelete.style.display = 'flex';
-            wrapper.onmouseleave = () => btnEditDelete.style.display = 'none';
-
-            wrapper.appendChild(spanText);
-            wrapper.appendChild(btnEditDelete);
-            
-            inputData.textoFinal = texto;
-            hacerArrastrable(wrapper, wrapper); // Ahora toda la palabra es arrastrable
-        };
+        const elData = { wrapper, type: 'text', texto, pageNum, format: { ...textFormat }, size: 14, element: span };
         
-        wrapper.appendChild(dragHandle);
-        wrapper.appendChild(input);
-        wrapper.appendChild(btnMinus);
-        wrapper.appendChild(btnPlus);
-        wrapper.appendChild(btnConfirm);
+        btnDelete.onclick = (e) => { e.stopPropagation(); wrapper.remove(); elementosFlotantes = elementosFlotantes.filter(i => i !== elData); };
+
+        wrapper.appendChild(span);
         wrapper.appendChild(btnDelete);
+        wrapper.appendChild(resizeHandle);
         parent.appendChild(wrapper);
-        
-        inputsFlotantes.push(inputData);
-        hacerArrastrable(wrapper, dragHandle);
-        input.focus();
+
+        elementosFlotantes.push(elData);
+        hacerInteractivo(wrapper, elData, resizeHandle);
+        cerrarModalTexto();
     }
 
     // ==========================================
-    // 10. FIRMA DIGITAL
+    // 11. MODAL DE FIRMA (TRAZO FINO)
     // ==========================================
     let sigCanvas, sigCtx, drawing = false;
     let currentSigTarget = null;
@@ -674,7 +671,9 @@
         sigCanvas = document.getElementById('canvas-firma');
         sigCtx = sigCanvas.getContext('2d');
         sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
-        sigCtx.lineWidth = 3;
+        
+        // TRAZO MÁS FINO Y REALISTA
+        sigCtx.lineWidth = 1.5; 
         sigCtx.strokeStyle = '#000';
         sigCtx.lineCap = 'round';
         sigCtx.lineJoin = 'round';
@@ -701,10 +700,7 @@
 
     function getTouchPos(canvasDom, touchEvent) {
         const rect = canvasDom.getBoundingClientRect();
-        return {
-            x: touchEvent.touches[0].clientX - rect.left,
-            y: touchEvent.touches[0].clientY - rect.top
-        };
+        return { x: touchEvent.touches[0].clientX - rect.left, y: touchEvent.touches[0].clientY - rect.top };
     }
 
     function limpiarFirma() { sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height); }
@@ -712,112 +708,153 @@
 
     function guardarFirma() {
         const dataUrl = sigCanvas.toDataURL('image/png');
-        colocarFirmaEnPdf(dataUrl);
-    }
-
-    function colocarFirmaEnPdf(dataUrl) {
         const { parent, x, y, pageNum } = currentSigTarget;
         
         const wrapper = document.createElement('div');
-        wrapper.className = 'draggable-signature';
+        wrapper.className = 'floating-element';
         wrapper.style.left = `${x}px`;
         wrapper.style.top = `${y - 30}px`; 
-        
-        // ESCUDO GLOBAL
-        wrapper.addEventListener('click', e => e.stopPropagation());
-        wrapper.addEventListener('mousedown', e => e.stopPropagation());
-        wrapper.addEventListener('touchstart', e => e.stopPropagation(), {passive: false});
-
-        let currentWidth = 150; 
 
         const img = document.createElement('img');
         img.src = dataUrl;
-        img.style.width = `${currentWidth}px`;
-        
-        const controls = document.createElement('div');
-        controls.className = 'sig-controls';
-        
-        const btnMinus = document.createElement('button');
-        btnMinus.innerText = '-';
-        btnMinus.className = 'btn-size-input';
-        btnMinus.onclick = (e) => { e.stopPropagation(); currentWidth -= 10; img.style.width = `${currentWidth}px`; sigData.width = currentWidth; };
-
-        const btnPlus = document.createElement('button');
-        btnPlus.innerText = '+';
-        btnPlus.className = 'btn-size-input';
-        btnPlus.onclick = (e) => { e.stopPropagation(); currentWidth += 10; img.style.width = `${currentWidth}px`; sigData.width = currentWidth; };
+        img.className = 'floating-img';
+        img.style.width = `150px`;
         
         const btnDelete = document.createElement('button');
+        btnDelete.className = 'btn-delete-float';
         btnDelete.innerText = '✖';
-        btnDelete.className = 'btn-delete-input';
+
+        const resizeHandle = document.createElement('div');
+        resizeHandle.className = 'resize-handle';
         
-        const sigData = { wrapper, dataUrl, pageNum, width: currentWidth };
+        const elData = { wrapper, type: 'image', dataUrl, pageNum, size: 150, element: img };
         
-        btnDelete.onclick = (e) => { e.stopPropagation(); wrapper.remove(); firmasFlotantes = firmasFlotantes.filter(f => f !== sigData); };
-        
-        controls.appendChild(btnMinus);
-        controls.appendChild(btnPlus);
-        controls.appendChild(btnDelete);
+        btnDelete.onclick = (e) => { e.stopPropagation(); wrapper.remove(); elementosFlotantes = elementosFlotantes.filter(f => f !== elData); };
         
         wrapper.appendChild(img);
-        wrapper.appendChild(controls);
+        wrapper.appendChild(btnDelete);
+        wrapper.appendChild(resizeHandle);
         parent.appendChild(wrapper);
         
-        firmasFlotantes.push(sigData);
-        hacerArrastrable(wrapper, wrapper); 
+        elementosFlotantes.push(elData);
+        hacerInteractivo(wrapper, elData, resizeHandle); 
         cerrarModalFirma();
     }
 
     // ==========================================
-    // 11. MOTOR DE ARRASTRE BLINDADO
+    // 12. MOTOR INTERACTIVO (ARRASTRE Y PINCH-TO-ZOOM)
     // ==========================================
-    function hacerArrastrable(wrapper, handle) {
-        let isDragging = false;
+    function hacerInteractivo(wrapper, elData, resizeHandle) {
+        let isDragging = false, isResizing = false;
         let startX, startY, initialLeft, initialTop;
+        
+        // Variables para Pinch-to-Zoom
+        let initialDistance = 0;
+        let initialSize = 0;
 
+        // --- ARRASTRE ---
         const startDrag = (e) => {
-            if(e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
-            e.preventDefault();
-            e.stopPropagation(); // ESCUDO
+            if(e.target === resizeHandle || e.target.tagName === 'BUTTON') return;
+            e.preventDefault(); e.stopPropagation();
+            
+            if (e.touches && e.touches.length === 2) {
+                // Iniciar Pinch-to-Zoom
+                isDragging = false;
+                initialDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                initialSize = elData.size;
+                return;
+            }
+
             isDragging = true;
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            startX = clientX;
-            startY = clientY;
+            startX = clientX; startY = clientY;
             initialLeft = parseInt(wrapper.style.left || wrapper.offsetLeft);
             initialTop = parseInt(wrapper.style.top || wrapper.offsetTop);
         };
 
-        const doDrag = (e) => {
+        const doDragOrZoom = (e) => {
+            if (e.touches && e.touches.length === 2 && initialDistance > 0) {
+                // Ejecutar Pinch-to-Zoom
+                e.preventDefault(); e.stopPropagation();
+                const currentDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                const scale = currentDistance / initialDistance;
+                let newSize = initialSize * scale;
+                
+                // Limites de tamaño
+                if (elData.type === 'text') {
+                    newSize = Math.max(8, Math.min(newSize, 72));
+                    elData.element.style.fontSize = `${newSize}px`;
+                } else {
+                    newSize = Math.max(30, Math.min(newSize, 500));
+                    elData.element.style.width = `${newSize}px`;
+                }
+                elData.size = newSize;
+                return;
+            }
+
             if (!isDragging) return;
-            e.preventDefault();
-            e.stopPropagation(); // ESCUDO
+            e.preventDefault(); e.stopPropagation();
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            const dx = clientX - startX;
-            const dy = clientY - startY;
-            wrapper.style.left = (initialLeft + dx) + 'px';
-            wrapper.style.top = (initialTop + dy) + 'px';
+            wrapper.style.left = (initialLeft + (clientX - startX)) + 'px';
+            wrapper.style.top = (initialTop + (clientY - startY)) + 'px';
         };
 
         const stopDrag = (e) => {
-            if (isDragging) {
-                e.stopPropagation(); // ESCUDO
+            if (isDragging || initialDistance > 0) {
+                e.stopPropagation();
                 isDragging = false;
+                initialDistance = 0;
             }
         };
 
-        handle.addEventListener('mousedown', startDrag);
-        document.addEventListener('mousemove', doDrag);
-        document.addEventListener('mouseup', stopDrag);
+        // --- REDIMENSIÓN CON MOUSE (Tirador) ---
+        const startResize = (e) => {
+            e.preventDefault(); e.stopPropagation();
+            isResizing = true;
+            startX = e.clientX || e.touches[0].clientX;
+            initialSize = elData.size;
+        };
 
-        handle.addEventListener('touchstart', startDrag, {passive: false});
-        document.addEventListener('touchmove', doDrag, {passive: false});
+        const doResize = (e) => {
+            if (!isResizing) return;
+            e.preventDefault(); e.stopPropagation();
+            const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+            const dx = clientX - startX;
+            
+            let newSize = initialSize + dx;
+            if (elData.type === 'text') {
+                newSize = Math.max(8, Math.min(newSize, 72));
+                elData.element.style.fontSize = `${newSize}px`;
+            } else {
+                newSize = Math.max(30, Math.min(newSize, 500));
+                elData.element.style.width = `${newSize}px`;
+            }
+            elData.size = newSize;
+        };
+
+        const stopResize = () => { isResizing = false; };
+
+        // Eventos Arrastre y Zoom
+        wrapper.addEventListener('mousedown', startDrag);
+        document.addEventListener('mousemove', doDragOrZoom);
+        document.addEventListener('mouseup', stopDrag);
+        wrapper.addEventListener('touchstart', startDrag, {passive: false});
+        document.addEventListener('touchmove', doDragOrZoom, {passive: false});
         document.addEventListener('touchend', stopDrag);
+
+        // Eventos Tirador (Mouse)
+        resizeHandle.addEventListener('mousedown', startResize);
+        document.addEventListener('mousemove', doResize);
+        document.addEventListener('mouseup', stopResize);
+        resizeHandle.addEventListener('touchstart', startResize, {passive: false});
+        document.addEventListener('touchmove', doResize, {passive: false});
+        document.addEventListener('touchend', stopResize);
     }
 
     // ==========================================
-    // 12. GENERACIÓN FINAL DEL PDF LIBRE
+    // 13. GENERACIÓN FINAL DEL PDF LIBRE
     // ==========================================
     async function generarPdfLibre() {
         if (!freePdfDoc) return;
@@ -833,59 +870,57 @@
 
         try {
             const pages = freePdfDoc.getPages();
+            
+            // Cargar fuentes estándar para negrita y cursiva
+            const fontNormal = await freePdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+            const fontBold = await freePdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
+            const fontItalic = await freePdfDoc.embedFont(PDFLib.StandardFonts.HelveticaOblique);
+            const fontBoldItalic = await freePdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBoldOblique);
 
-            // 1. Estampar Textos
-            inputsFlotantes.forEach(item => {
-                const texto = item.textoFinal || item.input.value.trim();
-                if (texto) {
-                    const targetPage = pages[item.pageNum - 1]; 
-                    const pdfHeight = targetPage.getHeight();
-                    const scale = freeCanvasScales[item.pageNum];
-                    
-                    const isConfirmed = item.wrapper.className.includes('confirmed-text-wrapper');
-                    const offsetX = isConfirmed ? 4 : 28; 
-                    
-                    const pdfX = (item.wrapper.offsetLeft + offsetX) / scale;
-                    const pdfY = pdfHeight - ((item.wrapper.offsetTop + item.fontSize + 8) / scale);
-
-                    targetPage.drawText(texto, {
-                        x: pdfX,
-                        y: pdfY, 
-                        size: item.fontSize,
-                        color: PDFLib.rgb(0, 0, 0)
-                    });
-                }
-            });
-
-            // 2. Estampar Firmas
-            for (const item of firmasFlotantes) {
-                const targetPage = pages[item.pageNum - 1];
+            for (const item of elementosFlotantes) {
+                const targetPage = pages[item.pageNum - 1]; 
                 const pdfHeight = targetPage.getHeight();
                 const scale = freeCanvasScales[item.pageNum];
+                
+                const pdfX = (item.wrapper.offsetLeft + 4) / scale;
+                
+                if (item.type === 'text') {
+                    const pdfY = pdfHeight - ((item.wrapper.offsetTop + item.size + 4) / scale);
+                    
+                    let selectedFont = fontNormal;
+                    if (item.format.bold && item.format.italic) selectedFont = fontBoldItalic;
+                    else if (item.format.bold) selectedFont = fontBold;
+                    else if (item.format.italic) selectedFont = fontItalic;
 
-                const pngImage = await freePdfDoc.embedPng(item.dataUrl);
-                const pngDims = pngImage.scale(1);
-                const ratio = pngDims.height / pngDims.width;
+                    targetPage.drawText(item.texto, {
+                        x: pdfX,
+                        y: pdfY, 
+                        size: item.size,
+                        font: selectedFont,
+                        color: PDFLib.rgb(0, 0, 0)
+                    });
+                } 
+                else if (item.type === 'image') {
+                    const pngImage = await freePdfDoc.embedPng(item.dataUrl);
+                    const pngDims = pngImage.scale(1);
+                    const ratio = pngDims.height / pngDims.width;
 
-                const pdfWidth = item.width / scale;
-                const pdfImgHeight = pdfWidth * ratio;
+                    const pdfWidth = item.size / scale;
+                    const pdfImgHeight = pdfWidth * ratio;
+                    const pdfY = pdfHeight - ((item.wrapper.offsetTop / scale) + pdfImgHeight);
 
-                const pdfX = item.wrapper.offsetLeft / scale;
-                const pdfY = pdfHeight - ((item.wrapper.offsetTop / scale) + pdfImgHeight);
-
-                targetPage.drawImage(pngImage, {
-                    x: pdfX,
-                    y: pdfY,
-                    width: pdfWidth,
-                    height: pdfImgHeight
-                });
+                    targetPage.drawImage(pngImage, {
+                        x: pdfX,
+                        y: pdfY,
+                        width: pdfWidth,
+                        height: pdfImgHeight
+                    });
+                }
             }
 
-            // 3. Descontar créditos según la cantidad de hojas
             const pagado = await descontarCredito(freePdfPageCount);
             if (!pagado) throw new Error("No se pudo procesar el pago.");
 
-            // 4. Descargar
             const pdfBytes = await freePdfDoc.save();
             download(pdfBytes, `DocuFacil_Rellenado.pdf`, "application/pdf");
             
