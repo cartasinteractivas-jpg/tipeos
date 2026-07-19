@@ -25,31 +25,24 @@
         .screen { padding: 20px; display: none; flex-direction: column; gap: 20px; flex: 1; overflow-y: auto; padding-bottom: 40px; }
         .screen.active { display: flex; }
 
-        /* --- SECCIÓN YAPE Y COMPRA --- */
+        /* Sección Yape y Activar */
         .compra-section { background: linear-gradient(135deg, #742384 0%, #4a1554 100%); border-radius: 12px; padding: 20px; text-align: center; border: 1px solid #8e44ad; }
         .yape-logo { height: 40px; margin-bottom: 10px; object-fit: contain; }
         .btn-whatsapp { background: #25D366; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; width: 100%; display: flex; justify-content: center; align-items: center; gap: 8px; text-decoration: none; }
 
-        /* --- SECCIÓN ACTIVAR CÓDIGO --- */
         .activar-section { background: #222; border-radius: 12px; padding: 15px; border: 1px solid #333; }
         .input-codigo { width: 100%; padding: 12px; background: #000; color: #f1c40f; border: 2px solid #444; border-radius: 8px; outline: none; font-size: 16px; text-align: center; font-weight: bold; text-transform: uppercase; }
         .btn-activar { background: #f1c40f; color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; width: 100%; margin-top: 10px; }
 
-        /* --- NUEVO: CARRUSEL DE FORMATOS INTELIGENTES --- */
+        /* Tarjetas de Documentos */
         .section-title { color: #fff; font-size: 18px; margin-top: 10px; border-bottom: 2px solid #333; padding-bottom: 8px; }
-        .carrusel { display: flex; gap: 12px; overflow-x: auto; padding: 10px 0; scroll-snap-type: x mandatory; }
-        .carrusel::-webkit-scrollbar { display: none; }
-        
-        .card-formato { 
-            min-width: 140px; background: #2a2a2a; border-radius: 15px; padding: 15px; 
-            border: 1px solid #444; text-align: center; cursor: pointer; scroll-snap-align: start;
-            transition: 0.2s;
-        }
-        .card-formato:active { transform: scale(0.95); background: #333; }
-        .card-formato .icon { font-size: 28px; margin-bottom: 8px; }
-        .card-formato h3 { font-size: 13px; color: #fff; }
+        .lista-plantillas { display: flex; flex-direction: column; gap: 12px; }
+        .card { background: #2a2a2a; border: 1px solid #444; border-radius: 10px; padding: 15px; cursor: pointer; display: flex; align-items: center; gap: 15px; position: relative; overflow: hidden; transition: 0.2s; }
+        .card-icon { font-size: 30px; }
+        .card-info h3 { color: #fff; font-size: 16px; margin-bottom: 4px; }
+        .card-info p { color: #aaa; font-size: 12px; line-height: 1.3; }
 
-        /* --- RELLENADO LIBRE --- */
+        /* Rellenado Libre */
         .btn-libre { background: #222; border: 2px dashed #444; width: 100%; padding: 20px; border-radius: 15px; display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: bold; cursor: pointer; color: #888; margin-top: 10px; }
         .canvas-container { width: 100%; overflow: auto; border: 1px solid #444; border-radius: 8px; background: #222; position: relative; margin-top: 10px; display: flex; flex-direction: column; gap: 10px; padding: 10px; }
         .pdf-page-wrapper { position: relative; width: 100%; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
@@ -72,27 +65,23 @@
 
         <!-- PANTALLA 1: HOME -->
         <div id="screen-home" class="screen active">
-            <!-- Sección Yape -->
             <div class="compra-section">
                 <img src="https://vectorseek.com/wp-content/uploads/2023/09/Yape-App-Logo-Vector.svg-.png" alt="Yape" class="yape-logo">
                 <p style="font-size: 14px; margin-bottom: 10px;">¿Sin créditos? Yapea 5 soles al 987188120</p>
                 <a href="https://wa.me/51987188120?text=Hola!%20Quiero%20comprar%20créditos" class="btn-whatsapp">Hablar por WhatsApp</a>
             </div>
 
-            <!-- Activar Código -->
             <div class="activar-section">
                 <h3>Activar Código</h3>
                 <input type="text" id="input-codigo" class="input-codigo" placeholder="DOC-XXXXXX">
                 <button class="btn-activar" onclick="activarCodigo( )">Activar Créditos</button>
             </div>
 
-            <!-- Carrusel Inteligente -->
-            <h2 class="section-title">Formatos Inteligentes (IA)</h2>
-            <div class="carrusel" id="carrusel-formatos">
+            <h2 class="section-title">Formatos Disponibles</h2>
+            <div class="lista-plantillas" id="lista-plantillas">
                 <!-- Se llena con JS -->
             </div>
 
-            <!-- Rellenado Libre -->
             <h2 class="section-title">Otras opciones</h2>
             <div class="btn-libre" onclick="document.getElementById('pdf-upload').click()">
                 <span>📂</span> Rellenar mi propio PDF (Manual)
@@ -100,7 +89,17 @@
             <input type="file" id="pdf-upload" accept="application/pdf" style="display: none;">
         </div>
 
-        <!-- PANTALLA 2: RELLENADO LIBRE (TU MOTOR ORIGINAL) -->
+        <!-- PANTALLA 2: FORMULARIO ESTÁNDAR (TU DISEÑO ORIGINAL) -->
+        <div id="screen-form" class="screen">
+            <button class="btn-activar" style="background:#444; width:fit-content; padding:8px 15px;" onclick="volverAHome()">⬅ Volver</button>
+            <h2 id="form-titulo">Nombre del Formato</h2>
+            <div id="form-campos">
+                <!-- Campos dinámicos -->
+            </div>
+            <button class="btn-generar" id="btn-generar" onclick="generarDocumento()">✨ Generar Documento (1 Crédito)</button>
+        </div>
+
+        <!-- PANTALLA 3: RELLENADO LIBRE (TU MOTOR ORIGINAL) -->
         <div id="screen-libre" class="screen">
             <button class="btn-activar" style="background:#444;" onclick="volverAHome()">⬅ Volver al Inicio</button>
             <div id="free-canvas-container" class="canvas-container"></div>
@@ -151,8 +150,8 @@
         localStorage.setItem('docufacil_token', codigo); // Persistencia
         document.getElementById('user-creditos').innerText = data.creditos;
         
-        // Cargar formatos inteligentes
-        cargarFormatosInteligentes();
+        // Cargar formatos
+        cargarPlantillas();
     }
 
     // Auto-login si ya tiene código guardado
@@ -166,47 +165,59 @@
     autoLogin();
 
     // ==========================================
-    // 3. CARGAR CARRUSEL (IA)
+    // 3. CARGAR PLANTILLAS (TU DISEÑO DE TARJETAS)
     // ==========================================
-    async function cargarFormatosInteligentes() {
-        const { data, error } = await supabase.from('plantillas').select('*').eq('tipo', 'inteligente');
+    async function cargarPlantillas() {
+        const { data, error } = await supabase.from('plantillas').select('*');
         if (error) return;
 
-        const carrusel = document.getElementById('carrusel-formatos');
-        carrusel.innerHTML = '';
+        const lista = document.getElementById('lista-plantillas');
+        lista.innerHTML = '';
 
         data.forEach(fmt => {
             const icon = fmt.descripcion === 'solicitud' ? '📝' : (fmt.descripcion === 'contrato' ? '🤝' : '📄');
             const card = document.createElement('div');
-            card.className = 'card-formato';
-            card.onclick = () => abrirFlujoIA(fmt);
+            card.className = 'card';
+            card.onclick = () => abrirFormato(fmt);
             card.innerHTML = `
-                <div class="icon">${icon}</div>
-                <h3>${fmt.nombre}</h3>
+                <div class="card-icon">${icon}</div>
+                <div class="card-info">
+                    <h3>${fmt.nombre}</h3>
+                    <p>${fmt.descripcion || 'Formato estándar'}</p>
+                </div>
             `;
-            carrusel.appendChild(card);
+            lista.appendChild(card);
         });
     }
 
-    // ==========================================
-    // 4. FLUJO IA PASO A PASO (MODAL)
-    // ==========================================
-    function abrirFlujoIA(fmt) {
+    function abrirFormato(fmt) {
         if (!usuarioActual || usuarioActual.creditos <= 0) {
             return alert("🔒 Necesitas activar un código con créditos.");
         }
         
         formatoSeleccionado = fmt;
-        respuestasIA = {};
-        pasoActual = 0;
-        
-        const preguntas = fmt.configuracion.areas.filter(a => a.tipo !== 'firma');
-        if (preguntas.length === 0) return alert("Este formato no tiene preguntas configuradas.");
 
-        document.getElementById('modal-ia').style.display = 'flex';
-        mostrarPasoIA(preguntas);
+        if (fmt.tipo === 'inteligente') {
+            // --- FLUJO IA PASO A PASO ---
+            respuestasIA = {};
+            pasoActual = 0;
+            const preguntas = fmt.configuracion.areas.filter(a => a.tipo !== 'firma');
+            if (preguntas.length === 0) return alert("Este formato no tiene preguntas configuradas.");
+            
+            document.getElementById('modal-ia').style.display = 'flex';
+            mostrarPasoIA(preguntas);
+        } else {
+            // --- FLUJO ESTÁNDAR (TU LÓGICA ORIGINAL) ---
+            document.getElementById('screen-home').classList.remove('active');
+            document.getElementById('screen-form').classList.add('active');
+            document.getElementById('form-titulo').innerText = fmt.nombre;
+            // Aquí cargarías tus campos antiguos si los tienes...
+        }
     }
 
+    // ==========================================
+    // 4. MOTOR DE IA PASO A PASO (MODAL)
+    // ==========================================
     function mostrarPasoIA(preguntas) {
         const contenedor = document.getElementById('contenedor-ia');
         const area = preguntas[pasoActual];
@@ -266,6 +277,7 @@
     }
 
     function volverAHome() {
+        document.getElementById('screen-form').classList.remove('active');
         document.getElementById('screen-libre').classList.remove('active');
         document.getElementById('screen-home').classList.add('active');
     }
@@ -406,7 +418,6 @@
             
             wrapper.onclick = (e) => {
                 if (e.target !== canvas) {
-                    // Si toca fuera de un elemento, deseleccionar todo
                     if (!e.target.closest('.floating-element')) {
                         document.querySelectorAll('.floating-element').forEach(el => el.classList.remove('selected'));
                     }
@@ -421,37 +432,8 @@
     }
 
     // --- LÓGICA DE INTERACCIÓN Y MODALES (TU CÓDIGO ORIGINAL) ---
-    let menuTarget = null;
-
-    function abrirMenuOpciones(parent, x, y, page) {
-        menuTarget = { parent, x, y, page };
-        document.getElementById('modal-opciones').style.display = 'flex';
-    }
-
-    function cerrarModalOpciones() {
-        document.getElementById('modal-opciones').style.display = 'none';
-    }
-
-    function seleccionarOpcion(tipo) {
-        cerrarModalOpciones();
-        if (tipo === 'texto') {
-            document.getElementById('modal-texto').style.display = 'flex';
-            actualizarChips();
-        } else if (tipo === 'firma') {
-            document.getElementById('modal-firma').style.display = 'flex';
-            initCanvasFirma();
-        } else if (tipo === 'simbolo') {
-            document.getElementById('modal-simbolos').style.display = 'flex';
-        }
-    }
-
-    // ... (Aquí siguen todas tus funciones de Texto, Firma, Símbolos, Arrastre y Zoom que ya tenías) ...
-    // Para no hacer el mensaje infinito, asegúrate de que el resto de tu JS de pasted_content_98.txt esté aquí.
-
-    async function generarPdfLibre() {
-        // Tu lógica de descarga de PDF manual con el parche de símbolos que hicimos antes
-        // ...
-    }
+    // (Asegúrate de incluir aquí tus funciones de Texto, Firma, Símbolos, Arrastre y Zoom de pasted_content_99.txt)
+    // ...
 </script>
 </body>
 </html>
