@@ -455,6 +455,9 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
         mostrarPasoIA();
     }
 
+
+
+
     function mostrarPasoIA() {
         const contenedor = document.getElementById('contenedor-ia');
         const area = preguntasIA[pasoActual];
@@ -465,44 +468,100 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
                 <button onclick="cerrarModalIA()" style="background:none; border:none; color:#888; cursor:pointer;">✕</button>
             </div>
             <h3 style="color:#fff; margin: 10px 0;">${area.nombre}</h3>
-            <p style="color:#aaa; font-size:14px;">Ingresa la información para esta sección:</p>
+            <p style="color:#aaa; font-size:14px; margin-bottom:10px;">${area.tipo === 'firma' ? 'Dibuja tu firma abajo:' : 'Ingresa la información para esta sección:'}</p>
             
-            ${area.tipo === 'cuerpo' 
-                ? `<textarea id="input-ia-paso" class="input-ia-paso" rows="5" placeholder="Escribe aquí..."></textarea>`
-                : `<input type="text" id="input-ia-paso" class="input-ia-paso" placeholder="Escribe aquí...">`
+            ${area.tipo === 'firma' 
+                ? `<canvas id="canvas-firma-ia" width="300" height="150" style="background: white; border-radius: 8px; cursor: crosshair; touch-action: none; width: 100%;"></canvas>
+                   <button class="btn-ia-cancel" style="margin-top:5px; padding:5px; font-size:12px;" onclick="limpiarFirmaIA()">Limpiar Firma</button>`
+                : (area.tipo === 'cuerpo' 
+                    ? `<textarea id="input-ia-paso" class="input-ia-paso" rows="5" placeholder="Ej: Mi más sentido pésame..."></textarea>`
+                    : `<input type="text" id="input-ia-paso" class="input-ia-paso" placeholder="Escribe aquí...">`)
             }
 
-            <div style="display:flex; gap:10px; margin-top:10px;">
+            <div style="display:flex; gap:10px; margin-top:15px;">
                 ${pasoActual > 0 
                     ? `<button class="btn-ia-cancel" onclick="anteriorPasoIA()">Atrás</button>` 
                     : `<button class="btn-ia-cancel" onclick="cerrarModalIA()">Cancelar</button>`
                 }
                 <button class="btn-ia-nav" onclick="siguientePasoIA()">
-                    ${pasoActual === preguntasIA.length - 1 ? 'Generar ✨' : 'Siguiente'}
+                    ${pasoActual === preguntasIA.length - 1 ? 'Finalizar ✨' : 'Siguiente'}
                 </button>
             </div>
         `;
         
-        const input = document.getElementById('input-ia-paso');
-        if (respuestasIA[area.nombre]) input.value = respuestasIA[area.nombre];
-        input.focus();
+        if (area.tipo === 'firma') {
+            iniciarCanvasFirmaIA();
+        } else {
+            const input = document.getElementById('input-ia-paso');
+            if (respuestasIA[area.nombre]) input.value = respuestasIA[area.nombre];
+            input.focus();
+        }
     }
 
     function siguientePasoIA() {
-        const valor = document.getElementById('input-ia-paso').value.trim();
-        if (!valor) return alert("Por favor, completa este campo.");
+        const area = preguntasIA[pasoActual];
+        let valor;
 
-        respuestasIA[preguntasIA[pasoActual].nombre] = valor;
+        if (area.tipo === 'firma') {
+            const canvas = document.getElementById('canvas-firma-ia');
+            valor = canvas.toDataURL('image/png');
+            // Verificamos si el canvas está vacío (opcional)
+        } else {
+            valor = document.getElementById('input-ia-paso').value.trim();
+            if (!valor) return alert("Por favor, completa este campo.");
+        }
+
+        respuestasIA[area.nombre] = valor;
 
         if (pasoActual < preguntasIA.length - 1) {
             pasoActual++;
             mostrarPasoIA();
         } else {
-            // Aquí llamaremos al motor de estampado en la Parte 3
             procesarDocumentoIA();
         }
     }
 
+    // Funciones auxiliares para la firma en el modal IA
+    let sigCtxIA, drawingIA = false;
+    function iniciarCanvasFirmaIA() {
+        const canvas = document.getElementById('canvas-firma-ia');
+        sigCtxIA = canvas.getContext('2d');
+        sigCtxIA.lineWidth = 2;
+        sigCtxIA.strokeStyle = '#000';
+        sigCtxIA.lineCap = 'round';
+
+        const getPos = (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return { x: clientX - rect.left, y: clientY - rect.top };
+        };
+
+        const start = (e) => { e.preventDefault(); drawingIA = true; const pos = getPos(e); sigCtxIA.beginPath(); sigCtxIA.moveTo(pos.x, pos.y); };
+        const move = (e) => { e.preventDefault(); if(!drawingIA) return; const pos = getPos(e); sigCtxIA.lineTo(pos.x, pos.y); sigCtxIA.stroke(); };
+        const stop = () => { drawingIA = false; };
+
+        canvas.addEventListener('mousedown', start);
+        canvas.addEventListener('mousemove', move);
+        window.addEventListener('mouseup', stop);
+        canvas.addEventListener('touchstart', start, {passive:false});
+        canvas.addEventListener('touchmove', move, {passive:false});
+        canvas.addEventListener('touchend', stop);
+    }
+
+    function limpiarFirmaIA() {
+        const canvas = document.getElementById('canvas-firma-ia');
+        if(canvas) canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+
+
+
+
+
+
+
+    
     function anteriorPasoIA() {
         if (pasoActual > 0) {
             pasoActual--;
@@ -1214,30 +1273,48 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
         }
     }
 
-    // ==========================================
-    // MOTOR DE GENERACIÓN Y ESTAMPADO IA
+
+
+
+
+
+
+        // ==========================================
+    // MOTOR DE GENERACIÓN Y ESTAMPADO IA (ACTUALIZADO)
     // ==========================================
     async function procesarDocumentoIA() {
-        const btn = document.querySelector('.btn-ia-nav');
+        const btn = document.querySelector(".btn-ia-nav");
         const originalText = btn.innerText;
         btn.innerText = "⏳ Redactando...";
         btn.disabled = true;
 
         try {
-            // 1. Construir el prompt para la IA
-            let promptBase = `Genera un documento de tipo ${plantillaSeleccionada.nombre}. \n`;
-            promptBase += `Usa la siguiente información:\n`;
+            // 1. Construir el prompt para la IA (más inteligente)
+            let promptBase = `Eres un asistente experto en redacción de documentos formales. Tu tarea es generar un documento de tipo "${plantillaSeleccionada.nombre}" basándote en la información proporcionada. \n`;
+            promptBase += `Asegúrate de que el tono sea profesional y formal. \n`;
+            promptBase += `Aquí tienes la información clave:\n`;
+            
             for (let nombre in respuestasIA) {
-                promptBase += `- ${nombre}: ${respuestasIA[nombre]}\n`;
+                const area = preguntasIA.find(a => a.nombre === nombre);
+                if (area && area.tipo !== 'firma') { // No incluimos la firma en el prompt de texto
+                    promptBase += `- ${nombre}: ${respuestasIA[nombre]}\n`;
+                }
             }
-            promptBase += `\nRedacta el contenido de forma profesional, formal y completa. Responde ÚNICAMENTE con el texto del documento, sin saludos ni comentarios adicionales.`;
+            promptBase += `\nRedacta el contenido completo del documento. Responde ÚNICAMENTE con el texto del documento, sin saludos, comentarios adicionales o introducciones.`;
 
             // 2. Llamar a tu Edge Function de Supabase
-            const { data, error } = await supabase.functions.invoke('generar-documento', {
+            const { data, error } = await supabase.functions.invoke("generar-documento", {
                 body: { prompt: promptBase }
             });
 
-            if (error) throw new Error("Error en la IA: " + error.message);
+            // Manejo de errores mejorado para la Edge Function
+            if (error) {
+                console.error("Error al invocar Edge Function:", error);
+                throw new Error(`Error en la IA: ${error.message || 'La función Edge devolvió un error.'}`);
+            }
+            if (!data || !data.resultado) {
+                throw new Error("La IA no devolvió un resultado válido.");
+            }
             
             // 3. Estampar el resultado en el PDF
             await estamparDocumentoIA(data.resultado);
@@ -1249,8 +1326,18 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
         }
     }
 
+
+
+
+
+
+    
+    // ==========================================
+    // ESTAMPADO DE DOCUMENTO IA (ACTUALIZADO CON MÁRGENES Y FIRMA)
+    // ==========================================
     async function estamparDocumentoIA(textoGenerado) {
         const { fondo, tipoFondo, areas } = plantillaSeleccionada.configuracion;
+        const MARGEN_PDF = 28; // Aproximadamente 1cm en puntos de PDF (1 pulgada = 72 puntos)
 
         try {
             let pdfDoc;
@@ -1260,7 +1347,7 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
                 pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
             } else {
                 pdfDoc = await PDFLib.PDFDocument.create();
-                const page = pdfDoc.addPage([595, 842]); // Tamaño A4 estándar
+                const page = pdfDoc.addPage([595, 842]); // Tamaño A4 estándar (aprox. 21x29.7 cm)
                 const imgBytes = Uint8Array.from(atob(fondo.split(',')[1]), c => c.charCodeAt(0));
                 const embedImg = fondo.includes('png') ? await pdfDoc.embedPng(imgBytes) : await pdfDoc.embedJpg(imgBytes);
                 page.drawImage(embedImg, { x: 0, y: 0, width: 595, height: 842 });
@@ -1271,35 +1358,63 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
             const { width, height } = page.getSize();
 
             // Estampar cada área configurada
-            areas.forEach(area => {
-                // Si es el área tipo 'cuerpo', usamos el texto de la IA. Si no, la respuesta del usuario.
-                let contenido = area.tipo === 'cuerpo' ? textoGenerado : (respuestasIA[area.nombre] || "");
+            for (const area of areas) {
+                let contenido = '';
+                if (area.tipo === 'cuerpo') {
+                    contenido = textoGenerado;
+                } else if (area.tipo === 'firma') {
+                    contenido = respuestasIA[area.nombre]; // La firma es un Data URL
+                } else {
+                    contenido = respuestasIA[area.nombre] || '';
+                }
                 
                 if (contenido) {
                     // Convertir coordenadas del Admin (base 800px) a puntos de PDF
-                    const scaleX = width / 800;
-                    const scaleY = height / (800 * (height/width));
-                    
-                    const pdfX = area.x * scaleX;
-                    const pdfY = height - (area.y * scaleY) - 12; // Invertir Y (PDF empieza abajo)
+                    // Y aplicar márgenes de seguridad
+                    const adminWidth = 800; // Ancho de referencia del Admin
+                    const adminHeight = 800 * (height / width); // Altura de referencia escalada
 
-                    page.drawText(contenido, {
-                        x: pdfX,
-                        y: pdfY,
-                        size: 10,
-                        font: font,
-                        color: PDFLib.rgb(0, 0, 0),
-                        maxWidth: area.w * scaleX,
-                        lineHeight: 12
-                    });
+                    const scaleX = (width - 2 * MARGEN_PDF) / adminWidth;
+                    const scaleY = (height - 2 * MARGEN_PDF) / adminHeight;
+                    
+                    const pdfX = (area.x * scaleX) + MARGEN_PDF;
+                    const pdfY = height - ((area.y * scaleY) + MARGEN_PDF) - (area.tipo === 'firma' ? area.h * scaleY : 12); // Invertir Y y ajustar para firma/texto
+
+                    if (area.tipo === 'firma') {
+                        if (contenido.startsWith('data:image/png;base64,')) {
+                            const pngImage = await pdfDoc.embedPng(contenido);
+                            const pngDims = pngImage.scale(1);
+                            const ratio = pngDims.height / pngDims.width;
+
+                            const imgWidth = area.w * scaleX;
+                            const imgHeight = imgWidth * ratio;
+
+                            page.drawImage(pngImage, {
+                                x: pdfX,
+                                y: pdfY,
+                                width: imgWidth,
+                                height: imgHeight
+                            });
+                        }
+                    } else { // Texto (cuerpo, remitente, etc.)
+                        page.drawText(contenido, {
+                            x: pdfX,
+                            y: pdfY,
+                            size: 10,
+                            font: font,
+                            color: PDFLib.rgb(0, 0, 0),
+                            maxWidth: area.w * scaleX,
+                            lineHeight: 12
+                        });
+                    }
                 }
-            });
+            }
 
             // 4. Guardar y Descargar
             const finalPdfBytes = await pdfDoc.save();
             download(finalPdfBytes, `${plantillaSeleccionada.nombre}_DocuFacil.pdf`, "application/pdf");
             
-            // 5. Descontar crédito (Tu lógica original)
+            // 5. Descontar crédito
             await supabase.from('usuarios_codigos')
                 .update({ creditos: usuarioActual.creditos - 1 })
                 .eq('id', usuarioActual.id);
@@ -1315,6 +1430,8 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
 
 
 
+
+    
     
 </script>
 
