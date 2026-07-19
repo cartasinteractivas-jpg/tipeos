@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <!-- ¡IMPORTANTE! Quité el "user-scalable=no" para permitir el Zoom con los dedos en todo el PDF -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
     <title>DocuFácil - Generador de Documentos</title>
     
     <!-- Supabase -->
@@ -488,6 +489,57 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
         }
     }
 
+
+
+
+    // ==========================================
+    // ZOOM INTERNO DEL PDF (Pinch-to-Zoom)
+    // ==========================================
+    window.pdfGlobalScale = 1;
+    let initialPdfDist = 0;
+    let initialPdfScale = 1;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const container = document.getElementById('free-canvas-container');
+        
+        container.addEventListener('touchstart', (e) => {
+            // Solo hacer zoom si tocamos con 2 dedos y NO estamos tocando un texto/firma
+            if (e.touches.length === 2 && !e.target.closest('.floating-element')) {
+                initialPdfDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                initialPdfScale = window.pdfGlobalScale;
+            }
+        }, {passive: false});
+
+        container.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 2 && initialPdfDist > 0 && !e.target.closest('.floating-element')) {
+                e.preventDefault(); // Evita que la pantalla salte
+                const currentDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                const scaleFactor = currentDist / initialPdfDist;
+                
+                // Limitar el zoom entre 1x (normal) y 3x (muy grande)
+                window.pdfGlobalScale = Math.max(1, Math.min(initialPdfScale * scaleFactor, 3)); 
+                
+                // Aplicar el zoom solo a las hojas del PDF
+                document.querySelectorAll('.pdf-page-wrapper').forEach(wrapper => {
+                    wrapper.style.transform = `scale(${window.pdfGlobalScale})`;
+                    wrapper.style.transformOrigin = 'top left';
+                    // Ajustar el scroll para poder movernos por el PDF agrandado
+                    wrapper.style.marginBottom = `${(window.pdfGlobalScale - 1) * wrapper.offsetHeight}px`;
+                    wrapper.style.marginRight = `${(window.pdfGlobalScale - 1) * wrapper.offsetWidth}px`;
+                });
+            }
+        }, {passive: false});
+
+        container.addEventListener('touchend', (e) => {
+            if (e.touches.length < 2) initialPdfDist = 0;
+        });
+    });
+
+
+
+
+
+    
     // ==========================================
     // 8. LÓGICA: RELLENADO LIBRE (CARGA DE PDF)
     // ==========================================
@@ -551,18 +603,24 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
             canvas.height = viewport.height;
             
             await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+
+
             
-            // Evento para abrir el menú al tocar la hoja
+                       // Evento para abrir el menú al tocar la hoja
             wrapper.addEventListener('click', function(ev) {
                 if (ev.target.closest('.floating-element') || ev.target.closest('.click-menu')) return;
                 document.querySelectorAll('.click-menu').forEach(m => m.remove());
 
                 const rect = this.getBoundingClientRect();
-                const x = ev.clientX - rect.left;
-                const y = ev.clientY - rect.top;
+                // Ajuste exacto para que el menú aparezca donde tocas, incluso con zoom
+                const x = (ev.clientX - rect.left) / window.pdfGlobalScale;
+                const y = (ev.clientY - rect.top) / window.pdfGlobalScale;
                 
                 mostrarMenuOpciones(this, x, y, pageNum);
             });
+
+
+            
         }
         
         const btnGenerar = document.getElementById('btn-generar-free');
