@@ -81,6 +81,11 @@
         .floating-element { position: absolute; z-index: 40; cursor: grab; padding: 4px; border: 1px dashed transparent; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
         .floating-element:hover, .floating-element:active { border: 1px dashed #3498db; background: rgba(255,255,255,0.8); }
         .floating-element:active { cursor: grabbing; }
+
+                /* Nuevo: Estado Seleccionado */
+        .floating-element.selected { border: 2px dashed #3498db !important; background: rgba(255,255,255,0.9); }
+        .floating-element.selected .btn-delete-float, .floating-element.selected .resize-handle { display: flex !important; }
+
         
         .floating-text { color: #000; font-family: sans-serif; white-space: nowrap; pointer-events: none; user-select: none; }
         .floating-img { pointer-events: none; user-select: none; }
@@ -153,6 +158,7 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
     </div>
 </div>
 
+    
 <!-- MODAL DE SÍMBOLOS -->
 <div id="modal-simbolos" class="modal-overlay">
     <div class="modal-content">
@@ -168,6 +174,19 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
     </div>
 </div>
 
+<!-- MODAL DE OPCIONES (Reemplaza al menú flotante) -->
+<div id="modal-opciones" class="modal-overlay">
+    <div class="modal-content" style="gap: 10px;">
+        <h3>¿Qué deseas añadir?</h3>
+        <button type="button" class="btn-generar" style="margin-top:0; background:#3498db; color:white;" onclick="seleccionarOpcion('texto')">📝 Añadir Texto</button>
+        <button type="button" class="btn-generar" style="margin-top:0; background:#9b59b6; color:white;" onclick="seleccionarOpcion('firma')">✍️ Añadir Firma</button>
+        <button type="button" class="btn-generar" style="margin-top:0; background:#e67e22; color:white;" onclick="seleccionarOpcion('simbolo')">✅ Añadir Símbolo</button>
+        <button type="button" class="btn-volver" style="margin: 10px auto 0 auto;" onclick="cerrarModalOpciones()">❌ Cancelar</button>
+    </div>
+</div>
+
+
+    
 <div class="app-container">
     <div class="header">
         <h1>📄 DocuFácil</h1>
@@ -606,18 +625,24 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
 
 
             
-                       // Evento para abrir el menú al tocar la hoja
+                                    // Evento para abrir el menú o deseleccionar al tocar la hoja
             wrapper.addEventListener('click', function(ev) {
-                if (ev.target.closest('.floating-element') || ev.target.closest('.click-menu')) return;
-                document.querySelectorAll('.click-menu').forEach(m => m.remove());
+                if (ev.target.closest('.floating-element')) return; // Si tocamos un elemento, ignorar
+                
+                // Si hay un elemento seleccionado, lo deseleccionamos y NO abrimos el menú
+                const seleccionado = document.querySelector('.floating-element.selected');
+                if (seleccionado) {
+                    document.querySelectorAll('.floating-element').forEach(el => el.classList.remove('selected'));
+                    return;
+                }
 
                 const rect = this.getBoundingClientRect();
-                // Ajuste exacto para que el menú aparezca donde tocas, incluso con zoom
                 const x = (ev.clientX - rect.left) / window.pdfGlobalScale;
                 const y = (ev.clientY - rect.top) / window.pdfGlobalScale;
                 
                 mostrarMenuOpciones(this, x, y, pageNum);
             });
+
 
 
             
@@ -628,50 +653,34 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
         btnGenerar.style.display = 'block';
     });
 
+
     // ==========================================
-    // 9. MENÚ INTELIGENTE (NO SE CORTA)
+    // 9. MENÚ DE OPCIONES (MODAL FIJO)
     // ==========================================
+    let pendingAction = null;
+
     function mostrarMenuOpciones(parent, x, y, pageNum) {
-        const menu = document.createElement('div');
-        menu.className = 'click-menu';
-        
-        // Calcular bordes para que el menú no se salga de la pantalla
-        const rect = parent.getBoundingClientRect();
-        let menuX = x;
-        let menuY = y;
-        
-        if (x + 160 > rect.width) menuX = rect.width - 160; // Ajuste derecho
-        if (y + 180 > rect.height) menuY = rect.height - 180; // Ajuste inferior
-
-        menu.style.left = `${menuX}px`;
-        menu.style.top = `${menuY}px`;
-
-        menu.addEventListener('click', e => e.stopPropagation());
-        menu.addEventListener('mousedown', e => e.stopPropagation());
-        menu.addEventListener('touchstart', e => e.stopPropagation(), {passive: false});
-
-        const btnText = document.createElement('button');
-        btnText.innerText = '📝 Añadir Texto';
-        btnText.onclick = (e) => { e.stopPropagation(); menu.remove(); abrirModalTexto(parent, x, y, pageNum); };
-
-        const btnSig = document.createElement('button');
-        btnSig.innerText = '✍️ Añadir Firma';
-        btnSig.onclick = (e) => { e.stopPropagation(); menu.remove(); abrirModalFirma(parent, x, y, pageNum); };
-
-        const btnSym = document.createElement('button');
-        btnSym.innerText = '✅ Añadir Símbolo';
-        btnSym.onclick = (e) => { e.stopPropagation(); menu.remove(); abrirModalSimbolos(parent, x, y, pageNum); };
-
-        const btnCancel = document.createElement('button');
-        btnCancel.innerText = '❌ Cancelar';
-        btnCancel.onclick = (e) => { e.stopPropagation(); menu.remove(); };
-
-        menu.appendChild(btnText);
-        menu.appendChild(btnSig);
-        menu.appendChild(btnSym);
-        menu.appendChild(btnCancel);
-        parent.appendChild(menu);
+        pendingAction = { parent, x, y, pageNum };
+        document.getElementById('modal-opciones').style.display = 'flex';
     }
+
+    function cerrarModalOpciones() {
+        document.getElementById('modal-opciones').style.display = 'none';
+    }
+
+    function seleccionarOpcion(opcion) {
+        cerrarModalOpciones();
+        if (!pendingAction) return;
+        const { parent, x, y, pageNum } = pendingAction;
+        
+        if (opcion === 'texto') abrirModalTexto(parent, x, y, pageNum);
+        if (opcion === 'firma') abrirModalFirma(parent, x, y, pageNum);
+        if (opcion === 'simbolo') abrirModalSimbolos(parent, x, y, pageNum);
+    }
+
+
+
+    
     // ==========================================
     // 10. MODALES (TEXTO, FIRMA, SÍMBOLOS)
     // ==========================================
@@ -794,7 +803,11 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
         cerrarModalSimbolos();
     }
 
-    // ==========================================
+
+    
+
+
+        // ==========================================
     // 11. CREADOR DE ELEMENTOS Y MOTOR INTERACTIVO
     // ==========================================
     function crearElementoFlotante(parent, x, y, pageNum, tipo, contenido, formato = null) {
@@ -850,10 +863,24 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
         wrapper.appendChild(resizeHandle);
         parent.appendChild(wrapper);
 
+        // --- NUEVA LÓGICA DE SELECCIÓN (RECUADRO AZUL) ---
+        const seleccionarEsteElemento = () => {
+            document.querySelectorAll('.floating-element').forEach(el => el.classList.remove('selected'));
+            wrapper.classList.add('selected');
+        };
+        wrapper.addEventListener('mousedown', seleccionarEsteElemento);
+        wrapper.addEventListener('touchstart', seleccionarEsteElemento, {passive: true});
+        seleccionarEsteElemento(); // Seleccionarlo automáticamente al crearlo
+        // -------------------------------------------------
+
         elementosFlotantes.push(elData);
         hacerInteractivo(wrapper, elData, resizeHandle);
     }
 
+
+
+
+    
     function hacerInteractivo(wrapper, elData, resizeHandle) {
         let isDragging = false, isResizing = false;
         let startX, startY, initialLeft, initialTop;
