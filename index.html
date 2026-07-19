@@ -2,7 +2,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- ¡IMPORTANTE! Quité el "user-scalable=no" para permitir el Zoom con los dedos en todo el PDF -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DocuFácil - Generador de Documentos</title>
     
     <!-- Supabase -->
@@ -71,11 +72,11 @@
         .free-pdf-canvas { display: block; width: 100%; cursor: crosshair; }
         
         /* Menú al hacer clic */
-        .click-menu { position: absolute; background: #fff; border-radius: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: flex; flex-direction: column; z-index: 60; overflow: hidden; border: 1px solid #ccc; }
+        .click-menu { position: absolute; background: #fff; border-radius: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: flex; flex-direction: column; z-index: 90; overflow: hidden; border: 1px solid #ccc; min-width: 150px; }
         .click-menu button { background: none; border: none; padding: 12px 20px; cursor: pointer; font-weight: bold; font-size: 14px; color: #333; text-align: left; border-bottom: 1px solid #eee; transition: 0.2s; margin: 0; width: 100%; }
         .click-menu button:hover { background: #f1c40f; color: #000; }
 
-        /* Elementos Flotantes (Texto y Firma) */
+        /* Elementos Flotantes (Texto, Firma, Símbolos) */
         .floating-element { position: absolute; z-index: 40; cursor: grab; padding: 4px; border: 1px dashed transparent; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
         .floating-element:hover, .floating-element:active { border: 1px dashed #3498db; background: rgba(255,255,255,0.8); }
         .floating-element:active { cursor: grabbing; }
@@ -88,14 +89,15 @@
         .resize-handle { position: absolute; bottom: -8px; right: -8px; width: 16px; height: 16px; background: #3498db; border-radius: 50%; cursor: nwse-resize; display: none; z-index: 50; border: 2px solid white; }
         .floating-element:hover .btn-delete-float, .floating-element:hover .resize-handle { display: flex; }
 
-        /* --- MODALES (Texto y Firma) --- */
+        /* --- MODALES --- */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center; padding: 20px; }
         .modal-content { background: #222; padding: 20px; border-radius: 10px; border: 1px solid #555; width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 15px; }
         .modal-content h3 { color: #f1c40f; text-align: center; margin-bottom: 5px; }
         
         /* Formato de texto */
         .format-toolbar { display: flex; gap: 10px; justify-content: center; }
-        .btn-format { background: #333; color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; font-size: 16px; cursor: pointer; }
+        .btn-format { background: #333;
+color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; font-size: 16px; cursor: pointer; }
         .btn-format.active { background: #3498db; border-color: #2980b9; }
         
         /* Historial Chips */
@@ -105,17 +107,23 @@
 
         .modal-actions { display: flex; gap: 10px; justify-content: center; margin-top: 10px; }
         .modal-actions button { margin: 0; width: auto; padding: 10px 20px; }
+
+        /* Símbolos */
+        .symbol-grid { display: flex; justify-content: center; gap: 15px; margin-bottom: 10px; }
+        .btn-symbol { background: #333; color: white; border: 1px solid #555; font-size: 24px; width: 50px; height: 50px; border-radius: 8px; cursor: pointer; display: flex; justify-content: center; align-items: center; }
+        .btn-symbol:hover { background: #f1c40f; color: #000; }
     </style>
 </head>
 <body>
+
 <!-- MODAL DE TEXTO -->
 <div id="modal-texto" class="modal-overlay">
     <div class="modal-content">
         <h3>Añadir Texto</h3>
         
         <div class="format-toolbar">
-            <button id="btn-bold" class="btn-format" onclick="toggleFormat('bold')"><b>B</b></button>
-            <button id="btn-italic" class="btn-format" onclick="toggleFormat('italic')"><i>I</i></button>
+            <button type="button" id="btn-bold" class="btn-format" onclick="toggleFormat('bold')"><b>B</b></button>
+            <button type="button" id="btn-italic" class="btn-format" onclick="toggleFormat('italic')"><i>I</i></button>
         </div>
 
         <input type="text" id="input-texto-modal" placeholder="Escribe aquí..." style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #444; background: #111; color: white; font-size: 16px; outline: none;">
@@ -125,8 +133,8 @@
         </div>
 
         <div class="modal-actions">
-            <button onclick="cerrarModalTexto()" style="background: #555; color: white; border: none; border-radius: 5px;">Cancelar</button>
-            <button onclick="guardarTextoModal()" style="background: #2ecc71; color: black; border: none; border-radius: 5px;">Aceptar</button>
+            <button type="button" onclick="cerrarModalTexto()" style="background: #555; color: white; border: none; border-radius: 5px;">Cancelar</button>
+            <button type="button" onclick="guardarTextoModal()" style="background: #2ecc71; color: black; border: none; border-radius: 5px;">Aceptar</button>
         </div>
     </div>
 </div>
@@ -137,9 +145,24 @@
         <h3>Dibuja tu firma</h3>
         <canvas id="canvas-firma" width="300" height="150" style="background: white; border-radius: 5px; cursor: crosshair; touch-action: none; width: 100%;"></canvas>
         <div class="modal-actions">
-            <button onclick="limpiarFirma()" style="background: #e74c3c; color: white; border: none; border-radius: 5px;">Limpiar</button>
-            <button onclick="cerrarModalFirma()" style="background: #555; color: white; border: none; border-radius: 5px;">Cancelar</button>
-            <button onclick="guardarFirma()" style="background: #2ecc71; color: black; border: none; border-radius: 5px;">Aceptar</button>
+            <button type="button" onclick="limpiarFirma()" style="background: #e74c3c; color: white; border: none; border-radius: 5px;">Limpiar</button>
+            <button type="button" onclick="cerrarModalFirma()" style="background: #555; color: white; border: none; border-radius: 5px;">Cancelar</button>
+            <button type="button" onclick="guardarFirma()" style="background: #2ecc71; color: black; border: none; border-radius: 5px;">Aceptar</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL DE SÍMBOLOS -->
+<div id="modal-simbolos" class="modal-overlay">
+    <div class="modal-content">
+        <h3>Añadir Símbolo</h3>
+        <div class="symbol-grid">
+            <button type="button" class="btn-symbol" onclick="guardarSimbolo('✔')">✔</button>
+            <button type="button" class="btn-symbol" onclick="guardarSimbolo('✘')">✘</button>
+            <button type="button" class="btn-symbol" onclick="guardarSimbolo('•')">•</button>
+        </div>
+        <div class="modal-actions">
+            <button type="button" onclick="cerrarModalSimbolos()" style="background: #555; color: white; border: none; border-radius: 5px;">Cancelar</button>
         </div>
     </div>
 </div>
@@ -230,7 +253,7 @@
     // Variables para Rellenado Libre
     let freePdfDoc = null;
     let freeCanvasScales = {};
-    let elementosFlotantes = []; // Unificamos textos y firmas aquí
+    let elementosFlotantes = []; 
     let freePdfPageCount = 0; 
     let historialTextos = JSON.parse(localStorage.getItem('docufacil_historial' )) || [];
 
@@ -243,7 +266,7 @@
         const codigoGuardado = localStorage.getItem('docufacil_codigo');
         if (codigoGuardado) {
             document.getElementById('input-codigo').value = codigoGuardado;
-            await activarCodigo(codigoGuardado, true); // true = es auto-login (silencioso)
+            await activarCodigo(codigoGuardado, true); 
         }
     });
 
@@ -352,7 +375,6 @@
             });
         }
     }
-
     // ==========================================
     // 6. LÓGICA: PLANTILLAS PREDEFINIDAS
     // ==========================================
@@ -455,6 +477,17 @@
             btn.disabled = false;
         }
     }
+
+    // ==========================================
+    // 7. HISTORIAL (AUTOCOMPLETADO)
+    // ==========================================
+    function guardarEnHistorial(texto) {
+        if (texto && !historialTextos.includes(texto)) {
+            historialTextos.push(texto);
+            localStorage.setItem('docufacil_historial', JSON.stringify(historialTextos));
+        }
+    }
+
     // ==========================================
     // 8. LÓGICA: RELLENADO LIBRE (CARGA DE PDF)
     // ==========================================
@@ -538,13 +571,22 @@
     });
 
     // ==========================================
-    // 9. MENÚ DE OPCIONES
+    // 9. MENÚ INTELIGENTE (NO SE CORTA)
     // ==========================================
     function mostrarMenuOpciones(parent, x, y, pageNum) {
         const menu = document.createElement('div');
         menu.className = 'click-menu';
-        menu.style.left = `${x}px`;
-        menu.style.top = `${y}px`;
+        
+        // Calcular bordes para que el menú no se salga de la pantalla
+        const rect = parent.getBoundingClientRect();
+        let menuX = x;
+        let menuY = y;
+        
+        if (x + 160 > rect.width) menuX = rect.width - 160; // Ajuste derecho
+        if (y + 180 > rect.height) menuY = rect.height - 180; // Ajuste inferior
+
+        menu.style.left = `${menuX}px`;
+        menu.style.top = `${menuY}px`;
 
         menu.addEventListener('click', e => e.stopPropagation());
         menu.addEventListener('mousedown', e => e.stopPropagation());
@@ -558,24 +600,29 @@
         btnSig.innerText = '✍️ Añadir Firma';
         btnSig.onclick = (e) => { e.stopPropagation(); menu.remove(); abrirModalFirma(parent, x, y, pageNum); };
 
+        const btnSym = document.createElement('button');
+        btnSym.innerText = '✅ Añadir Símbolo';
+        btnSym.onclick = (e) => { e.stopPropagation(); menu.remove(); abrirModalSimbolos(parent, x, y, pageNum); };
+
         const btnCancel = document.createElement('button');
         btnCancel.innerText = '❌ Cancelar';
         btnCancel.onclick = (e) => { e.stopPropagation(); menu.remove(); };
 
         menu.appendChild(btnText);
         menu.appendChild(btnSig);
+        menu.appendChild(btnSym);
         menu.appendChild(btnCancel);
         parent.appendChild(menu);
     }
-
     // ==========================================
-    // 10. MODAL DE TEXTO Y CHIPS (HISTORIAL)
+    // 10. MODALES (TEXTO, FIRMA, SÍMBOLOS)
     // ==========================================
-    let currentTextTarget = null;
+    let currentTarget = null;
     let textFormat = { bold: false, italic: false };
 
+    // --- MODAL TEXTO ---
     function abrirModalTexto(parent, x, y, pageNum) {
-        currentTextTarget = { parent, x, y, pageNum };
+        currentTarget = { parent, x, y, pageNum };
         textFormat = { bold: false, italic: false };
         document.getElementById('btn-bold').classList.remove('active');
         document.getElementById('btn-italic').classList.remove('active');
@@ -590,9 +637,7 @@
         setTimeout(() => input.focus(), 100);
     }
 
-    function cerrarModalTexto() {
-        document.getElementById('modal-texto').style.display = 'none';
-    }
+    function cerrarModalTexto() { document.getElementById('modal-texto').style.display = 'none'; }
 
     function toggleFormat(type) {
         textFormat[type] = !textFormat[type];
@@ -611,6 +656,7 @@
         container.innerHTML = '';
         historialTextos.forEach(texto => {
             const chip = document.createElement('button');
+            chip.type = 'button';
             chip.className = 'chip';
             chip.innerText = texto;
             chip.onclick = () => { document.getElementById('input-texto-modal').value = texto; };
@@ -623,57 +669,22 @@
         if (!texto) return cerrarModalTexto();
 
         guardarEnHistorial(texto);
-
-        const { parent, x, y, pageNum } = currentTextTarget;
-        const wrapper = document.createElement('div');
-        wrapper.className = 'floating-element';
-        wrapper.style.left = `${x}px`;
-        wrapper.style.top = `${y - 15}px`;
-
-        const span = document.createElement('span');
-        span.className = 'floating-text';
-        span.innerText = texto;
-        span.style.fontSize = '14px';
-        if (textFormat.bold) span.style.fontWeight = 'bold';
-        if (textFormat.italic) span.style.fontStyle = 'italic';
-
-        const btnDelete = document.createElement('button');
-        btnDelete.className = 'btn-delete-float';
-        btnDelete.innerText = '✖';
-        
-        const resizeHandle = document.createElement('div');
-        resizeHandle.className = 'resize-handle';
-
-        const elData = { wrapper, type: 'text', texto, pageNum, format: { ...textFormat }, size: 14, element: span };
-        
-        btnDelete.onclick = (e) => { e.stopPropagation(); wrapper.remove(); elementosFlotantes = elementosFlotantes.filter(i => i !== elData); };
-
-        wrapper.appendChild(span);
-        wrapper.appendChild(btnDelete);
-        wrapper.appendChild(resizeHandle);
-        parent.appendChild(wrapper);
-
-        elementosFlotantes.push(elData);
-        hacerInteractivo(wrapper, elData, resizeHandle);
+        crearElementoFlotante(currentTarget.parent, currentTarget.x, currentTarget.y, currentTarget.pageNum, 'text', texto, { ...textFormat });
         cerrarModalTexto();
     }
 
-    // ==========================================
-    // 11. MODAL DE FIRMA (TRAZO FINO)
-    // ==========================================
+    // --- MODAL FIRMA ---
     let sigCanvas, sigCtx, drawing = false;
-    let currentSigTarget = null;
 
     function abrirModalFirma(parent, x, y, pageNum) {
-        currentSigTarget = { parent, x, y, pageNum };
+        currentTarget = { parent, x, y, pageNum };
         document.getElementById('modal-firma').style.display = 'flex';
         
         sigCanvas = document.getElementById('canvas-firma');
         sigCtx = sigCanvas.getContext('2d');
         sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
         
-        // TRAZO MÁS FINO Y REALISTA
-        sigCtx.lineWidth = 1.5; 
+        sigCtx.lineWidth = 1.5; // Trazo fino
         sigCtx.strokeStyle = '#000';
         sigCtx.lineCap = 'round';
         sigCtx.lineJoin = 'round';
@@ -708,57 +719,94 @@
 
     function guardarFirma() {
         const dataUrl = sigCanvas.toDataURL('image/png');
-        const { parent, x, y, pageNum } = currentSigTarget;
-        
-        const wrapper = document.createElement('div');
-        wrapper.className = 'floating-element';
-        wrapper.style.left = `${x}px`;
-        wrapper.style.top = `${y - 30}px`; 
-
-        const img = document.createElement('img');
-        img.src = dataUrl;
-        img.className = 'floating-img';
-        img.style.width = `150px`;
-        
-        const btnDelete = document.createElement('button');
-        btnDelete.className = 'btn-delete-float';
-        btnDelete.innerText = '✖';
-
-        const resizeHandle = document.createElement('div');
-        resizeHandle.className = 'resize-handle';
-        
-        const elData = { wrapper, type: 'image', dataUrl, pageNum, size: 150, element: img };
-        
-        btnDelete.onclick = (e) => { e.stopPropagation(); wrapper.remove(); elementosFlotantes = elementosFlotantes.filter(f => f !== elData); };
-        
-        wrapper.appendChild(img);
-        wrapper.appendChild(btnDelete);
-        wrapper.appendChild(resizeHandle);
-        parent.appendChild(wrapper);
-        
-        elementosFlotantes.push(elData);
-        hacerInteractivo(wrapper, elData, resizeHandle); 
+        crearElementoFlotante(currentTarget.parent, currentTarget.x, currentTarget.y, currentTarget.pageNum, 'image', dataUrl);
         cerrarModalFirma();
     }
 
+    // --- MODAL SÍMBOLOS ---
+    function abrirModalSimbolos(parent, x, y, pageNum) {
+        currentTarget = { parent, x, y, pageNum };
+        document.getElementById('modal-simbolos').style.display = 'flex';
+    }
+
+    function cerrarModalSimbolos() { document.getElementById('modal-simbolos').style.display = 'none'; }
+
+    function guardarSimbolo(simbolo) {
+        crearElementoFlotante(currentTarget.parent, currentTarget.x, currentTarget.y, currentTarget.pageNum, 'symbol', simbolo);
+        cerrarModalSimbolos();
+    }
+
     // ==========================================
-    // 12. MOTOR INTERACTIVO (ARRASTRE Y PINCH-TO-ZOOM)
+    // 11. CREADOR DE ELEMENTOS Y MOTOR INTERACTIVO
     // ==========================================
+    function crearElementoFlotante(parent, x, y, pageNum, tipo, contenido, formato = null) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'floating-element';
+        wrapper.style.left = `${x}px`;
+        wrapper.style.top = `${y - 15}px`;
+
+        const btnDelete = document.createElement('button');
+        btnDelete.type = 'button';
+        btnDelete.className = 'btn-delete-float';
+        btnDelete.innerText = '✖';
+        
+        const resizeHandle = document.createElement('div');
+        resizeHandle.className = 'resize-handle';
+
+        let elData = { wrapper, type: tipo, pageNum };
+        let domElement;
+
+        if (tipo === 'text' || tipo === 'symbol') {
+            domElement = document.createElement('span');
+            domElement.className = 'floating-text';
+            domElement.innerText = contenido;
+            
+            let initialSize = tipo === 'symbol' ? 24 : 14;
+            domElement.style.fontSize = `${initialSize}px`;
+            
+            if (formato) {
+                if (formato.bold) domElement.style.fontWeight = 'bold';
+                if (formato.italic) domElement.style.fontStyle = 'italic';
+                elData.format = formato;
+            }
+            
+            elData.texto = contenido;
+            elData.size = initialSize;
+        } 
+        else if (tipo === 'image') {
+            domElement = document.createElement('img');
+            domElement.src = contenido;
+            domElement.className = 'floating-img';
+            domElement.style.width = `150px`;
+            
+            elData.dataUrl = contenido;
+            elData.size = 150;
+        }
+
+        elData.element = domElement;
+        
+        btnDelete.onclick = (e) => { e.stopPropagation(); wrapper.remove(); elementosFlotantes = elementosFlotantes.filter(i => i !== elData); };
+
+        wrapper.appendChild(domElement);
+        wrapper.appendChild(btnDelete);
+        wrapper.appendChild(resizeHandle);
+        parent.appendChild(wrapper);
+
+        elementosFlotantes.push(elData);
+        hacerInteractivo(wrapper, elData, resizeHandle);
+    }
+
     function hacerInteractivo(wrapper, elData, resizeHandle) {
         let isDragging = false, isResizing = false;
         let startX, startY, initialLeft, initialTop;
-        
-        // Variables para Pinch-to-Zoom
-        let initialDistance = 0;
-        let initialSize = 0;
+        let initialDistance = 0, initialSize = 0;
 
-        // --- ARRASTRE ---
+        // --- ARRASTRE Y PINCH-TO-ZOOM ---
         const startDrag = (e) => {
             if(e.target === resizeHandle || e.target.tagName === 'BUTTON') return;
             e.preventDefault(); e.stopPropagation();
             
             if (e.touches && e.touches.length === 2) {
-                // Iniciar Pinch-to-Zoom
                 isDragging = false;
                 initialDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
                 initialSize = elData.size;
@@ -775,15 +823,13 @@
 
         const doDragOrZoom = (e) => {
             if (e.touches && e.touches.length === 2 && initialDistance > 0) {
-                // Ejecutar Pinch-to-Zoom
                 e.preventDefault(); e.stopPropagation();
                 const currentDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
                 const scale = currentDistance / initialDistance;
                 let newSize = initialSize * scale;
                 
-                // Limites de tamaño
-                if (elData.type === 'text') {
-                    newSize = Math.max(8, Math.min(newSize, 72));
+                if (elData.type === 'text' || elData.type === 'symbol') {
+                    newSize = Math.max(8, Math.min(newSize, 100));
                     elData.element.style.fontSize = `${newSize}px`;
                 } else {
                     newSize = Math.max(30, Math.min(newSize, 500));
@@ -824,8 +870,8 @@
             const dx = clientX - startX;
             
             let newSize = initialSize + dx;
-            if (elData.type === 'text') {
-                newSize = Math.max(8, Math.min(newSize, 72));
+            if (elData.type === 'text' || elData.type === 'symbol') {
+                newSize = Math.max(8, Math.min(newSize, 100));
                 elData.element.style.fontSize = `${newSize}px`;
             } else {
                 newSize = Math.max(30, Math.min(newSize, 500));
@@ -836,7 +882,6 @@
 
         const stopResize = () => { isResizing = false; };
 
-        // Eventos Arrastre y Zoom
         wrapper.addEventListener('mousedown', startDrag);
         document.addEventListener('mousemove', doDragOrZoom);
         document.addEventListener('mouseup', stopDrag);
@@ -844,7 +889,6 @@
         document.addEventListener('touchmove', doDragOrZoom, {passive: false});
         document.addEventListener('touchend', stopDrag);
 
-        // Eventos Tirador (Mouse)
         resizeHandle.addEventListener('mousedown', startResize);
         document.addEventListener('mousemove', doResize);
         document.addEventListener('mouseup', stopResize);
@@ -854,7 +898,7 @@
     }
 
     // ==========================================
-    // 13. GENERACIÓN FINAL DEL PDF LIBRE
+    // 12. GENERACIÓN FINAL DEL PDF LIBRE
     // ==========================================
     async function generarPdfLibre() {
         if (!freePdfDoc) return;
@@ -871,7 +915,6 @@
         try {
             const pages = freePdfDoc.getPages();
             
-            // Cargar fuentes estándar para negrita y cursiva
             const fontNormal = await freePdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
             const fontBold = await freePdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
             const fontItalic = await freePdfDoc.embedFont(PDFLib.StandardFonts.HelveticaOblique);
@@ -884,13 +927,13 @@
                 
                 const pdfX = (item.wrapper.offsetLeft + 4) / scale;
                 
-                if (item.type === 'text') {
+                if (item.type === 'text' || item.type === 'symbol') {
                     const pdfY = pdfHeight - ((item.wrapper.offsetTop + item.size + 4) / scale);
                     
                     let selectedFont = fontNormal;
-                    if (item.format.bold && item.format.italic) selectedFont = fontBoldItalic;
-                    else if (item.format.bold) selectedFont = fontBold;
-                    else if (item.format.italic) selectedFont = fontItalic;
+                    if (item.format && item.format.bold && item.format.italic) selectedFont = fontBoldItalic;
+                    else if (item.format && item.format.bold) selectedFont = fontBold;
+                    else if (item.format && item.format.italic) selectedFont = fontItalic;
 
                     targetPage.drawText(item.texto, {
                         x: pdfX,
