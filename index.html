@@ -533,7 +533,9 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
 
 
     
-    async function ejecutarIAExperta() {
+
+    
+       async function ejecutarIAExperta() {
         const btn = document.querySelector(".btn-ia-nav");
         btn.innerText = "⏳ IA Redactando...";
         btn.disabled = true;
@@ -544,41 +546,51 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
                 .filter(a => a.tipo !== 'firma')
                 .map(a => a.nombre);
 
-            // Prompt optimizado para recibir JSON limpio
             const promptFinal = `Actúa como un experto legal. Redacta una "${plantillaSeleccionada.nombre}" basada en: "${instruccion}". 
             Devuelve un JSON con estas llaves: ${camposARellenar.join(", ")}. 
             Responde SOLO el JSON, sin texto extra.`;
 
-            const { data, error } = await supabase.functions.invoke('generar-documento', {
-                body: { prompt: promptFinal }
+            // --- URL DIRECTA CONFIGURADA ---
+            const URL_DIRECTA = 'https://wpzddhmllctdsiuxenss.supabase.co/functions/v1/generar-documento'; 
+            
+            const response = await fetch(URL_DIRECTA, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${supabase.supabaseKey}` 
+                },
+                body: JSON.stringify({ prompt: promptFinal } )
             });
 
-            if (error) throw error;
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `Error ${response.status}: No se pudo conectar con la IA.`);
+            }
 
-            // Intentar parsear el JSON de la IA
+            const data = await response.json();
+            
             let resultado;
             try {
+                // Limpiamos el JSON por si la IA mandó texto extra
                 const texto = data.resultado;
                 const inicio = texto.indexOf('{');
                 const fin = texto.lastIndexOf('}') + 1;
                 resultado = JSON.parse(texto.substring(inicio, fin));
             } catch (e) {
+                console.error("Error parseando JSON:", data.resultado);
                 throw new Error("La IA no devolvió un formato válido. Intenta ser más específico.");
             }
 
             await estamparDocumentoIA(resultado);
 
-
         } catch (err) {
             console.error("Error completo:", err);
-            // CAMBIO AQUÍ: Mostrar el mensaje de error real del servidor
-            alert("❌ Error del Servidor: " + (err.message || "Error desconocido"));
+            alert("❌ " + err.message);
             btn.innerText = "Generar Documento ✨";
             btn.disabled = false;
         }
-
-            
     }
+
 
 
 
