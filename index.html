@@ -446,24 +446,31 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
 
 
     
+
+    
+    // ==========================================
+    // MOTOR IA EXPERTA - VERSIÓN FINAL CORREGIDA
+    // ==========================================
     function iniciarFlujoIA(tpl) {
         plantillaSeleccionada = tpl;
         respuestasIA = {};
+        pasoActual = 0;
         
-        // En el modo Experto, solo hacemos una pregunta general
-        // y luego pedimos la firma si existe.
-        const tieneFirma = tpl.configuracion.areas.some(a => a.tipo === 'firma');
-        
+        // MODO EXPERTO: Solo 2 pasos (Instrucción y Firma)
         preguntasIA = [
-            { nombre: "Instrucción General", tipo: "contexto", descripcion: "¿Qué deseas redactar? Incluye nombres, fechas o motivos clave." }
+            { 
+                nombre: "Instrucción General", 
+                tipo: "contexto", 
+                descripcion: "Escribe qué quieres redactar. La IA se encargará de la fecha, nombres y el contenido profesional." 
+            }
         ];
 
-        if (tieneFirma) {
-            const areaFirma = tpl.configuracion.areas.find(a => a.tipo === 'firma');
+        // Si el formato tiene un área de firma, la agregamos como segundo paso
+        const areaFirma = tpl.configuracion.areas.find(a => a.tipo === 'firma');
+        if (areaFirma) {
             preguntasIA.push(areaFirma);
         }
 
-        pasoActual = 0;
         document.getElementById('modal-ia').style.display = 'flex';
         mostrarPasoIA();
     }
@@ -474,16 +481,16 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
         
         contenedor.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span style="color:#f1c40f; font-size:12px; font-weight:bold;">ASISTENTE IA - PASO ${pasoActual + 1}</span>
-                <button onclick="cerrarModalIA()" style="background:none; border:none; color:#888; cursor:pointer;">✕</button>
+                <span style="color:#f1c40f; font-size:12px; font-weight:bold;">DOCUFÁCIL IA - PASO ${pasoActual + 1}</span>
+                <button onclick="cerrarModalIA()" style="background:none; border:none; color:#888; cursor:pointer; font-size:20px;">✕</button>
             </div>
             <h3 style="color:#fff; margin: 10px 0;">${paso.nombre}</h3>
-            <p style="color:#aaa; font-size:14px; margin-bottom:10px;">${paso.tipo === 'firma' ? 'Dibuja tu firma abajo:' : paso.descripcion}</p>
+            <p style="color:#aaa; font-size:14px; margin-bottom:10px;">${paso.tipo === 'firma' ? 'Dibuja tu firma aquí abajo:' : paso.descripcion}</p>
             
             ${paso.tipo === 'firma' 
                 ? `<canvas id="canvas-firma-ia" width="300" height="150" style="background: white; border-radius: 8px; cursor: crosshair; touch-action: none; width: 100%;"></canvas>
                    <button class="btn-ia-cancel" style="margin-top:5px; padding:5px; font-size:12px;" onclick="limpiarFirmaIA()">Limpiar Firma</button>`
-                : `<textarea id="input-ia-paso" class="input-ia-paso" rows="6" placeholder="Ej: Una carta de renuncia para mi jefe Juan Perez, mi último día será el 15 de agosto..."></textarea>`
+                : `<textarea id="input-ia-paso" class="input-ia-paso" rows="6" placeholder="Ej: Una carta de renuncia para mi jefe Juan, mi último día es el viernes..."></textarea>`
             }
 
             <div style="display:flex; gap:10px; margin-top:15px;">
@@ -495,7 +502,7 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
         `;
         
         if (paso.tipo === 'firma') {
-            iniciarCanvasFirmaIA();
+            setTimeout(iniciarCanvasFirmaIA, 100);
         } else {
             document.getElementById('input-ia-paso').focus();
         }
@@ -509,7 +516,7 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
             valor = document.getElementById('canvas-firma-ia').toDataURL('image/png');
         } else {
             valor = document.getElementById('input-ia-paso').value.trim();
-            if (!valor) return alert("Por favor, cuéntame qué necesitas redactar.");
+            if (!valor) return alert("Por favor, escribe tu instrucción.");
         }
 
         respuestasIA[paso.nombre] = valor;
@@ -518,10 +525,58 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
             pasoActual++;
             mostrarPasoIA();
         } else {
-            procesarDocumentoIA();
+            ejecutarIAExperta();
         }
     }
 
+    async function ejecutarIAExperta() {
+        const btn = document.querySelector(".btn-ia-nav");
+        btn.innerText = "⏳ IA Redactando...";
+        btn.disabled = true;
+
+        try {
+            const instruccion = respuestasIA["Instrucción General"];
+            const camposARellenar = plantillaSeleccionada.configuracion.areas
+                .filter(a => a.tipo !== 'firma')
+                .map(a => a.nombre);
+
+            // Prompt optimizado para recibir JSON limpio
+            const promptFinal = `Actúa como un experto legal. Redacta una "${plantillaSeleccionada.nombre}" basada en: "${instruccion}". 
+            Devuelve un JSON con estas llaves: ${camposARellenar.join(", ")}. 
+            Responde SOLO el JSON, sin texto extra.`;
+
+            const { data, error } = await supabase.functions.invoke('generar-documento', {
+                body: { prompt: promptFinal }
+            });
+
+            if (error) throw error;
+
+            // Intentar parsear el JSON de la IA
+            let resultado;
+            try {
+                const texto = data.resultado;
+                const inicio = texto.indexOf('{');
+                const fin = texto.lastIndexOf('}') + 1;
+                resultado = JSON.parse(texto.substring(inicio, fin));
+            } catch (e) {
+                throw new Error("La IA no devolvió un formato válido. Intenta ser más específico.");
+            }
+
+            await estamparDocumentoIA(resultado);
+
+        } catch (err) {
+            console.error("Error completo:", err);
+            alert("❌ Error: " + (err.message || "No se pudo conectar con la IA. Revisa los logs de Supabase."));
+            btn.innerText = "Generar Documento ✨";
+            btn.disabled = false;
+        }
+    }
+
+
+
+
+
+    
 
 
 
@@ -1283,60 +1338,9 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
 
 
 
-        async function procesarDocumentoIA() {
-        const btn = document.querySelector(".btn-ia-nav");
-        const originalText = btn.innerText;
-        btn.innerText = "⏳ IA Redactando...";
-        btn.disabled = true;
-
-        try {
-            const instruccionUsuario = respuestasIA["Instrucción General"];
-            const areasTexto = plantillaSeleccionada.configuracion.areas.filter(a => a.tipo !== 'firma');
-            
-            // 1. Prompt simplificado y directo para evitar errores de la IA
-            let promptBase = `Redacta una "${plantillaSeleccionada.nombre}" profesional. \n`;
-            promptBase += `Instrucción del usuario: "${instruccionUsuario}". \n`;
-            promptBase += `Devuelve un JSON con estas llaves: ${areasTexto.map(a => `"${a.nombre}"`).join(", ")}. \n`;
-            promptBase += `Responde SOLO el JSON.`;
-
-            // 2. Llamada a Supabase con manejo de errores detallado
-            const { data, error } = await supabase.functions.invoke('generar-documento', {
-                body: { prompt: promptBase }
-            });
-
-            if (error) {
-                console.error("Error de Supabase:", error);
-                throw new Error("Error de conexión con el servidor de IA.");
-            }
-
-            // 3. Limpieza automática de la respuesta (Cerebro de emergencia)
-            let textoIA = data.resultado;
-            let jsonFinal;
-
-            try {
-                // Si la IA mandó texto extra, buscamos donde empieza el { y donde termina el }
-                const inicioJson = textoIA.indexOf('{');
-                const finJson = textoIA.lastIndexOf('}') + 1;
-                if (inicioJson !== -1 && finJson !== -1) {
-                    textoIA = textoIA.substring(inicioJson, finJson);
-                }
-                jsonFinal = JSON.parse(textoIA);
-            } catch (e) {
-                console.error("La IA no mandó un JSON válido:", textoIA);
-                throw new Error("La IA no pudo estructurar el documento. Intenta ser más claro en tu instrucción.");
-            }
-
-            // 4. Estampar el documento
-            await estamparDocumentoIA(jsonFinal);
-
-        } catch (err) {
-            alert("⚠️ " + err.message);
-            btn.innerText = originalText;
-            btn.disabled = false;
-        }
-    }
-
     
+
+   
 
 
     
