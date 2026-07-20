@@ -1283,10 +1283,7 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
 
 
 
-    
-
-
-    async function procesarDocumentoIA() {
+        async function procesarDocumentoIA() {
         const btn = document.querySelector(".btn-ia-nav");
         const originalText = btn.innerText;
         btn.innerText = "⏳ IA Redactando...";
@@ -1296,47 +1293,54 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
             const instruccionUsuario = respuestasIA["Instrucción General"];
             const areasTexto = plantillaSeleccionada.configuracion.areas.filter(a => a.tipo !== 'firma');
             
-            // 1. Construimos un prompt potente para que la IA rellene todo de una vez
-            let promptBase = `Eres un asistente experto en redacción de documentos. \n`;
-            promptBase += `Tu objetivo es redactar una "${plantillaSeleccionada.nombre}" siguiendo esta instrucción: "${instruccionUsuario}". \n\n`;
-            promptBase += `Debes devolver un objeto JSON donde las llaves sean los nombres de las secciones y el valor sea el texto redactado profesionalmente. \n`;
-            promptBase += `Las secciones a rellenar son: ${areasTexto.map(a => a.nombre).join(", ")}. \n\n`;
-            promptBase += `IMPORTANTE: Responde ÚNICAMENTE con el objeto JSON, sin textos adicionales.`;
+            // 1. Prompt simplificado y directo para evitar errores de la IA
+            let promptBase = `Redacta una "${plantillaSeleccionada.nombre}" profesional. \n`;
+            promptBase += `Instrucción del usuario: "${instruccionUsuario}". \n`;
+            promptBase += `Devuelve un JSON con estas llaves: ${areasTexto.map(a => `"${a.nombre}"`).join(", ")}. \n`;
+            promptBase += `Responde SOLO el JSON.`;
 
-            // 2. Llamada a la Edge Function de Supabase
+            // 2. Llamada a Supabase con manejo de errores detallado
             const { data, error } = await supabase.functions.invoke('generar-documento', {
-                body: { 
-                    prompt: promptBase,
-                    formato_json: true // Le indicamos a tu función que queremos JSON
-                }
+                body: { prompt: promptBase }
             });
 
             if (error) {
-                console.error("Error Supabase:", error);
-                throw new Error("La IA no respondió correctamente. Revisa tu API Key en Supabase.");
+                console.error("Error de Supabase:", error);
+                throw new Error("Error de conexión con el servidor de IA.");
             }
 
-            // 3. Intentar procesar la respuesta (asumiendo que la IA devuelve JSON)
-            let resultadoFinal;
+            // 3. Limpieza automática de la respuesta (Cerebro de emergencia)
+            let textoIA = data.resultado;
+            let jsonFinal;
+
             try {
-                // Si la IA devuelve un string que parece JSON, lo parseamos
-                resultadoFinal = typeof data.resultado === 'string' ? JSON.parse(data.resultado) : data.resultado;
+                // Si la IA mandó texto extra, buscamos donde empieza el { y donde termina el }
+                const inicioJson = textoIA.indexOf('{');
+                const finJson = textoIA.lastIndexOf('}') + 1;
+                if (inicioJson !== -1 && finJson !== -1) {
+                    textoIA = textoIA.substring(inicioJson, finJson);
+                }
+                jsonFinal = JSON.parse(textoIA);
             } catch (e) {
-                console.error("Error parseando JSON de la IA:", data.resultado);
-                throw new Error("La IA no devolvió el formato esperado. Intenta ser más específico en tu instrucción.");
+                console.error("La IA no mandó un JSON válido:", textoIA);
+                throw new Error("La IA no pudo estructurar el documento. Intenta ser más claro en tu instrucción.");
             }
 
-            // 4. Mandamos a estampar (Pasamos el JSON con todos los textos)
-            await estamparDocumentoIA(resultadoFinal);
+            // 4. Estampar el documento
+            await estamparDocumentoIA(jsonFinal);
 
         } catch (err) {
-            alert("❌ " + err.message);
+            alert("⚠️ " + err.message);
             btn.innerText = originalText;
             btn.disabled = false;
         }
     }
 
+    
 
+
+    
+    
 
 
 
