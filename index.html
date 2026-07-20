@@ -529,6 +529,10 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
         }
     }
 
+
+
+
+    
     async function ejecutarIAExperta() {
         const btn = document.querySelector(".btn-ia-nav");
         btn.innerText = "⏳ IA Redactando...";
@@ -564,12 +568,16 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
 
             await estamparDocumentoIA(resultado);
 
+
         } catch (err) {
             console.error("Error completo:", err);
-            alert("❌ Error: " + (err.message || "No se pudo conectar con la IA. Revisa los logs de Supabase."));
+            // CAMBIO AQUÍ: Mostrar el mensaje de error real del servidor
+            alert("❌ Error del Servidor: " + (err.message || "Error desconocido"));
             btn.innerText = "Generar Documento ✨";
             btn.disabled = false;
         }
+
+            
     }
 
 
