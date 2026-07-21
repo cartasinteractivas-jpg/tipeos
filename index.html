@@ -1286,22 +1286,29 @@ function addMessage(sender, text) {
     }
 
 
+
     
-async function generarPdfAI() {
+    
+
+
+    async function generarPdfAI() {
     const editedContent = document.getElementById('edit-ai-content').value;
     if (!editedContent) return;
-    if (usuarioActual.creditos < 1) return alert("Necesitas 1 crédito.");
+
+    // Verificamos créditos de forma segura
+    if (!usuarioActual || usuarioActual.creditos < 1) {
+        return alert("Necesitas al menos 1 crédito. Por favor, activa un código o yapea para recargar.");
+    }
 
     try {
         const pdfDoc = await PDFLib.PDFDocument.create();
         let page = pdfDoc.addPage();
         const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
         
-        const text = editedContent; // Usamos el contenido editado
         const margin = 50;
         const { width, height } = page.getSize();
         
-        page.drawText(text, {
+        page.drawText(editedContent, {
             x: margin,
             y: height - margin - 12,
             size: 12,
@@ -1310,17 +1317,22 @@ async function generarPdfAI() {
             lineHeight: 15
         });
 
+        // Intentar descontar el crédito
         const pagado = await descontarCredito(1);
         if (!pagado) return;
 
         const pdfBytes = await pdfDoc.save();
-        download(pdfBytes, "Documento_AI.pdf", "application/pdf");
-        alert("✅ ¡Documento generado!");
+        
+        // Descarga el archivo usando la librería download.js que ya tienes
+        download(pdfBytes, "Documento_DocuFacil.pdf", "application/pdf");
+        
+        alert("✅ ¡Documento generado con éxito!");
         document.getElementById('modal-preview-ai').style.display = 'none';
         cerrarChatAI();
         volverAHome();
     } catch (e) {
-        alert("Error al generar PDF");
+        console.error("Error detallado:", e);
+        alert("Error al generar PDF: " + e.message);
     }
 }
 
