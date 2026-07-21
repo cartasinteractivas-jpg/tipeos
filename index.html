@@ -150,7 +150,39 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
     .chat-input { flex: 1; background: #000; border: 1px solid #444; color: #fff; padding: 12px 15px; border-radius: 25px; outline: none; }
     .btn-chat-action { background: #3498db; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; font-size: 20px; display: flex; justify-content: center; align-items: center; }
 
-    
+
+.canvas-container {
+    width: 100%;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px;
+    background: #333;
+    /* Permite zoom y scroll natural en móviles */
+    touch-action: manipulation; 
+    -webkit-overflow-scrolling: touch;
+}
+
+.pdf-page-wrapper {
+    position: relative;
+    background: white;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    /* Asegura que los elementos hijos no se salgan */
+    overflow: visible; 
+}
+
+
+.free-pdf-canvas {
+    display: block;
+    width: 100%;
+    cursor: crosshair;
+    /* Mejora la nitidez visual en navegadores */
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+}
+
+        
     
     </style>
 </head>
@@ -643,47 +675,78 @@ function renderizarPlantillas() {
         showScreen('screen-rellenado-libre');
     }
 
-    document.getElementById('free-pdf-upload').addEventListener('change', async function(e) {
-        if (!e.target.files.length) return;
-        
-        const file = e.target.files[0];
-        const arrayBuffer = await file.arrayBuffer();
-        
-        freePdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
-        const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+
+
+    document.getElementById('free-pdf-upload').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async function() {
+        const typedarray = new Uint8Array(this.result);
+        const loadingTask = pdfjsLib.getDocument(typedarray);
         const pdf = await loadingTask.promise;
-        
-        freePdfPageCount = pdf.numPages; 
-        
+        freePdfDoc = pdf;
+        freePdfPageCount = pdf.numPages;
+
         const container = document.getElementById('free-canvas-container');
-        container.innerHTML = ''; 
-        elementosFlotantes = [];
-        freeCanvasScales = {};
+        container.innerHTML = '';
         container.style.display = 'flex';
-        
-        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-            const page = await pdf.getPage(pageNum);
+        elementosFlotantes = [];
+
+        for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            
+            // ESCALA 2.0 PARA NITIDEZ HD
+            const viewport = page.getViewport({ scale: 2.0 });
+            
             const wrapper = document.createElement('div');
             wrapper.className = 'pdf-page-wrapper';
-            wrapper.dataset.pageNum = pageNum;
-            
+            wrapper.style.position = 'relative';
+            wrapper.style.width = '100%';
+            wrapper.style.maxWidth = (viewport.width / 2) + 'px'; // Mantenemos el tamaño visual original
+            wrapper.style.margin = '0 auto 20px auto';
+            wrapper.style.backgroundColor = 'white';
+            wrapper.style.boxShadow = '0 4px 15px rgba(0,0,0,0.5)';
+
             const canvas = document.createElement('canvas');
-            canvas.className = 'free-pdf-canvas';
+            const context = canvas.getContext('2d');
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+            canvas.style.width = '100%';
+            canvas.style.height = 'auto';
+            canvas.style.display = 'block';
+
+            // Guardamos la escala de renderizado para el PDF final
+
+freeCanvasScales[i] = 2.0; 
             
+            await page.render({ canvasContext: context, viewport: viewport }).promise;
+
             wrapper.appendChild(canvas);
             container.appendChild(wrapper);
-            
-            const ctx = canvas.getContext('2d');
-            const containerWidth = container.clientWidth - 20; 
-            const unscaledViewport = page.getViewport({ scale: 1 });
-            const scale = containerWidth / unscaledViewport.width;
-            freeCanvasScales[pageNum] = scale;
-            
-            const viewport = page.getViewport({ scale: scale });
-            canvas.width = viewport.width;
-            canvas.height = viewport.height;
-            
-            await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+
+            // CLIC CORREGIDO PARA ALTA RESOLUCIÓN
+            canvas.onclick = (ev) => {
+                const rect = canvas.getBoundingClientRect();
+                // Calculamos la posición relativa al tamaño real del canvas (HD)
+                const x = (ev.clientX - rect.left) * (canvas.width / rect.width);
+                const y = (ev.clientY - rect.top) * (canvas.height / rect.height);
+                
+                clickCoords = { x, y, pageNum: i, wrapper };
+                abrirModalOpciones();
+            };
+        }
+
+        document.getElementById('btn-generar-free').style.display = 'block';
+        document.getElementById('btn-generar-free').innerText = `✨ Descargar PDF Lleno (${pdf.numPages} Créditos)`;
+    };
+    reader.readAsArrayBuffer(file);
+});
+
+
+
+
 
 
             
@@ -1117,7 +1180,7 @@ function renderizarPlantillas() {
                 const pdfX = (item.wrapper.offsetLeft + 4) / scale;
                 
                 if (item.type === 'text' || item.type === 'symbol') {
-                    const pdfY = pdfHeight - ((item.wrapper.offsetTop + item.size + 4) / scale);
+                   const pdfX = (item.wrapper.offsetLeft + 4) / (scale / 2););
                     
                     let selectedFont = fontNormal;
                     if (item.format && item.format.bold && item.format.italic) selectedFont = fontBoldItalic;
@@ -1139,7 +1202,7 @@ function renderizarPlantillas() {
 
                     const pdfWidth = item.size / scale;
                     const pdfImgHeight = pdfWidth * ratio;
-                    const pdfY = pdfHeight - ((item.wrapper.offsetTop / scale) + pdfImgHeight);
+                  const pdfY = pdfHeight - ((item.wrapper.offsetTop + (item.size || 0) + 4) / (scale / 2));
 
                     targetPage.drawImage(pngImage, {
                         x: pdfX,
