@@ -187,22 +187,28 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
 </div>
 
 
-    
-<!-- === FIRMA MEJORADA === -->
+<!-- MODAL DE FIRMA MEJORADO -->
 <div id="modal-firma" class="modal-overlay">
     <div class="modal-content">
         <h3>Dibuja tu firma</h3>
+        
+        <!-- Selector de color -->
+        <div style="text-align:center; margin-bottom:10px;">
+            <label style="color:#ccc; font-size:14px;">Color: </label>
+            <input type="color" id="firma-color" value="#1a1a1a" style="width:60px; height:30px; border:none; background:none; cursor:pointer;">
+        </div>
+
         <canvas id="canvas-firma" width="380" height="200" 
-                style="background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); touch-action: none; width: 100%; max-width: 100%;">
+                style="background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); touch-action: none; width: 100%;">
         </canvas>
-        <div class="modal-actions">
-            <button type="button" onclick="limpiarFirma()" style="background: #e74c3c; color: white;">Limpiar</button>
-            <button type="button" onclick="cerrarModalFirma()" style="background: #555; color: white;">Cancelar</button>
-            <button type="button" onclick="guardarFirma()" style="background: #2ecc71; color: black;">Aceptar</button>
+
+        <div class="modal-actions" style="margin-top:15px; display:flex; gap:10px; justify-content:center;">
+            <button type="button" onclick="limpiarFirma()" style="background: #e74c3c; color: white; padding:10px 20px;">Limpiar</button>
+            <button type="button" onclick="cerrarModalFirma()" style="background: #555; color: white; padding:10px 20px;">Cancelar</button>
+            <button type="button" onclick="guardarFirma()" style="background: #2ecc71; color: black; padding:10px 20px;">Aceptar</button>
         </div>
     </div>
 </div>
-
 
     
     
@@ -820,12 +826,11 @@ function renderizarPlantillas() {
 
 
 
-    
 
-   // --- MODAL FIRMA MEJORADA ---
+// ==================== FIRMA MEJORADA ====================
 let sigCanvas, sigCtx, isDrawing = false;
 let lastX = 0, lastY = 0;
-let points = []; // Para suavizado
+let currentColor = '#1a1a1a';
 
 function abrirModalFirma(parent, x, y, pageNum) {
     currentTarget = { parent, x, y, pageNum };
@@ -834,17 +839,14 @@ function abrirModalFirma(parent, x, y, pageNum) {
     sigCanvas = document.getElementById('canvas-firma');
     sigCtx = sigCanvas.getContext('2d', { alpha: true });
     
-    // Limpieza y configuración
+    // Limpiar canvas
     sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
     
-    // Configuración para firma más natural
-    sigCtx.strokeStyle = '#1a1a1a';
-    sigCtx.lineCap = 'round';
-    sigCtx.lineJoin = 'round';
-    sigCtx.shadowColor = 'rgba(0,0,0,0.3)';
-    sigCtx.shadowBlur = 1;
+    // Configuración inicial
+    currentColor = document.getElementById('firma-color').value;
+    actualizarEstiloFirma();
 
-    // Resetear eventos
+    // Eventos
     sigCanvas.onmousedown = startDrawing;
     sigCanvas.onmousemove = draw;
     sigCanvas.onmouseup = stopDrawing;
@@ -853,37 +855,39 @@ function abrirModalFirma(parent, x, y, pageNum) {
     sigCanvas.ontouchstart = (e) => { e.preventDefault(); startDrawing(e); };
     sigCanvas.ontouchmove = (e) => { e.preventDefault(); draw(e); };
     sigCanvas.ontouchend = stopDrawing;
+
+    // Cambiar color en tiempo real
+    document.getElementById('firma-color').oninput = function() {
+        currentColor = this.value;
+        actualizarEstiloFirma();
+    };
+}
+
+function actualizarEstiloFirma() {
+    sigCtx.strokeStyle = currentColor;
+    sigCtx.lineCap = 'round';
+    sigCtx.lineJoin = 'round';
+    sigCtx.shadowColor = currentColor === '#1a1a1a' ? 'rgba(0,0,0,0.4)' : 'transparent';
+    sigCtx.shadowBlur = 1;
 }
 
 function startDrawing(e) {
     isDrawing = true;
-    points = [];
     const pos = getPos(e);
     lastX = pos.x;
     lastY = pos.y;
-    points.push({x: lastX, y: lastY});
 }
 
 function draw(e) {
     if (!isDrawing) return;
-    
+
     const pos = getPos(e);
-    points.push({x: pos.x, y: pos.y});
+    const lineWidth = calculateLineWidth(lastX, lastY, pos.x, pos.y);
 
-    sigCtx.lineWidth = calculateLineWidth(lastX, lastY, pos.x, pos.y);
-
-    // Suavizado con curvas cuadráticas
+    sigCtx.lineWidth = lineWidth;
     sigCtx.beginPath();
     sigCtx.moveTo(lastX, lastY);
-    
-    if (points.length > 2) {
-        const midX = (lastX + pos.x) / 2;
-        const midY = (lastY + pos.y) / 2;
-        sigCtx.quadraticCurveTo(lastX, lastY, midX, midY);
-    } else {
-        sigCtx.lineTo(pos.x, pos.y);
-    }
-    
+    sigCtx.lineTo(pos.x, pos.y);
     sigCtx.stroke();
 
     lastX = pos.x;
@@ -891,10 +895,7 @@ function draw(e) {
 }
 
 function stopDrawing() {
-    if (isDrawing) {
-        isDrawing = false;
-        points = [];
-    }
+    isDrawing = false;
 }
 
 function getPos(e) {
@@ -909,10 +910,8 @@ function getPos(e) {
 }
 
 function calculateLineWidth(x1, y1, x2, y2) {
-    const distance = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-    // Velocidad inversa = más lento → más grueso
-    const baseWidth = 3.5;
-    return Math.max(1.8, Math.min(baseWidth - distance * 0.08, 6));
+    const dist = Math.hypot(x2 - x1, y2 - y1);
+    return Math.max(2.5, Math.min(6.5, 5 - dist * 0.12)); // trazo suave
 }
 
 function limpiarFirma() {
@@ -924,12 +923,11 @@ function cerrarModalFirma() {
 }
 
 function guardarFirma() {
-    const canvas = document.getElementById('canvas-firma');
-    firmaDataUrl = canvas.toDataURL('image/png', 0.95); // alta calidad
+    firmaDataUrl = sigCanvas.toDataURL('image/png', 0.92);
     document.getElementById('modal-firma').style.display = 'none';
     alert("✅ Firma guardada correctamente");
 }
-
+    
 
 
 
