@@ -757,87 +757,105 @@ document.addEventListener('DOMContentLoaded', () => {
     
     
 
-// ==========================================
-// 8. LÓGICA: RELLENADO LIBRE (CARGA DE PDF)
-// ==========================================
-function abrirRellenadoLibre() {
-    if (!usuarioActual || usuarioActual.creditos <= 0) {
-        alert("🔒 Necesitas activar un código con créditos.");
-        document.getElementById('seccion-compra').scrollIntoView({ behavior: 'smooth' });
-        return;
+
+
+
+    
+    // ==========================================
+    // 8. LÓGICA: RELLENADO LIBRE (CARGA DE PDF)
+    // ==========================================
+    function abrirRellenadoLibre() {
+        if (!usuarioActual || usuarioActual.creditos <= 0) {
+            alert("🔒 Necesitas activar un código con créditos.");
+            document.getElementById('seccion-compra').scrollIntoView({ behavior: 'smooth' });
+            return;
+        }
+        
+        document.getElementById('free-pdf-upload').value = '';
+        document.getElementById('free-canvas-container').style.display = 'none';
+        document.getElementById('free-canvas-container').innerHTML = ''; 
+        document.getElementById('btn-generar-free').style.display = 'none';
+        
+        elementosFlotantes = [];
+        freeCanvasScales = {};
+        freePdfPageCount = 0;
+        
+        showScreen('screen-rellenado-libre');
     }
-    
-    // Resetear todo
-    document.getElementById('free-pdf-upload').value = '';
-    const container = document.getElementById('free-canvas-container');
-    container.innerHTML = '';
-    container.style.display = 'none';
-    document.getElementById('btn-generar-free').style.display = 'none';
-    
-    elementosFlotantes = [];
-    freeCanvasScales = {};
-    freePdfPageCount = 0;
-    
-    showScreen('screen-rellenado-libre');
-}
 
-// Listener del input de archivo
-document.getElementById('free-pdf-upload').addEventListener('change', async function(e) {
-    if (!e.target.files.length) return;
-    
-    const file = e.target.files[0];
-    const arrayBuffer = await file.arrayBuffer();
-    
-    freePdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
-    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
-    const pdf = await loadingTask.promise;
-    
-    freePdfPageCount = pdf.numPages; 
-    
-    const container = document.getElementById('free-canvas-container');
-    container.innerHTML = ''; 
-    container.style.display = 'flex';
-    
-    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-        const page = await pdf.getPage(pageNum);
-        const wrapper = document.createElement('div');
-        wrapper.className = 'pdf-page-wrapper';
-        wrapper.dataset.pageNum = pageNum;
+    document.getElementById('free-pdf-upload').addEventListener('change', async function(e) {
+        if (!e.target.files.length) return;
         
-        const canvas = document.createElement('canvas');
-        canvas.className = 'free-pdf-canvas';
+        const file = e.target.files[0];
+        const arrayBuffer = await file.arrayBuffer();
         
-        wrapper.appendChild(canvas);
-        container.appendChild(wrapper);
+        freePdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
+        const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+        const pdf = await loadingTask.promise;
         
-        const ctx = canvas.getContext('2d');
-        const containerWidth = container.clientWidth - 20;
-        const unscaledViewport = page.getViewport({ scale: 1 });
-        const scale = containerWidth / unscaledViewport.width;
-        freeCanvasScales[pageNum] = scale;
+        freePdfPageCount = pdf.numPages; 
         
-        const viewport = page.getViewport({ scale: scale });
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
+        const container = document.getElementById('free-canvas-container');
+        container.innerHTML = ''; 
+        elementosFlotantes = [];
+        freeCanvasScales = {};
+        container.style.display = 'flex';
         
-        await page.render({ canvasContext: ctx, viewport: viewport }).promise;
-
-        wrapper.addEventListener('click', function(ev) {
-            if (ev.target.closest('.floating-element')) return;
+        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+            const page = await pdf.getPage(pageNum);
+            const wrapper = document.createElement('div');
+            wrapper.className = 'pdf-page-wrapper';
+            wrapper.dataset.pageNum = pageNum;
             
-            const rect = this.getBoundingClientRect();
-            const x = (ev.clientX - rect.left) / window.pdfGlobalScale;
-            const y = (ev.clientY - rect.top) / window.pdfGlobalScale;
+            const canvas = document.createElement('canvas');
+            canvas.className = 'free-pdf-canvas';
             
-            mostrarMenuOpciones(this, x, y, pageNum);
-        });
-    }
-    
-    const btnGenerar = document.getElementById('btn-generar-free');
-    btnGenerar.innerText = `✨ Descargar PDF Lleno (${freePdfPageCount} Créditos)`;
-    btnGenerar.style.display = 'block';
-});
+            wrapper.appendChild(canvas);
+            container.appendChild(wrapper);
+            
+            const ctx = canvas.getContext('2d');
+            const containerWidth = container.clientWidth - 20; 
+            const unscaledViewport = page.getViewport({ scale: 1 });
+            const scale = containerWidth / unscaledViewport.width;
+            freeCanvasScales[pageNum] = scale;
+            
+            const viewport = page.getViewport({ scale: scale });
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            
+            await page.render({ canvasContext: ctx, viewport: viewport }).promise;
 
+
+            
+                                    // Evento para abrir el menú o deseleccionar al tocar la hoja
+            wrapper.addEventListener('click', function(ev) {
+                if (ev.target.closest('.floating-element')) return; // Si tocamos un elemento, ignorar
+                
+                // Si hay un elemento seleccionado, lo deseleccionamos y NO abrimos el menú
+                const seleccionado = document.querySelector('.floating-element.selected');
+                if (seleccionado) {
+                    document.querySelectorAll('.floating-element').forEach(el => el.classList.remove('selected'));
+                    return;
+                }
+
+                const rect = this.getBoundingClientRect();
+                const x = (ev.clientX - rect.left) / window.pdfGlobalScale;
+                const y = (ev.clientY - rect.top) / window.pdfGlobalScale;
+                
+                mostrarMenuOpciones(this, x, y, pageNum);
+            });
+
+
+
+            
+        }
+        
+        const btnGenerar = document.getElementById('btn-generar-free');
+        btnGenerar.innerText = `✨ Descargar PDF Lleno (${freePdfPageCount} Créditos)`;
+        btnGenerar.style.display = 'block';
+    });
+
+    
 
     
     // ==========================================
