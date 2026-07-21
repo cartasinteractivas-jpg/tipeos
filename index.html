@@ -1269,51 +1269,66 @@ function addMessage(sender, text) {
     }
 
 
-    async function generarPdfAI() {
-        if (!currentDocumentDraft) return;
-        if (usuarioActual.creditos < 1) return alert("Necesitas 1 crédito.");
+    
+async function generarPdfAI() {
+    const editedContent = document.getElementById('edit-ai-content').value;
+    if (!editedContent) return;
+    if (usuarioActual.creditos < 1) return alert("Necesitas 1 crédito.");
 
-        try {
-            const pdfDoc = await PDFLib.PDFDocument.create();
-            let page = pdfDoc.addPage();
-            const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
-            
-            const text = currentDocumentDraft;
-            const margin = 50;
-            const { width, height } = page.getSize();
-            
-            page.drawText(text, {
-                x: margin,
-                y: height - margin - 12,
-                size: 12,
-                font: font,
-                maxWidth: width - (margin * 2),
-                lineHeight: 15
-            });
+    try {
+        const pdfDoc = await PDFLib.PDFDocument.create();
+        let page = pdfDoc.addPage();
+        const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+        
+        const text = editedContent; // Usamos el contenido editado
+        const margin = 50;
+        const { width, height } = page.getSize();
+        
+        page.drawText(text, {
+            x: margin,
+            y: height - margin - 12,
+            size: 12,
+            font: font,
+            maxWidth: width - (margin * 2),
+            lineHeight: 15
+        });
 
-            const pagado = await descontarCredito(1);
-            if (!pagado) return;
+        const pagado = await descontarCredito(1);
+        if (!pagado) return;
 
-            const pdfBytes = await pdfDoc.save();
-            download(pdfBytes, "Documento_AI.pdf", "application/pdf");
-            alert("✅ ¡Documento generado!");
-            document.getElementById('modal-preview-ai').style.display = 'none';
-            cerrarChatAI();
-            volverAHome();
-        } catch (e) {
-            alert("Error al generar PDF");
-        }
+        const pdfBytes = await pdfDoc.save();
+        download(pdfBytes, "Documento_AI.pdf", "application/pdf");
+        alert("✅ ¡Documento generado!");
+        document.getElementById('modal-preview-ai').style.display = 'none';
+        cerrarChatAI();
+        volverAHome();
+    } catch (e) {
+        alert("Error al generar PDF");
     }
+}
 
+
+    
+
+    
     function mostrarModalPreviewAI(content) {
-        const modal = document.getElementById('modal-preview-ai');
-        const preview = document.getElementById('preview-content');
-        if (modal && preview) {
-            preview.innerText = content;
-            modal.style.display = 'flex';
-        }
+    const modal = document.getElementById('modal-preview-ai');
+    const preview = document.getElementById('preview-content');
+    if (modal && preview) {
+        // Cambiamos el div por un textarea para que puedas editar el texto
+        preview.innerHTML = `<textarea id="edit-ai-content" style="width:100%; height:300px; border:1px solid #ccc; padding:10px; font-family:serif; font-size:14px; resize:none; background:white; color:black;">${content}</textarea>`;
+        modal.style.display = 'flex';
     }
+}
 
+
+// Activar envío con la tecla Enter en el chat
+document.getElementById('chat-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault(); // Evita que se cree una nueva línea
+        enviarMensajeAI();
+    }
+});
 
 
     
