@@ -753,6 +753,8 @@ function renderizarPlantillas() {
     let lastTextSize = 14;
     let lastSymbolSize = 24;
 
+
+    
     // --- MODAL TEXTO ---
     function abrirModalTexto(parent, x, y, pageNum) {
         currentTarget = { parent, x, y, pageNum };
@@ -864,12 +866,31 @@ function renderizarPlantillas() {
 
 
 
-    function guardarFirma() {
+
+
+function guardarFirma() {
     const canvas = document.getElementById('canvas-firma');
-    firmaDataUrl = canvas.toDataURL('image/png'); // Guardamos la firma aquí
+    const dataUrl = canvas.toDataURL('image/png');
+    
+    if (firmaFlotante) firmaFlotante.remove();
+
+    firmaFlotante = document.createElement('div');
+    firmaFlotante.style.position = 'absolute';
+    firmaFlotante.style.top = '100px';
+    firmaFlotante.style.left = '50px';
+    firmaFlotante.style.zIndex = '100';
+    firmaFlotante.style.cursor = 'grab';
+    firmaFlotante.innerHTML = `
+        <img src="${dataUrl}" style="width: 120px; pointer-events: none;">
+        <div style="position:absolute; top:-10px; right:-10px; background:red; color:white; border-radius:50%; width:20px; height:20px; text-align:center; cursor:pointer;" onclick="this.parentElement.remove(); firmaFlotante=null;">×</div>
+    `;
+
+    hacerElementoArrastrable(firmaFlotante);
+    document.getElementById('preview-wrapper').appendChild(firmaFlotante);
     document.getElementById('modal-firma').style.display = 'none';
-    alert("✅ Firma guardada correctamente");
 }
+
+    
 
 
 
@@ -1300,16 +1321,10 @@ function addMessage(sender, text) {
 
 
 
+
     async function generarPdfAI() {
     const textarea = document.getElementById('edit-ai-content');
-    if (!textarea) return alert("No se encontró el contenido del documento");
-    
-    let text = textarea.value.trim();
-    text = text.replace(/\\n/g, '\n'); // Limpia saltos de línea falsos
-
-    if (!usuarioActual || usuarioActual.creditos < 1) {
-        return alert("Necesitas 1 crédito para descargar.");
-    }
+    const text = textarea.value.trim().replace(/\\n/g, '\n');
 
     try {
         const pdfDoc = await PDFLib.PDFDocument.create();
@@ -1317,56 +1332,27 @@ function addMessage(sender, text) {
         const { width, height } = page.getSize();
         const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
         
-        const margin = 50;
-        let currentY = height - margin;
-        const paragraphs = text.split('\n');
+        page.drawText(text, {
+            x: 50, y: height - 70, size: 11, font: font, maxWidth: width - 100, lineHeight: 14
+        });
 
-        for (let para of paragraphs) {
-            if (para.trim() === "") {
-                currentY -= 15;
-                continue;
-            }
+        if (firmaFlotante) {
+            const imgElement = firmaFlotante.querySelector('img');
+            const pdfImg = await pdfDoc.embedPng(imgElement.src);
+            const wrapper = document.getElementById('preview-wrapper');
+            
+            // Calculamos la posición real en el PDF
+            const x = (firmaFlotante.offsetLeft / wrapper.offsetWidth) * width;
+            const y = height - ((firmaFlotante.offsetTop + 60) / wrapper.offsetHeight) * height;
 
-            page.drawText(para, {
-                x: margin,
-                y: currentY,
-                size: 11,
-                font: font,
-                maxWidth: width - (margin * 2),
-                lineHeight: 14
-            });
-
-            const lines = Math.ceil(font.widthOfTextAtSize(para, 11) / (width - margin * 2));
-            currentY -= (lines * 14) + 12;
-
-            if (currentY < margin + 100) {
-                page = pdfDoc.addPage();
-                currentY = height - margin;
-            }
+            page.drawImage(pdfImg, { x: x, y: y, width: 100, height: 50 });
         }
-
-        // FIRMA: Solo se añade si realmente has firmado algo
-        if (typeof firmaDataUrl !== 'undefined' && firmaDataUrl) {
-            const firmaImg = await pdfDoc.embedPng(firmaDataUrl);
-            page.drawImage(firmaImg, { 
-                x: margin, 
-                y: currentY - 60, 
-                width: 100, 
-                height: 50 
-            });
-        }
-
-        const pagado = await descontarCredito(1);
-        if (!pagado) return;
 
         const pdfBytes = await pdfDoc.save();
-        download(pdfBytes, "Documento_DocuFacil.pdf", "application/pdf");
-        
-        alert("✅ ¡Documento descargado!");
-        document.getElementById('modal-preview-ai').style.display = 'none';
+        download(pdfBytes, "Documento_Final.pdf", "application/pdf");
+        alert("✅ ¡PDF descargado con éxito!");
     } catch (e) {
-        console.error(e);
-        alert("Error al generar PDF: " + e.message);
+        alert("Error: " + e.message);
     }
 }
 
@@ -1397,6 +1383,49 @@ document.getElementById('chat-input').addEventListener('keydown', (e) => {
 });
 
 
+
+
+function hacerElementoArrastrable(elmnt) {
+    let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+    elmnt.onmousedown = dragMouseDown;
+    elmnt.ontouchstart = dragMouseDown;
+
+    function dragMouseDown(e) {
+        e = e || window.event;
+        const clientX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
+        const clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
+        pos3 = clientX;
+        pos4 = clientY;
+        document.onmouseup = closeDragElement;
+        document.ontouchend = closeDragElement;
+        document.onmousemove = elementDrag;
+        document.ontouchmove = elementDrag;
+    }
+
+    function elementDrag(e) {
+        e = e || window.event;
+        const clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
+        const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
+        pos1 = pos3 - clientX;
+        pos2 = pos4 - clientY;
+        pos3 = clientX;
+        pos4 = clientY;
+        elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+        elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+    }
+
+    function closeDragElement() {
+        document.onmouseup = null;
+        document.onmousemove = null;
+        document.ontouchend = null;
+        document.ontouchmove = null;
+    }
+}
+
+
+
+
+
     
     
 </script>
@@ -1414,14 +1443,26 @@ document.getElementById('chat-input').addEventListener('keydown', (e) => {
 </div>
 
 
+
 <div id="modal-preview-ai" class="modal-overlay">
-    <div class="modal-content">
+    <div class="modal-content" style="max-width: 500px;">
         <h3>Previsualización</h3>
-        <div id="preview-content" style="background:white; color:black; padding:15px; border-radius:5px; max-height:300px; overflow-y:auto; white-space:pre-wrap;"></div>
-        <button class="btn-generar" onclick="generarPdfAI()">✅ Descargar PDF (1 Crédito)</button>
-        <button class="btn-volver" onclick="document.getElementById('modal-preview-ai').style.display='none'">Cerrar</button>
+        <!-- Contenedor relativo para que la firma flote dentro -->
+        <div id="preview-wrapper" style="position: relative; background: white; border-radius: 5px; overflow: hidden;">
+            <div id="preview-content" style="background:white; color:black; padding:15px; min-height:300px; white-space:pre-wrap;"></div>
+            <!-- Aquí caerá la firma flotante -->
+        </div>
+        
+        <div style="display:flex; gap:10px; margin-top:10px;">
+            <button type="button" onclick="abrirModalFirmaAI()" style="background: #e67e22; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; flex: 1;">✍️ Añadir Firma</button>
+            <button class="btn-generar" onclick="generarPdfAI()" style="margin:0; flex: 2;">✅ Descargar PDF (1 Crédito)</button>
+        </div>
+        <button class="btn-volver" onclick="document.getElementById('modal-preview-ai').style.display='none'" style="width:100%; margin-top:10px;">Cerrar</button>
     </div>
 </div>
+
+
+    
 
 
     
