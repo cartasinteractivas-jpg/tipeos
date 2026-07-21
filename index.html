@@ -1291,51 +1291,85 @@ function addMessage(sender, text) {
     
 
 
-    async function generarPdfAI() {
-    const editedContent = document.getElementById('edit-ai-content').value;
-    if (!editedContent) return;
 
-    // Verificamos créditos de forma segura
-    if (!usuarioActual || usuarioActual.creditos < 1) {
-        return alert("Necesitas al menos 1 crédito. Por favor, activa un código o yapea para recargar.");
-    }
+async function generarPdfAI() {
+    const textarea = document.getElementById('edit-ai-content');
+    let text = textarea.value.trim();
+    
+    // LIMPIEZA: Reemplazamos los \n literales por saltos de línea reales
+    text = text.replace(/\\n/g, '\n');
+
+    if (usuarioActual.creditos < 1) return alert("Necesitas 1 crédito.");
 
     try {
         const pdfDoc = await PDFLib.PDFDocument.create();
         let page = pdfDoc.addPage();
+        const { width, height } = page.getSize();
         const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+        const fontBold = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
         
         const margin = 50;
-        const { width, height } = page.getSize();
-        
-        page.drawText(editedContent, {
-            x: margin,
-            y: height - margin - 12,
-            size: 12,
-            font: font,
-            maxWidth: width - (margin * 2),
-            lineHeight: 15
-        });
+        let currentY = height - margin;
 
-        // Intentar descontar el crédito
+        // Dividimos el texto por párrafos para procesarlos uno a uno
+        const paragraphs = text.split('\n');
+
+        for (let para of paragraphs) {
+            if (para.trim() === "") {
+                currentY -= 10; // Espacio entre párrafos
+                continue;
+            }
+
+            // Si el párrafo parece ser la Ciudad/Fecha, lo ponemos a la derecha
+            let xPos = margin;
+            let currentFont = font;
+            
+            if (para.includes("Ciudad") || para.includes("Fecha") || /^[A-Z][a-z]+, \d+/.test(para)) {
+                // Opcional: podrías moverlo a la derecha si quieres
+                // xPos = width - margin - font.widthOfTextAtSize(para, 12);
+            }
+
+            page.drawText(para, {
+                x: xPos,
+                y: currentY,
+                size: 11,
+                font: currentFont,
+                maxWidth: width - (margin * 2),
+                lineHeight: 14
+            });
+
+            // Calculamos cuánto espacio ocupó el párrafo (aproximado)
+            const lines = Math.ceil(font.widthOfTextAtSize(para, 11) / (width - margin * 2));
+            currentY -= (lines * 14) + 10;
+
+            // Si nos quedamos sin página, añadimos otra
+            if (currentY < margin + 100) {
+                page = pdfDoc.addPage();
+                currentY = height - margin;
+            }
+        }
+
+        // Añadir firma al final si existe
+        if (firmaDataUrl) {
+            const firmaImg = await pdfDoc.embedPng(firmaDataUrl);
+            page.drawImage(firmaImg, { x: margin, y: currentY - 60, width: 100, height: 50 });
+        }
+
         const pagado = await descontarCredito(1);
         if (!pagado) return;
 
         const pdfBytes = await pdfDoc.save();
+        download(pdfBytes, "Carta_DocuFacil.pdf", "application/pdf");
         
-        // Descarga el archivo usando la librería download.js que ya tienes
-        download(pdfBytes, "Documento_DocuFacil.pdf", "application/pdf");
-        
-        alert("✅ ¡Documento generado con éxito!");
+        alert("✅ ¡Carta generada con formato profesional!");
         document.getElementById('modal-preview-ai').style.display = 'none';
-        cerrarChatAI();
-        volverAHome();
     } catch (e) {
-        console.error("Error detallado:", e);
-        alert("Error al generar PDF: " + e.message);
+        alert("Error: " + e.message);
     }
 }
 
+
+    
 
     
 
