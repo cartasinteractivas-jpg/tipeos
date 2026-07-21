@@ -1191,7 +1191,11 @@ function renderizarPlantillas() {
 
 
 
-function addMessage(sender, text) {
+
+
+
+
+    function addMessage(sender, text) {
     var container = document.getElementById('chat-messages');
     if (!container) return;
     var msgDiv = document.createElement('div');
@@ -1202,10 +1206,6 @@ function addMessage(sender, text) {
     container.appendChild(msgDiv);
     container.scrollTop = container.scrollHeight;
 }
-
-
-
-    
     
 
 
