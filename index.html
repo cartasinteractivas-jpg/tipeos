@@ -1073,6 +1073,8 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
         document.addEventListener('touchend', stopResize);
     }
 
+
+    
     // ==========================================
     // 12. GENERACIÓN FINAL DEL PDF LIBRE
     // ==========================================
@@ -1156,6 +1158,14 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
 
 
 
+
+    
+
+        // Variables para el control del chat
+    let chatHistory = [];
+    let isAITyping = false;
+    let voiceTimer;
+
     function mostrarScreen(id) {
         if(id === 'screen-ai-chat') {
             document.getElementById(id).classList.add('active');
@@ -1171,8 +1181,95 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
     function actualizarBotonChat() {
         const input = document.getElementById('chat-input');
         const btn = document.getElementById('btn-chat-action');
-        btn.innerText = input.value.trim() === "" ? "🎤" : "➤";
-        btn.style.background = input.value.trim() === "" ? "#3498db" : "#2ecc71";
+        if (input.value.trim() === "") {
+            btn.innerText = "🎤";
+            btn.style.background = "#3498db";
+        } else {
+            btn.innerText = "➤";
+            btn.style.background = "#2ecc71";
+        }
+    }
+
+    function addMessage(sender, text) {
+        const container = document.getElementById('chat-messages');
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `chat-message ${sender}`;
+        msgDiv.innerHTML = text.replace(/\n/g, '  
+');
+        container.appendChild(msgDiv);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function iniciarVozChat() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) return alert("Dictado no soportado.");
+        
+        const btn = document.getElementById('btn-chat-action');
+        const input = document.getElementById('chat-input');
+        const recognition = new SpeechRecognition();
+        
+        recognition.lang = 'es-ES';
+        btn.style.boxShadow = "0 0 15px #3498db"; // Efecto visual de escucha
+        recognition.start();
+
+        recognition.onresult = (e) => {
+            const transcript = e.results[0][0].transcript;
+            input.value = transcript;
+            actualizarBotonChat();
+            
+            // Auto-envío tras 2 segundos de silencio
+            clearTimeout(voiceTimer);
+            voiceTimer = setTimeout(() => {
+                enviarMensajeAI();
+            }, 2000);
+        };
+
+        recognition.onend = () => {
+            btn.style.boxShadow = "none";
+        };
+    }
+
+    async function enviarMensajeAI() {
+        const input = document.getElementById('chat-input');
+        const texto = input.value.trim();
+        if (!texto || isAITyping) return;
+
+        // 1. Mostrar mensaje del usuario
+        addMessage('user', texto);
+        input.value = "";
+        actualizarBotonChat();
+        isAITyping = true;
+
+        // 2. Guardar en historial
+        chatHistory.push({ role: 'user', content: texto });
+
+        try {
+            // 3. Llamada a la IA (Supabase Edge Function)
+            const { data, error } = await supabase.functions.invoke('generar-documento', {
+                body: JSON.stringify({ 
+                    history: chatHistory, 
+                    user_input: texto 
+                }),
+            });
+
+            if (error) throw error;
+
+            // 4. Mostrar respuesta de la IA
+            const aiResponse = data.response;
+            addMessage('ai', aiResponse.message);
+            chatHistory.push({ role: 'assistant', content: aiResponse.raw_response });
+
+            // Si la IA generó un borrador, podrías mostrar el modal aquí
+            if (aiResponse.action === 'document_draft') {
+                // mostrarModalPreviewAI(aiResponse.document_content);
+            }
+
+        } catch (error) {
+            addMessage('ai', '❌ Error: No pude conectarme con el experto.');
+            console.error(error);
+        } finally {
+            isAITyping = false;
+        }
     }
 
     function accionChat() {
@@ -1184,26 +1281,11 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
         }
     }
 
-    function iniciarVozChat() {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) return alert("Dictado no soportado.");
-        const recognition = new SpeechRecognition();
-        recognition.lang = 'es-ES';
-        recognition.start();
-        recognition.onresult = (e) => {
-            document.getElementById('chat-input').value = e.results[0][0].transcript;
-            actualizarBotonChat();
-        };
-    }
+    // Permitir enviar con la tecla Enter
+    document.getElementById('chat-input')?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') enviarMensajeAI();
+    });
 
-    async function enviarMensajeAI() {
-        const input = document.getElementById('chat-input');
-        const texto = input.value.trim();
-        // Aquí iría tu lógica de fetch a Supabase para la IA
-        console.log("Enviando a IA:", texto);
-        input.value = "";
-        actualizarBotonChat();
-    }
 
 
     
