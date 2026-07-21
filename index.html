@@ -318,6 +318,9 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
     // ==========================================
     // 2. VARIABLES GLOBALES
     // ==========================================
+   
+    let firmaDataUrl = null;
+
     let usuarioActual = null;
     let plantillaSeleccionada = null;
     let plantillasGlobales = [];
@@ -859,11 +862,15 @@ function renderizarPlantillas() {
     function limpiarFirma() { sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height); }
     function cerrarModalFirma() { document.getElementById('modal-firma').style.display = 'none'; }
 
+
+
     function guardarFirma() {
-        const dataUrl = sigCanvas.toDataURL('image/png');
-        crearElementoFlotante(currentTarget.parent, currentTarget.x, currentTarget.y, currentTarget.pageNum, 'image', dataUrl);
-        cerrarModalFirma();
-    }
+    const canvas = document.getElementById('canvas-firma');
+    firmaDataUrl = canvas.toDataURL('image/png'); // Guardamos la firma aquí
+    document.getElementById('modal-firma').style.display = 'none';
+    alert("✅ Firma guardada correctamente");
+}
+
 
 
 
@@ -1292,81 +1299,77 @@ function addMessage(sender, text) {
 
 
 
-async function generarPdfAI() {
-    const textarea = document.getElementById('edit-ai-content');
-    let text = textarea.value.trim();
-    
-    // LIMPIEZA: Reemplazamos los \n literales por saltos de línea reales
-    text = text.replace(/\\n/g, '\n');
 
-    if (usuarioActual.creditos < 1) return alert("Necesitas 1 crédito.");
+    async function generarPdfAI() {
+    const textarea = document.getElementById('edit-ai-content');
+    if (!textarea) return alert("No se encontró el contenido del documento");
+    
+    let text = textarea.value.trim();
+    text = text.replace(/\\n/g, '\n'); // Limpia saltos de línea falsos
+
+    if (!usuarioActual || usuarioActual.creditos < 1) {
+        return alert("Necesitas 1 crédito para descargar.");
+    }
 
     try {
         const pdfDoc = await PDFLib.PDFDocument.create();
         let page = pdfDoc.addPage();
         const { width, height } = page.getSize();
         const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
-        const fontBold = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
         
         const margin = 50;
         let currentY = height - margin;
-
-        // Dividimos el texto por párrafos para procesarlos uno a uno
         const paragraphs = text.split('\n');
 
         for (let para of paragraphs) {
             if (para.trim() === "") {
-                currentY -= 10; // Espacio entre párrafos
+                currentY -= 15;
                 continue;
             }
 
-            // Si el párrafo parece ser la Ciudad/Fecha, lo ponemos a la derecha
-            let xPos = margin;
-            let currentFont = font;
-            
-            if (para.includes("Ciudad") || para.includes("Fecha") || /^[A-Z][a-z]+, \d+/.test(para)) {
-                // Opcional: podrías moverlo a la derecha si quieres
-                // xPos = width - margin - font.widthOfTextAtSize(para, 12);
-            }
-
             page.drawText(para, {
-                x: xPos,
+                x: margin,
                 y: currentY,
                 size: 11,
-                font: currentFont,
+                font: font,
                 maxWidth: width - (margin * 2),
                 lineHeight: 14
             });
 
-            // Calculamos cuánto espacio ocupó el párrafo (aproximado)
             const lines = Math.ceil(font.widthOfTextAtSize(para, 11) / (width - margin * 2));
-            currentY -= (lines * 14) + 10;
+            currentY -= (lines * 14) + 12;
 
-            // Si nos quedamos sin página, añadimos otra
             if (currentY < margin + 100) {
                 page = pdfDoc.addPage();
                 currentY = height - margin;
             }
         }
 
-        // Añadir firma al final si existe
-        if (firmaDataUrl) {
+        // FIRMA: Solo se añade si realmente has firmado algo
+        if (typeof firmaDataUrl !== 'undefined' && firmaDataUrl) {
             const firmaImg = await pdfDoc.embedPng(firmaDataUrl);
-            page.drawImage(firmaImg, { x: margin, y: currentY - 60, width: 100, height: 50 });
+            page.drawImage(firmaImg, { 
+                x: margin, 
+                y: currentY - 60, 
+                width: 100, 
+                height: 50 
+            });
         }
 
         const pagado = await descontarCredito(1);
         if (!pagado) return;
 
         const pdfBytes = await pdfDoc.save();
-        download(pdfBytes, "Carta_DocuFacil.pdf", "application/pdf");
+        download(pdfBytes, "Documento_DocuFacil.pdf", "application/pdf");
         
-        alert("✅ ¡Carta generada con formato profesional!");
+        alert("✅ ¡Documento descargado!");
         document.getElementById('modal-preview-ai').style.display = 'none';
     } catch (e) {
-        alert("Error: " + e.message);
+        console.error(e);
+        alert("Error al generar PDF: " + e.message);
     }
 }
+
 
 
     
