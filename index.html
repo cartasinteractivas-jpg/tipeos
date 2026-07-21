@@ -1184,20 +1184,24 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
         btn.style.background = input.value.trim() === "" ? "#3498db" : "#2ecc71";
     }
 
+
+
     
-       function addMessage(sender, text) {
-        const container = document.getElementById('chat-messages');
-        if (!container) return;
-        const msgDiv = document.createElement('div');
-        msgDiv.className = `chat-message ${sender}`;
-        // CORRECCIÓN: Usamos .replace para los saltos de línea sin romper el código
-        msgDiv.innerHTML = text.replace(/\n/g, '  
+      function addMessage(sender, text) {
+    const container = document.getElementById('chat-messages');
+    if (!container) return;
+    const msgDiv = document.createElement('div');
+    msgDiv.className = `chat-message ${sender}`;
+    msgDiv.innerHTML = text.replace(/\n/g, '  
 ');
-        container.appendChild(msgDiv);
-        container.scrollTop = container.scrollHeight;
-    }
+    container.appendChild(msgDiv);
+    container.scrollTop = container.scrollHeight;
+}
 
 
+
+
+    
     
     function iniciarVozChat() {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
