@@ -118,6 +118,143 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
         .symbol-grid { display: flex; justify-content: center; gap: 15px; margin-bottom: 10px; }
         .btn-symbol { background: #333; color: white; border: 1px solid #555; font-size: 24px; width: 50px; height: 50px; border-radius: 8px; cursor: pointer; display: flex; justify-content: center; align-items: center; }
         .btn-symbol:hover { background: #f1c40f; color: #000; }
+
+
+
+            /* Estilos para la pantalla del chat */
+    #screen-ai-chat {
+        background: #1e1e1e;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        padding: 0;
+    }
+
+    .chat-header {
+        background: #2c3e50;
+        color: white;
+        padding: 15px;
+        text-align: center;
+        font-size: 18px;
+        font-weight: bold;
+        border-bottom: 2px solid #34495e;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .chat-header .btn-volver {
+        margin: 0;
+        padding: 5px 10px;
+        font-size: 14px;
+    }
+
+    .chat-messages {
+        flex: 1;
+        padding: 15px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .chat-message {
+        max-width: 80%;
+        padding: 10px 15px;
+        border-radius: 15px;
+        line-height: 1.4;
+        word-wrap: break-word;
+    }
+
+    .chat-message.user {
+        background: #3498db;
+        color: white;
+        align-self: flex-end;
+        border-bottom-right-radius: 2px;
+    }
+
+    .chat-message.ai {
+        background: #2c3e50;
+        color: white;
+        align-self: flex-start;
+        border-bottom-left-radius: 2px;
+    }
+
+    .chat-input-area {
+        display: flex;
+        padding: 15px;
+        gap: 10px;
+        border-top: 1px solid #333;
+        background: #1e1e1e;
+    }
+
+    .chat-input {
+        flex: 1;
+        padding: 12px;
+        border-radius: 25px;
+        border: 1px solid #444;
+        background: #222;
+        color: white;
+        font-size: 16px;
+        outline: none;
+    }
+
+    .chat-send-btn {
+        background: #2ecc71;
+        color: black;
+        border: none;
+        border-radius: 25px;
+        padding: 10px 20px;
+        font-weight: bold;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+    }
+
+    .chat-send-btn:disabled {
+        background: #555;
+        cursor: not-allowed;
+    }
+
+    /* Estilos para el modal de previsualización */
+    #modal-preview-ai .modal-content {
+        max-width: 90%;
+        width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    #preview-content {
+        background: white;
+        color: black;
+        padding: 20px;
+        border-radius: 8px;
+        min-height: 200px;
+        margin-bottom: 15px;
+        white-space: pre-wrap; /* Para respetar saltos de línea */
+        text-align: left;
+        font-family: 'Times New Roman', serif;
+        font-size: 12pt;
+        line-height: 1.5;
+    }
+
+    #preview-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    #preview-actions .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 10px;
+        color: #ccc;
+    }
+
+        
     </style>
 </head>
 <body>
@@ -376,14 +513,19 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
         renderizarPlantillas();
     }
 
-    function renderizarPlantillas() {
-        const contenedor = document.getElementById('lista-plantillas');
-        contenedor.innerHTML = '';
+
+    
+
+
+        function renderizarPlantillas() {
+        const contenedor = document.getElementById("lista-plantillas");
+        contenedor.innerHTML = "";
         
         const tieneCreditos = usuarioActual && usuarioActual.creditos > 0;
-        const claseBloqueado = tieneCreditos ? '' : 'locked';
-        const candadoHtml = tieneCreditos ? '' : '<div class="candado-icon">🔒</div>';
+        const claseBloqueado = tieneCreditos ? "" : "locked";
+        const candadoHtml = tieneCreditos ? "" : "<div class=\"candado-icon\">🔒</div>";
 
+        // Tarjeta de "Rellenar mi propio PDF" (se mantiene)
         contenedor.innerHTML += `
             <div class="card ${claseBloqueado}" onclick="abrirRellenadoLibre()" style="border-color: #e67e22;">
                 <div class="card-icon">✍️</div>
@@ -395,17 +537,33 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
             </div>
         `;
 
-        if (plantillasGlobales.length === 0) {
-            contenedor.innerHTML += '<p style="text-align: center; color:#888; margin-top: 15px;">No hay más documentos disponibles.</p>';
+        // NUEVA TARJETA: Generación de Documentos (IA)
+        contenedor.innerHTML += `
+            <div class="card ${claseBloqueado}" onclick="mostrarScreen(\'screen-ai-chat\')" style="border-color: #3498db;">
+                <div class="card-icon">✨</div>
+                <div class="card-info">
+                    <h3 style="color: #3498db;">Generación de Documentos (IA)</h3>
+                    <p>Crea documentos personalizados con ayuda de nuestro experto AI.</p>
+                </div>
+                ${candadoHtml}
+            </div>
+        `;
+
+        // Renderizar otras plantillas, excluyendo la "Carta Simple" si existe
+        const plantillasFiltradas = plantillasGlobales.filter(tpl => tpl.nombre !== "Carta Simple"); // Puedes añadir más nombres aquí si quieres ocultar otras
+
+        if (plantillasFiltradas.length === 0) {
+            contenedor.innerHTML += 
+                "<p style=\"text-align: center; color:#888; margin-top: 15px;\">No hay más documentos disponibles.</p>";
         } else {
-            plantillasGlobales.forEach(tpl => {
-                const icono = tpl.tipo === 'rellenado' ? '📝' : '🤖';
+            plantillasFiltradas.forEach(tpl => {
+                const icono = tpl.tipo === "rellenado" ? "📝" : "🤖";
                 contenedor.innerHTML += `
-                    <div class="card ${claseBloqueado}" onclick='clickPlantilla(${JSON.stringify(tpl)})'>
+                    <div class="card ${claseBloqueado}" onclick=\'clickPlantilla(${JSON.stringify(tpl)})\'>
                         <div class="card-icon">${icono}</div>
                         <div class="card-info">
                             <h3>${tpl.nombre}</h3>
-                            <p>${tpl.descripcion || 'Documento listo para generar'}</p>
+                            <p>${tpl.descripcion || "Documento listo para generar"}</p>
                         </div>
                         ${candadoHtml}
                     </div>
@@ -413,6 +571,11 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
             });
         }
     }
+
+
+
+
+    
     // ==========================================
     // 6. LÓGICA: PLANTILLAS PREDEFINIDAS
     // ==========================================
@@ -1116,6 +1279,172 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
             btn.disabled = false;
         }
     }
+
+
+    // ==========================================
+    // NUEVA LÓGICA DE CHAT AI Y GENERACIÓN DE DOCUMENTOS
+    // ==========================================
+
+    // Variables Globales para el Chat AI
+    let chatHistory = [];
+    let currentDocumentDraft = null;
+    let currentTemplateFields = {};
+    let isAITyping = false;
+    let userSignatureImage = null; 
+
+    // Alias para compatibilidad con el botón del menú
+    function mostrarScreen(id) { showScreen(id); }
+
+    // Cargar la firma del usuario si ya existe
+    async function loadUserSignature() {
+        if (!usuarioActual) return;
+        try {
+            const { data, error } = await supabase.storage.from("firmas").download(`firma-${usuarioActual.id}.png`);
+            if (data) {
+                const reader = new FileReader();
+                reader.onload = (e) => { userSignatureImage = e.target.result; };
+                reader.readAsDataURL(data);
+            }
+        } catch (e) { console.log("Sin firma previa"); }
+    }
+
+    const chatMessagesDiv = document.getElementById("chat-messages");
+    const chatInput = document.getElementById("chat-input");
+    const chatSendBtn = document.getElementById("chat-send-btn");
+    const modalPreviewAI = document.getElementById("modal-preview-ai");
+    const previewContentDiv = document.getElementById("preview-content");
+    const includeSignatureCheckbox = document.getElementById("include-signature");
+
+    function addMessage(sender, text, isHtml = false) {
+        const messageDiv = document.createElement("div");
+        messageDiv.classList.add("chat-message", sender);
+        if (isHtml) messageDiv.innerHTML = text;
+        else messageDiv.innerText = text;
+        chatMessagesDiv.appendChild(messageDiv);
+        chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight;
+    }
+
+    async function sendChatMessage() {
+        const message = chatInput.value.trim();
+        if (!message || isAITyping) return;
+
+        addMessage("user", message);
+        chatInput.value = "";
+        isAITyping = true;
+        chatSendBtn.disabled = true;
+
+        chatHistory.push({ role: "user", content: message });
+
+        try {
+            const { data, error } = await supabase.functions.invoke("generar-documento", {
+                body: JSON.stringify({ history: chatHistory, user_input: message, current_draft: currentDocumentDraft }),
+            });
+
+            if (error) throw error;
+
+            const aiResponse = data.response;
+            chatHistory.push({ role: "assistant", content: aiResponse.raw_response });
+
+            if (aiResponse.action === "document_draft" || aiResponse.action === "final_document") {
+                currentDocumentDraft = aiResponse.document_content;
+                addMessage("ai", aiResponse.message + "  
+  
+<b>Previsualizando documento...</b>", true);
+                mostrarModalPreviewAI(currentDocumentDraft);
+            } else {
+                addMessage("ai", aiResponse.message);
+            }
+
+        } catch (error) {
+            addMessage("ai", "Error: No se pudo conectar con el experto AI.");
+        } finally {
+            isAITyping = false;
+            chatSendBtn.disabled = false;
+        }
+    }
+
+    function mostrarModalPreviewAI(content) {
+        previewContentDiv.innerText = content;
+        modalPreviewAI.style.display = "flex";
+    }
+
+    function cerrarModalPreviewAI() { modalPreviewAI.style.display = "none"; }
+
+    async function generarPdfAI() {
+        if (!currentDocumentDraft) return;
+        if (usuarioActual.creditos < 1) return alert("Necesitas 1 crédito.");
+
+        try {
+            const pdfDoc = await PDFLib.PDFDocument.create();
+            let page = pdfDoc.addPage();
+            const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+            
+            const text = currentDocumentDraft;
+            const margin = 50;
+            const { width, height } = page.getSize();
+            
+            page.drawText(text, {
+                x: margin,
+                y: height - margin - 12,
+                size: 12,
+                font: font,
+                maxWidth: width - (margin * 2),
+                lineHeight: 15
+            });
+
+            const pagado = await descontarCredito(1);
+            if (!pagado) return;
+
+            const pdfBytes = await pdfDoc.save();
+            download(pdfBytes, "Documento_AI.pdf", "application/pdf");
+            alert("✅ ¡Documento generado!");
+            cerrarModalPreviewAI();
+            volverAHome();
+        } catch (e) {
+            alert("Error al generar PDF");
+        }
+    }
+
+    chatSendBtn.onclick = sendChatMessage;
+    chatInput.onkeypress = (e) => { if(e.key === "Enter") sendChatMessage(); };
+
+
+
+
+    
 </script>
+
+
+<!-- PANTALLA 3: CHAT CON IA -->
+<div id="screen-ai-chat" class="screen">
+    <div class="chat-header">
+        <button class="btn-volver" onclick="volverAHome()">⬅</button>
+        <span>✨ DocuFácil AI Expert</span>
+    </div>
+    <div class="chat-messages" id="chat-messages"></div>
+    <div class="chat-input-area">
+        <input type="text" id="chat-input" class="chat-input" placeholder="Pregúntale al AI Expert..." autocomplete="off">
+        <button id="chat-send-btn" class="chat-send-btn">➤</button>
+    </div>
+</div>
+
+<!-- MODAL DE PREVISUALIZACIÓN AI -->
+<div id="modal-preview-ai" class="modal-overlay">
+    <div class="modal-content">
+        <h3>Previsualización del Documento</h3>
+        <div id="preview-content"></div>
+        <div id="preview-actions">
+            <div class="checkbox-group">
+                <input type="checkbox" id="include-signature" checked>
+                <label for="include-signature">Incluir Firma (si está disponible)</label>
+            </div>
+            <button class="btn-generar" style="background: #f1c40f; color: black;" onclick="generarPdfAI()">✅ Generar PDF (1 Crédito)</button>
+            <button class="btn-volver" style="margin: 0 auto;" onclick="cerrarModalPreviewAI()">❌ Cancelar</button>
+        </div>
+    </div>
+</div>
+
+
+    
 </body>
 </html>
