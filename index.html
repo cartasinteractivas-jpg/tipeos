@@ -922,10 +922,25 @@ function cerrarModalFirma() {
     document.getElementById('modal-firma').style.display = 'none';
 }
 
+    
 function guardarFirma() {
-    firmaDataUrl = sigCanvas.toDataURL('image/png', 0.92);
+    const canvas = document.getElementById('canvas-firma');
+    const dataUrl = canvas.toDataURL('image/png', 0.92);
+    
+    // Cerrar modal
     document.getElementById('modal-firma').style.display = 'none';
-    alert("✅ Firma guardada correctamente");
+    
+    // Crear elemento flotante (imagen) en el PDF
+    if (currentTarget) {
+        crearElementoFlotante(
+            currentTarget.parent, 
+            currentTarget.x, 
+            currentTarget.y, 
+            currentTarget.pageNum, 
+            'image', 
+            dataUrl
+        );
+    }
 }
     
 
