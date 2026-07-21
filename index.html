@@ -186,15 +186,19 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
     </div>
 </div>
 
-<!-- MODAL DE FIRMA -->
+
+    
+<!-- === FIRMA MEJORADA === -->
 <div id="modal-firma" class="modal-overlay">
     <div class="modal-content">
         <h3>Dibuja tu firma</h3>
-        <canvas id="canvas-firma" width="300" height="150" style="background: white; border-radius: 5px; cursor: crosshair; touch-action: none; width: 100%;"></canvas>
+        <canvas id="canvas-firma" width="380" height="200" 
+                style="background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); touch-action: none; width: 100%; max-width: 100%;">
+        </canvas>
         <div class="modal-actions">
-            <button type="button" onclick="limpiarFirma()" style="background: #e74c3c; color: white; border: none; border-radius: 5px;">Limpiar</button>
-            <button type="button" onclick="cerrarModalFirma()" style="background: #555; color: white; border: none; border-radius: 5px;">Cancelar</button>
-            <button type="button" onclick="guardarFirma()" style="background: #2ecc71; color: black; border: none; border-radius: 5px;">Aceptar</button>
+            <button type="button" onclick="limpiarFirma()" style="background: #e74c3c; color: white;">Limpiar</button>
+            <button type="button" onclick="cerrarModalFirma()" style="background: #555; color: white;">Cancelar</button>
+            <button type="button" onclick="guardarFirma()" style="background: #2ecc71; color: black;">Aceptar</button>
         </div>
     </div>
 </div>
@@ -818,55 +822,110 @@ function renderizarPlantillas() {
 
     
 
-    // --- MODAL FIRMA ---
-    let sigCanvas, sigCtx, drawing = false;
+   // --- MODAL FIRMA MEJORADA ---
+let sigCanvas, sigCtx, isDrawing = false;
+let lastX = 0, lastY = 0;
+let points = []; // Para suavizado
 
-    function abrirModalFirma(parent, x, y, pageNum) {
-        currentTarget = { parent, x, y, pageNum };
-        document.getElementById('modal-firma').style.display = 'flex';
-        
-        sigCanvas = document.getElementById('canvas-firma');
-        sigCtx = sigCanvas.getContext('2d');
-        sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
-        
-        sigCtx.lineWidth = 1.5; // Trazo fino
-        sigCtx.strokeStyle = '#000';
-        sigCtx.lineCap = 'round';
-        sigCtx.lineJoin = 'round';
+function abrirModalFirma(parent, x, y, pageNum) {
+    currentTarget = { parent, x, y, pageNum };
+    document.getElementById('modal-firma').style.display = 'flex';
+    
+    sigCanvas = document.getElementById('canvas-firma');
+    sigCtx = sigCanvas.getContext('2d', { alpha: true });
+    
+    // Limpieza y configuración
+    sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+    
+    // Configuración para firma más natural
+    sigCtx.strokeStyle = '#1a1a1a';
+    sigCtx.lineCap = 'round';
+    sigCtx.lineJoin = 'round';
+    sigCtx.shadowColor = 'rgba(0,0,0,0.3)';
+    sigCtx.shadowBlur = 1;
 
-        sigCanvas.onmousedown = (e) => { drawing = true; sigCtx.beginPath(); sigCtx.moveTo(e.offsetX, e.offsetY); };
-        sigCanvas.onmousemove = (e) => { if(drawing) { sigCtx.lineTo(e.offsetX, e.offsetY); sigCtx.stroke(); } };
-        sigCanvas.onmouseup = () => drawing = false;
-        sigCanvas.onmouseout = () => drawing = false;
+    // Resetear eventos
+    sigCanvas.onmousedown = startDrawing;
+    sigCanvas.onmousemove = draw;
+    sigCanvas.onmouseup = stopDrawing;
+    sigCanvas.onmouseout = stopDrawing;
 
-        sigCanvas.ontouchstart = (e) => { 
-            e.preventDefault(); drawing = true; 
-            const pos = getTouchPos(sigCanvas, e);
-            sigCtx.beginPath(); sigCtx.moveTo(pos.x, pos.y); 
-        };
-        sigCanvas.ontouchmove = (e) => { 
-            e.preventDefault(); 
-            if(drawing) { 
-                const pos = getTouchPos(sigCanvas, e);
-                sigCtx.lineTo(pos.x, pos.y); sigCtx.stroke(); 
-            } 
-        };
-        sigCanvas.ontouchend = () => drawing = false;
+    sigCanvas.ontouchstart = (e) => { e.preventDefault(); startDrawing(e); };
+    sigCanvas.ontouchmove = (e) => { e.preventDefault(); draw(e); };
+    sigCanvas.ontouchend = stopDrawing;
+}
+
+function startDrawing(e) {
+    isDrawing = true;
+    points = [];
+    const pos = getPos(e);
+    lastX = pos.x;
+    lastY = pos.y;
+    points.push({x: lastX, y: lastY});
+}
+
+function draw(e) {
+    if (!isDrawing) return;
+    
+    const pos = getPos(e);
+    points.push({x: pos.x, y: pos.y});
+
+    sigCtx.lineWidth = calculateLineWidth(lastX, lastY, pos.x, pos.y);
+
+    // Suavizado con curvas cuadráticas
+    sigCtx.beginPath();
+    sigCtx.moveTo(lastX, lastY);
+    
+    if (points.length > 2) {
+        const midX = (lastX + pos.x) / 2;
+        const midY = (lastY + pos.y) / 2;
+        sigCtx.quadraticCurveTo(lastX, lastY, midX, midY);
+    } else {
+        sigCtx.lineTo(pos.x, pos.y);
     }
+    
+    sigCtx.stroke();
 
-    function getTouchPos(canvasDom, touchEvent) {
-        const rect = canvasDom.getBoundingClientRect();
-        return { x: touchEvent.touches[0].clientX - rect.left, y: touchEvent.touches[0].clientY - rect.top };
+    lastX = pos.x;
+    lastY = pos.y;
+}
+
+function stopDrawing() {
+    if (isDrawing) {
+        isDrawing = false;
+        points = [];
     }
+}
 
-    function limpiarFirma() { sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height); }
-    function cerrarModalFirma() { document.getElementById('modal-firma').style.display = 'none'; }
+function getPos(e) {
+    const rect = sigCanvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    
+    return {
+        x: (clientX - rect.left) * (sigCanvas.width / rect.width),
+        y: (clientY - rect.top) * (sigCanvas.height / rect.height)
+    };
+}
 
+function calculateLineWidth(x1, y1, x2, y2) {
+    const distance = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+    // Velocidad inversa = más lento → más grueso
+    const baseWidth = 3.5;
+    return Math.max(1.8, Math.min(baseWidth - distance * 0.08, 6));
+}
 
+function limpiarFirma() {
+    sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+}
 
-    function guardarFirma() {
+function cerrarModalFirma() {
+    document.getElementById('modal-firma').style.display = 'none';
+}
+
+function guardarFirma() {
     const canvas = document.getElementById('canvas-firma');
-    firmaDataUrl = canvas.toDataURL('image/png'); // Guardamos la firma aquí
+    firmaDataUrl = canvas.toDataURL('image/png', 0.95); // alta calidad
     document.getElementById('modal-firma').style.display = 'none';
     alert("✅ Firma guardada correctamente");
 }
