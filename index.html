@@ -1162,7 +1162,7 @@ function renderizarPlantillas() {
 
 
 
-    let voiceTimer;
+       let voiceTimer;
     let chatHistory = [];
     let isAITyping = false;
     let currentDocumentDraft = null;
@@ -1191,19 +1191,21 @@ function renderizarPlantillas() {
 
 
 
-
 function addMessage(sender, text) {
     var container = document.getElementById('chat-messages');
     if (!container) return;
     var msgDiv = document.createElement('div');
     msgDiv.className = 'chat-message ' + sender;
-    // Esta forma es más segura y no da errores de saltos de línea
+    // Esta línea es la clave: no tiene saltos de línea físicos
     msgDiv.innerHTML = text.split('\n').join('  
 ');
     container.appendChild(msgDiv);
     container.scrollTop = container.scrollHeight;
 }
 
+
+
+    
     
 
 
