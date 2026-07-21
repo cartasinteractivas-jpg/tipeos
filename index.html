@@ -2,9 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <!-- ¡IMPORTANTE! Quité el "user-scalable=no" para permitir el Zoom con los dedos en todo el PDF -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
     <title>DocuFácil - Generador de Documentos</title>
     
     <!-- Supabase -->
@@ -20,7 +18,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: #121212; color: #ffffff; display: flex; justify-content: center; min-height: 100vh; }
         
-        .app-container { background: #1e1e1e; width: 100%; max-width: 480px; min-height: 100vh; display: flex; flex-direction: column; position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.5  ); }
+        .app-container { background: #1e1e1e; width: 100%; max-width: 480px; min-height: 100vh; display: flex; flex-direction: column; position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.5 ); }
         
         .header { background: #2c3e50; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; border-bottom: 2px solid #34495e; }
         .header h1 { color: #fff; font-size: 20px; display: flex; align-items: center; gap: 8px; }
@@ -52,193 +50,189 @@
         .card-info { flex: 1; }
         .card-info h3 { color: #fff; font-size: 16px; margin-bottom: 4px; }
         .card-info p { color: #aaa; font-size: 12px; line-height: 1.3; }
-        
-        .card.locked { opacity: 0.7; border-color: #333; }
-        .card.locked::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 1; }
-        .candado-icon { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); font-size: 24px; z-index: 2; }
-
-        /* --- FORMULARIOS --- */
-        .input-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; }
-        .input-group label { color: #ccc; font-weight: bold; font-size: 14px; }
-        .input-with-mic { display: flex; gap: 10px; }
-        .input-with-mic input, .input-with-mic textarea { flex: 1; padding: 12px; background: #000; color: #fff; border: 1px solid #444; border-radius: 8px; outline: none; font-size: 15px; }
-        .btn-mic { background: #3498db; color: white; border: none; width: 48px; border-radius: 8px; cursor: pointer; font-size: 20px; display: flex; justify-content: center; align-items: center; }
-        
-        .btn-generar { background: #2ecc71; color: #000; border: none; padding: 15px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; width: 100%; margin-top: 10px; }
-        .btn-volver { background: transparent; color: #aaa; border: 1px solid #555; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 13px; width: fit-content; margin-bottom: 10px; }
-
-        /* --- RELLENADO LIBRE --- */
-        .canvas-container { width: 100%; overflow: auto; border: 1px solid #444; border-radius: 8px; background: #222; position: relative; margin-top: 10px; display: flex; flex-direction: column; gap: 10px; padding: 10px; }
-        .pdf-page-wrapper { position: relative; width: 100%; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
-        .free-pdf-canvas { display: block; width: 100%; cursor: crosshair; }
-        
-        /* Menú al hacer clic */
-        .click-menu { position: absolute; background: #fff; border-radius: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: flex; flex-direction: column; z-index: 90; overflow: hidden; border: 1px solid #ccc; min-width: 150px; }
-        .click-menu button { background: none; border: none; padding: 12px 20px; cursor: pointer; font-weight: bold; font-size: 14px; color: #333; text-align: left; border-bottom: 1px solid #eee; transition: 0.2s; margin: 0; width: 100%; }
-        .click-menu button:hover { background: #f1c40f; color: #000; }
-
-        /* Elementos Flotantes (Texto, Firma, Símbolos) */
-        .floating-element { position: absolute; z-index: 40; cursor: grab; padding: 4px; border: 1px dashed transparent; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
-        .floating-element:hover, .floating-element:active { border: 1px dashed #3498db; background: rgba(255,255,255,0.8); }
-        .floating-element:active { cursor: grabbing; }
-
-                /* Nuevo: Estado Seleccionado */
-        .floating-element.selected { border: 2px dashed #3498db !important; background: rgba(255,255,255,0.9); }
-        .floating-element.selected .btn-delete-float, .floating-element.selected .resize-handle { display: flex !important; }
-
-        
-        .floating-text { color: #000; font-family: sans-serif; white-space: nowrap; pointer-events: none; user-select: none; }
-        .floating-img { pointer-events: none; user-select: none; }
-        
-        /* Botón de borrar y tirador de tamaño */
-        .btn-delete-float { position: absolute; top: -10px; right: -10px; background: #e74c3c; color: white; border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 10px; font-weight: bold; cursor: pointer; display: none; justify-content: center; align-items: center; z-index: 50; }
-        .resize-handle { position: absolute; bottom: -8px; right: -8px; width: 16px; height: 16px; background: #3498db; border-radius: 50%; cursor: nwse-resize; display: none; z-index: 50; border: 2px solid white; }
-        .floating-element:hover .btn-delete-float, .floating-element:hover .resize-handle { display: flex; }
 
         /* --- MODALES --- */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center; padding: 20px; }
         .modal-content { background: #222; padding: 20px; border-radius: 10px; border: 1px solid #555; width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 15px; }
         .modal-content h3 { color: #f1c40f; text-align: center; margin-bottom: 5px; }
-        
-        /* Formato de texto */
-        .format-toolbar { display: flex; gap: 10px; justify-content: center; }
-        .btn-format { background: #333;
-color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; font-size: 16px; cursor: pointer; }
-        .btn-format.active { background: #3498db; border-color: #2980b9; }
-        
-        /* Historial Chips */
-        .chips-container { display: flex; flex-wrap: wrap; gap: 8px; max-height: 80px; overflow-y: auto; }
-        .chip { background: #444; color: #fff; padding: 6px 12px; border-radius: 15px; font-size: 12px; cursor: pointer; border: none; }
-        .chip:hover { background: #f1c40f; color: #000; }
 
-        .modal-actions { display: flex; gap: 10px; justify-content: center; margin-top: 10px; }
-        .modal-actions button { margin: 0; width: auto; padding: 10px 20px; }
-
-        /* Símbolos */
-        .symbol-grid { display: flex; justify-content: center; gap: 15px; margin-bottom: 10px; }
-        .btn-symbol { background: #333; color: white; border: 1px solid #555; font-size: 24px; width: 50px; height: 50px; border-radius: 8px; cursor: pointer; display: flex; justify-content: center; align-items: center; }
-        .btn-symbol:hover { background: #f1c40f; color: #000; }
-   
         /* Pantalla de Chat sobrepuesta para celular */
-    #screen-ai-chat {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: #121212;
-        z-index: 2000;
-        display: none; /* Se activa con JS */
-        flex-direction: column;
-    }
-    #screen-ai-chat.active { display: flex; }
+        #screen-ai-chat {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #121212;
+            z-index: 2000;
+            display: none;
+            flex-direction: column;
+        }
+        #screen-ai-chat.active { display: flex; }
 
-    .chat-header {
-        background: #2c3e50;
-        padding: 15px;
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        border-bottom: 2px solid #34495e;
-    }
-    .chat-messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-    .chat-message { max-width: 85%; padding: 10px 15px; border-radius: 15px; font-size: 15px; line-height: 1.4; }
-    .chat-message.user { background: #3498db; align-self: flex-end; border-bottom-right-radius: 2px; }
-    .chat-message.ai { background: #2a2a2a; border: 1px solid #444; align-self: flex-start; border-bottom-left-radius: 2px; }
-    
-    .chat-input-area { padding: 15px; background: #1e1e1e; display: flex; gap: 10px; border-top: 1px solid #333; }
-    .chat-input { flex: 1; background: #000; border: 1px solid #444; color: #fff; padding: 12px 15px; border-radius: 25px; outline: none; }
-    .btn-chat-action { background: #3498db; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; font-size: 20px; display: flex; justify-content: center; align-items: center; }
+        .chat-header {
+            background: #2c3e50;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border-bottom: 2px solid #34495e;
+        }
+        .chat-messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .chat-message { max-width: 85%; padding: 10px 15px; border-radius: 15px; font-size: 15px; line-height: 1.4; }
+        .chat-message.user { background: #3498db; align-self: flex-end; border-bottom-right-radius: 2px; }
+        .chat-message.ai { background: #2a2a2a; border: 1px solid #444; align-self: flex-start; border-bottom-left-radius: 2px; }
+        
+        .chat-input-area { padding: 15px; background: #1e1e1e; display: flex; gap: 10px; border-top: 1px solid #333; }
+        .chat-input { flex: 1; background: #000; border: 1px solid #444; color: #fff; padding: 12px 15px; border-radius: 25px; outline: none; }
+        .btn-chat-action { background: #3498db; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; font-size: 20px; display: flex; justify-content: center; align-items: center; }
 
-    
-    
+        /* MODAL DE PREVISUALIZACIÓN MEJORADO */
+        #modal-preview-ai {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .preview-modal-content {
+            background: #222;
+            border-radius: 10px;
+            border: 1px solid #555;
+            width: 100%;
+            max-width: 450px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .preview-header {
+            background: #2c3e50;
+            padding: 15px;
+            border-bottom: 2px solid #34495e;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .preview-header h3 { color: #f1c40f; margin: 0; }
+
+        .preview-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .preview-document {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background: #1a1a1a;
+        }
+
+        .preview-document textarea {
+            width: 100%;
+            height: 100%;
+            background: white;
+            color: #000;
+            border: none;
+            padding: 15px;
+            border-radius: 5px;
+            outline: none;
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
+            resize: none;
+            min-height: 250px;
+        }
+
+        .preview-chat-section {
+            height: 200px;
+            display: flex;
+            flex-direction: column;
+            border-top: 1px solid #333;
+            background: #1e1e1e;
+        }
+
+        .preview-chat-messages {
+            flex: 1;
+            padding: 10px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .preview-chat-message {
+            max-width: 80%;
+            padding: 8px 12px;
+            border-radius: 12px;
+            font-size: 13px;
+        }
+
+        .preview-chat-message.user { background: #3498db; align-self: flex-end; border-bottom-right-radius: 2px; }
+        .preview-chat-message.ai { background: #444; border: 1px solid #555; align-self: flex-start; border-bottom-left-radius: 2px; }
+
+        .preview-chat-input {
+            padding: 10px;
+            display: flex;
+            gap: 8px;
+            background: #1e1e1e;
+            border-top: 1px solid #333;
+        }
+
+        .preview-chat-input input {
+            flex: 1;
+            background: #000;
+            border: 1px solid #444;
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 20px;
+            outline: none;
+        }
+
+        .preview-chat-input button {
+            background: #3498db;
+            color: white;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .preview-actions {
+            padding: 15px;
+            display: flex;
+            gap: 10px;
+            background: #222;
+            border-top: 1px solid #333;
+        }
+
+        .preview-actions button {
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            flex: 1;
+        }
+
+        .btn-firmar { background: #e67e22; color: white; }
+        .btn-descargar { background: #2ecc71; color: #000; }
+        .btn-cerrar-preview { background: #555; color: white; }
     </style>
 </head>
 <body>
 
-
-    
-<!-- MODAL DE TEXTO -->
-<div id="modal-texto" class="modal-overlay">
-    <div class="modal-content">
-        <h3>Añadir Texto</h3>
-        
-                <div class="format-toolbar">
-            <button type="button" id="btn-bold" class="btn-format" onclick="toggleFormat('bold')"><b>B</b></button>
-            <button type="button" id="btn-italic" class="btn-format" onclick="toggleFormat('italic')"><i>I</i></button>
-            <!-- NUEVO: Selector numérico de tamaño -->
-            <input type="number" id="input-size-texto" value="14" min="4" max="100" style="width: 60px; padding: 5px; border-radius: 6px; border: 1px solid #444; background: #111; color: white; text-align: center; outline: none; font-size: 16px;" title="Tamaño del texto">
-        </div>
-
-
-
-        
-        <input type="text" id="input-texto-modal" placeholder="Escribe aquí..." style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #444; background: #111; color: white; font-size: 16px; outline: none;">
-        
-        <div id="chips-historial" class="chips-container">
-            <!-- Los chips de historial aparecerán aquí -->
-        </div>
-
-        <div class="modal-actions">
-            <button type="button" onclick="cerrarModalTexto()" style="background: #555; color: white; border: none; border-radius: 5px;">Cancelar</button>
-            <button type="button" onclick="guardarTextoModal()" style="background: #2ecc71; color: black; border: none; border-radius: 5px;">Aceptar</button>
-        </div>
-    </div>
-</div>
-
-<!-- MODAL DE FIRMA -->
-<div id="modal-firma" class="modal-overlay">
-    <div class="modal-content">
-        <h3>Dibuja tu firma</h3>
-        <canvas id="canvas-firma" width="300" height="150" style="background: white; border-radius: 5px; cursor: crosshair; touch-action: none; width: 100%;"></canvas>
-        <div class="modal-actions">
-            <button type="button" onclick="limpiarFirma()" style="background: #e74c3c; color: white; border: none; border-radius: 5px;">Limpiar</button>
-            <button type="button" onclick="cerrarModalFirma()" style="background: #555; color: white; border: none; border-radius: 5px;">Cancelar</button>
-            <button type="button" onclick="guardarFirma()" style="background: #2ecc71; color: black; border: none; border-radius: 5px;">Aceptar</button>
-        </div>
-    </div>
-</div>
-
-
-    
-    
-<!-- MODAL DE SÍMBOLOS -->
-<div id="modal-simbolos" class="modal-overlay">
-    <div class="modal-content">
-        <h3>Añadir Símbolo</h3>
-        <!-- NUEVO: Selector numérico de tamaño -->
-        <div style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 10px;">
-            <label style="color: #ccc; font-size: 14px;">Tamaño:</label>
-            <input type="number" id="input-size-simbolo" value="24" min="4" max="100" style="width: 60px; padding: 5px; border-radius: 6px; border: 1px solid #444; background: #111; color: white; text-align: center; outline: none; font-size: 16px;">
-        </div>
-        <div class="symbol-grid">
-            <button type="button" class="btn-symbol" onclick="guardarSimbolo('✔')">✔</button>
-            <button type="button" class="btn-symbol" onclick="guardarSimbolo('✘')">✘</button>
-            <button type="button" class="btn-symbol" onclick="guardarSimbolo('•')">•</button>
-        </div>
-        <div class="modal-actions">
-            <button type="button" onclick="cerrarModalSimbolos()" style="background: #555; color: white; border: none; border-radius: 5px;">Cancelar</button>
-        </div>
-    </div>
-</div>
-
-    
-
-
-    
-<!-- MODAL DE OPCIONES (Reemplaza al menú flotante) -->
-<div id="modal-opciones" class="modal-overlay">
-    <div class="modal-content" style="gap: 10px;">
-        <h3>¿Qué deseas añadir?</h3>
-        <button type="button" class="btn-generar" style="margin-top:0; background:#3498db; color:white;" onclick="seleccionarOpcion('texto')">📝 Añadir Texto</button>
-        <button type="button" class="btn-generar" style="margin-top:0; background:#9b59b6; color:white;" onclick="seleccionarOpcion('firma')">✍️ Añadir Firma</button>
-        <button type="button" class="btn-generar" style="margin-top:0; background:#e67e22; color:white;" onclick="seleccionarOpcion('simbolo')">✅ Añadir Símbolo</button>
-        <button type="button" class="btn-volver" style="margin: 10px auto 0 auto;" onclick="cerrarModalOpciones()">❌ Cancelar</button>
-    </div>
-</div>
-
-
-    
 <div class="app-container">
     <div class="header">
         <h1>📄 DocuFácil</h1>
@@ -247,1114 +241,35 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
 
     <!-- PANTALLA 1: INICIO -->
     <div id="screen-home" class="screen active">
-        <div class="compra-section" id="seccion-compra">
-            <img src="https://vectorseek.com/wp-content/uploads/2023/09/Yape-App-Logo-Vector.svg-.png" alt="Yape" class="yape-logo" onerror="this.style.display='none'">
+        <div class="compra-section">
+            <img src="https://vectorseek.com/wp-content/uploads/2023/09/Yape-App-Logo-Vector.svg-.png" alt="Yape" class="yape-logo">
             <div class="compra-info">
-                <p style="font-size: 16px; font-weight: bold; margin-bottom: 5px;">¿Necesitas crear un documento?</p>
-                <p>Adquiere créditos y genera documentos profesionales al instante.</p>
-                <p style="margin-top: 10px; font-size: 15px;">1 Crédito = 1 Hoja = <span class="precio-tag">S/ 0.20</span></p>
+                <p style="font-size: 16px; font-weight: bold;">¿Necesitas crear un documento?</p>
+                <p>1 Crédito = 1 Hoja = <span class="precio-tag">S/ 0.20</span></p>
                 <p style="margin-top: 10px; font-weight: bold; color: #f1c40f; font-size: 18px;">Yapea al: 967 188 120</p>
             </div>
-            <a href="https://wa.me/51967188120?text=Hola,%20ya%20yapeé.%20Quiero%20comprar%20créditos%20para%20DocuFácil." target="_blank" class="btn-whatsapp">💬 Enviar captura por WhatsApp</a>
+            <a href="https://wa.me/51967188120" target="_blank" class="btn-whatsapp">💬 Enviar captura por WhatsApp</a>
         </div>
 
         <div class="activar-section">
-            <h3>🔑 ¿Ya tienes un código? Actívalo aquí:</h3>
+            <h3>🔑 Activar código:</h3>
             <div class="input-codigo-wrapper">
-                <input type="text" id="input-codigo" class="input-codigo" placeholder="EJ: MANU-123" oninput="this.value = this.value.toUpperCase( ).replace(/[^A-Z0-9-]/g, '')">
-                <button class="btn-activar" onclick="activarCodigoBoton()">Activar</button>
+                <input type="text" id="input-codigo" class="input-codigo" placeholder="EJ: MANU-123">
+                <button class="btn-activar" onclick="activarCodigoBoton( )">Activar</button>
             </div>
         </div>
 
-        <h2 class="section-title">📚 Documentos Disponibles</h2>
+        <h2 class="section-title">📚 Documentos</h2>
         <div id="lista-plantillas" class="lista-plantillas">
             <!-- Se llena con JS -->
         </div>
     </div>
-
-    <!-- PANTALLA 2: FORMULARIO DE PLANTILLAS -->
-    <div id="screen-formulario" class="screen">
-        <button class="btn-volver" onclick="volverAHome()">⬅ Volver al inicio</button>
-        <div style="background: #222; padding: 15px; border-radius: 10px; border-left: 4px solid #3498db; margin-bottom: 10px;">
-            <h3 id="form-titulo" style="color: #3498db; margin-bottom: 5px;">Nombre</h3>
-            <p id="form-desc" style="color: #aaa; font-size: 13px;">Descripción</p>
-        </div>
-        <div class="input-group" style="background: #2a2a2a; padding: 15px; border-radius: 8px; border: 1px dashed #555;">
-            <label style="color: #f1c40f;">📄 Sube el PDF base (Plantilla)</label>
-            <input type="file" id="user-pdf-upload" accept="application/pdf" style="width: 100%; color: #fff;">
-        </div>
-        <div id="form-campos" style="display: flex; flex-direction: column; gap: 5px;"></div>
-        <button class="btn-generar" id="btn-generar" onclick="generarDocumento()">✨ Generar Documento (1 Crédito)</button>
-    </div>
-
-    <!-- PANTALLA 3: RELLENADO LIBRE -->
-    <div id="screen-rellenado-libre" class="screen">
-        <button class="btn-volver" onclick="volverAHome()">⬅ Volver al inicio</button>
-        <div style="background: #222; padding: 15px; border-radius: 10px; border-left: 4px solid #e67e22; margin-bottom: 10px;">
-            <h3 style="color: #e67e22; margin-bottom: 5px;">✍️ Rellenar mi propio PDF</h3>
-            <p style="color: #aaa; font-size: 13px;">Sube tu documento, <strong>toca en la pantalla</strong> donde quieras escribir o firmar. Usa dos dedos para ajustar el tamaño.</p>
-        </div>
-        
-        <input type="file" id="free-pdf-upload" accept="application/pdf" style="width: 100%; color: #fff; background: #2a2a2a; padding: 10px; border-radius: 8px;">
-        
-        <div class="canvas-container" id="free-canvas-container" style="display: none;">
-            <!-- Las hojas del PDF se generarán aquí dinámicamente -->
-        </div>
-
-        <button class="btn-generar" id="btn-generar-free" onclick="generarPdfLibre()" style="display: none; background: #e67e22;">✨ Descargar PDF Lleno</button>
-    </div>
 </div>
 
-<script>
-    // ==========================================
-    // 1. CONFIGURACIÓN SUPABASE Y PDF.JS
-    // ==========================================
-    const supabaseUrl = 'https://wpzddhmllctdsiuxenss.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwemRkaG1sbGN0ZHNpdXhlbnNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5NjUyNzQsImV4cCI6MjA5OTU0MTI3NH0.hwSxJ3Sk_RlgbvFyr8S64XRuxW7j55BU4gaIneFTuhY';
-    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey );
-    
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-
-    // ==========================================
-    // 2. VARIABLES GLOBALES
-    // ==========================================
-    let usuarioActual = null;
-    let plantillaSeleccionada = null;
-    let plantillasGlobales = [];
-
-    // Variables para Rellenado Libre
-    let freePdfDoc = null;
-    let freeCanvasScales = {};
-    let elementosFlotantes = []; 
-    let freePdfPageCount = 0; 
-    let historialTextos = JSON.parse(localStorage.getItem('docufacil_historial' )) || [];
-
-    // ==========================================
-    // 3. INICIALIZACIÓN Y AUTO-LOGIN
-    // ==========================================
-    document.addEventListener('DOMContentLoaded', async () => {
-        cargarPlantillas();
-        
-        const codigoGuardado = localStorage.getItem('docufacil_codigo');
-        if (codigoGuardado) {
-            document.getElementById('input-codigo').value = codigoGuardado;
-            await activarCodigo(codigoGuardado, true); 
-        }
-    });
-
-    function showScreen(screenId) {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById(screenId).classList.add('active');
-        window.scrollTo(0, 0);
-    }
-
-    function volverAHome() {
-        plantillaSeleccionada = null;
-        showScreen('screen-home');
-    }
-
-    // ==========================================
-    // 4. SISTEMA DE CRÉDITOS
-    // ==========================================
-    async function activarCodigoBoton() {
-        const codigo = document.getElementById('input-codigo').value.trim();
-        if (!codigo) return alert("Ingresa un código válido.");
-        await activarCodigo(codigo, false);
-    }
-
-    async function activarCodigo(codigo, silencioso = false) {
-        const { data, error } = await supabase.from('usuarios_codigos').select('*').eq('codigo', codigo).single();
-        
-        if (error || !data) {
-            localStorage.removeItem('docufacil_codigo');
-            if (!silencioso) alert("❌ Código incorrecto o no existe.");
-            return;
-        }
-        
-        if (data.creditos <= 0) {
-            if (!silencioso) alert("⚠️ Este código ya no tiene créditos.");
-            return;
-        }
-
-        usuarioActual = data;
-        localStorage.setItem('docufacil_codigo', codigo);
-        document.getElementById('user-creditos').innerText = usuarioActual.creditos;
-        
-        if (!silencioso) {
-            document.getElementById('input-codigo').value = '';
-            alert(`✅ ¡Código activado! Tienes ${usuarioActual.creditos} créditos disponibles.`);
-        }
-        renderizarPlantillas();
-    }
-
-    async function descontarCredito(cantidad = 1) {
-        if (!usuarioActual || usuarioActual.creditos < cantidad) return false;
-        const nuevoSaldo = usuarioActual.creditos - cantidad;
-        const { error } = await supabase.from('usuarios_codigos').update({ creditos: nuevoSaldo }).eq('id', usuarioActual.id);
-        if (error) {
-            alert("Error al procesar el crédito.");
-            return false;
-        }
-        usuarioActual.creditos = nuevoSaldo;
-        document.getElementById('user-creditos').innerText = nuevoSaldo;
-        if (nuevoSaldo === 0) renderizarPlantillas(); 
-        return true;
-    }
-
-    // ==========================================
-    // 5. CARGA Y RENDERIZADO DE PLANTILLAS
-    // ==========================================
-    async function cargarPlantillas() {
-        const { data, error } = await supabase.from('plantillas').select('*');
-        plantillasGlobales = data || [];
-        renderizarPlantillas();
-    }
-
-
-    
-function renderizarPlantillas() {
-    const contenedor = document.getElementById('lista-plantillas');
-    if (!contenedor) return;
-    contenedor.innerHTML = '';
-    
-    const tieneCreditos = usuarioActual && usuarioActual.creditos > 0;
-    const claseBloqueado = tieneCreditos ? '' : 'locked';
-    const candadoHtml = tieneCreditos ? '' : '<div class="candado-icon">🔒</div>';
-
-    // Botón 1: Rellenador
-    contenedor.innerHTML += `
-        <div class="card ${claseBloqueado}" onclick="abrirRellenadoLibre()" style="border-color: #e67e22;">
-            <div class="card-icon">✍️</div>
-            <div class="card-info">
-                <h3 style="color: #e67e22;">Rellenar mi propio PDF</h3>
-                <p>Sube cualquier documento, toca donde quieras escribir o firmar y descárgalo.</p>
-            </div>
-            ${candadoHtml}
-        </div>
-    `;
-
-    // Botón 2: IA
-    contenedor.innerHTML += `
-        <div class="card ${claseBloqueado}" onclick="mostrarScreen('screen-ai-chat')" style="border-color: #3498db;">
-            <div class="card-icon">✨</div>
-            <div class="card-info">
-                <h3 style="color: #3498db;">Generación de documento</h3>
-                <p>Crea documentos personalizados con ayuda de nuestro experto AI.</p>
-            </div>
-            ${candadoHtml}
-        </div>
-    `;
-}
-
-    
-
-
-
-    
-    
-
-    
-    // ==========================================
-    // 6. LÓGICA: PLANTILLAS PREDEFINIDAS
-    // ==========================================
-    function clickPlantilla(tpl) {
-        if (!usuarioActual || usuarioActual.creditos <= 0) {
-            alert("🔒 Necesitas activar un código con créditos.");
-            document.getElementById('seccion-compra').scrollIntoView({ behavior: 'smooth' });
-            return;
-        }
-        abrirFormulario(tpl);
-    }
-
-    function abrirFormulario(tpl) {
-        plantillaSeleccionada = tpl;
-        document.getElementById('form-titulo').innerText = tpl.nombre;
-        document.getElementById('form-desc').innerText = tpl.descripcion || '';
-        document.getElementById('user-pdf-upload').value = '';
-        
-        const contenedorCampos = document.getElementById('form-campos');
-        contenedorCampos.innerHTML = '';
-
-        if (tpl.configuracion && tpl.configuracion.campos) {
-            tpl.configuracion.campos.forEach(campo => {
-                contenedorCampos.innerHTML += `
-                    <div class="input-group">
-                        <label>${campo.nombre.toUpperCase()}</label>
-                        <div class="input-with-mic">
-                            <input type="text" id="campo-${campo.nombre}" placeholder="Escribe aquí...">
-                            <button class="btn-mic" onclick="iniciarReconocimientoVoz('campo-${campo.nombre}')">🎤</button>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-        showScreen('screen-formulario');
-    }
-
-    function iniciarReconocimientoVoz(inputId) {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) return alert("Tu navegador no soporta dictado por voz.");
-        
-        const recognition = new SpeechRecognition();
-        recognition.lang = 'es-ES';
-        recognition.start();
-        
-        const input = document.getElementById(inputId);
-        input.placeholder = "Escuchando...";
-        
-        recognition.onresult = function(event) {
-            input.value = event.results[0][0].transcript;
-            input.placeholder = "Escribe aquí...";
-        };
-        recognition.onerror = function() {
-            input.placeholder = "Error al escuchar. Intenta de nuevo.";
-        };
-    }
-
-    async function generarDocumento() {
-        const fileInput = document.getElementById('user-pdf-upload');
-        if (!fileInput.files.length) return alert("Por favor, sube el PDF base de la plantilla.");
-
-        const btn = document.getElementById('btn-generar');
-        btn.innerText = "⏳ Generando...";
-        btn.disabled = true;
-
-        try {
-            const file = fileInput.files[0];
-            const arrayBuffer = await file.arrayBuffer();
-            const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
-            const pages = pdfDoc.getPages();
-            const firstPage = pages[0];
-
-            if (plantillaSeleccionada.configuracion && plantillaSeleccionada.configuracion.campos) {
-                plantillaSeleccionada.configuracion.campos.forEach(campo => {
-                    const valor = document.getElementById(`campo-${campo.nombre}`).value;
-                    if (valor) {
-                        firstPage.drawText(valor, {
-                            x: campo.x,
-                            y: campo.y,
-                            size: 12,
-                            color: PDFLib.rgb(0, 0, 0)
-                        });
-                    }
-                });
-            }
-
-            const pagado = await descontarCredito(1);
-            if (!pagado) throw new Error("No se pudo procesar el pago.");
-
-            const pdfBytes = await pdfDoc.save();
-            download(pdfBytes, `DocuFacil_${plantillaSeleccionada.nombre}.pdf`, "application/pdf");
-            
-            alert("✅ ¡Documento generado con éxito!");
-            volverAHome();
-
-        } catch (err) {
-            alert("Error: " + err.message);
-        } finally {
-            btn.innerText = "✨ Generar Documento (1 Crédito)";
-            btn.disabled = false;
-        }
-    }
-
-    // ==========================================
-    // 7. HISTORIAL (AUTOCOMPLETADO)
-    // ==========================================
-    function guardarEnHistorial(texto) {
-        if (texto && !historialTextos.includes(texto)) {
-            historialTextos.push(texto);
-            localStorage.setItem('docufacil_historial', JSON.stringify(historialTextos));
-        }
-    }
-
-
-
-
-    // ==========================================
-    // ZOOM INTERNO DEL PDF (Pinch-to-Zoom)
-    // ==========================================
-    window.pdfGlobalScale = 1;
-    let initialPdfDist = 0;
-    let initialPdfScale = 1;
-
-    document.addEventListener('DOMContentLoaded', () => {
-        const container = document.getElementById('free-canvas-container');
-        
-        container.addEventListener('touchstart', (e) => {
-            // Solo hacer zoom si tocamos con 2 dedos y NO estamos tocando un texto/firma
-            if (e.touches.length === 2 && !e.target.closest('.floating-element')) {
-                initialPdfDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-                initialPdfScale = window.pdfGlobalScale;
-            }
-        }, {passive: false});
-
-        container.addEventListener('touchmove', (e) => {
-            if (e.touches.length === 2 && initialPdfDist > 0 && !e.target.closest('.floating-element')) {
-                e.preventDefault(); // Evita que la pantalla salte
-                const currentDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-                const scaleFactor = currentDist / initialPdfDist;
-                
-                // Limitar el zoom entre 1x (normal) y 3x (muy grande)
-                window.pdfGlobalScale = Math.max(1, Math.min(initialPdfScale * scaleFactor, 3)); 
-                
-                // Aplicar el zoom solo a las hojas del PDF
-                document.querySelectorAll('.pdf-page-wrapper').forEach(wrapper => {
-                    wrapper.style.transform = `scale(${window.pdfGlobalScale})`;
-                    wrapper.style.transformOrigin = 'top left';
-                    // Ajustar el scroll para poder movernos por el PDF agrandado
-                    wrapper.style.marginBottom = `${(window.pdfGlobalScale - 1) * wrapper.offsetHeight}px`;
-                    wrapper.style.marginRight = `${(window.pdfGlobalScale - 1) * wrapper.offsetWidth}px`;
-                });
-            }
-        }, {passive: false});
-
-        container.addEventListener('touchend', (e) => {
-            if (e.touches.length < 2) initialPdfDist = 0;
-        });
-    });
-
-
-
-
-
-    
-    // ==========================================
-    // 8. LÓGICA: RELLENADO LIBRE (CARGA DE PDF)
-    // ==========================================
-    function abrirRellenadoLibre() {
-        if (!usuarioActual || usuarioActual.creditos <= 0) {
-            alert("🔒 Necesitas activar un código con créditos.");
-            document.getElementById('seccion-compra').scrollIntoView({ behavior: 'smooth' });
-            return;
-        }
-        
-        document.getElementById('free-pdf-upload').value = '';
-        document.getElementById('free-canvas-container').style.display = 'none';
-        document.getElementById('free-canvas-container').innerHTML = ''; 
-        document.getElementById('btn-generar-free').style.display = 'none';
-        
-        elementosFlotantes = [];
-        freeCanvasScales = {};
-        freePdfPageCount = 0;
-        
-        showScreen('screen-rellenado-libre');
-    }
-
-    document.getElementById('free-pdf-upload').addEventListener('change', async function(e) {
-        if (!e.target.files.length) return;
-        
-        const file = e.target.files[0];
-        const arrayBuffer = await file.arrayBuffer();
-        
-        freePdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
-        const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
-        const pdf = await loadingTask.promise;
-        
-        freePdfPageCount = pdf.numPages; 
-        
-        const container = document.getElementById('free-canvas-container');
-        container.innerHTML = ''; 
-        elementosFlotantes = [];
-        freeCanvasScales = {};
-        container.style.display = 'flex';
-        
-        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-            const page = await pdf.getPage(pageNum);
-            const wrapper = document.createElement('div');
-            wrapper.className = 'pdf-page-wrapper';
-            wrapper.dataset.pageNum = pageNum;
-            
-            const canvas = document.createElement('canvas');
-            canvas.className = 'free-pdf-canvas';
-            
-            wrapper.appendChild(canvas);
-            container.appendChild(wrapper);
-            
-            const ctx = canvas.getContext('2d');
-            const containerWidth = container.clientWidth - 20; 
-            const unscaledViewport = page.getViewport({ scale: 1 });
-            const scale = containerWidth / unscaledViewport.width;
-            freeCanvasScales[pageNum] = scale;
-            
-            const viewport = page.getViewport({ scale: scale });
-            canvas.width = viewport.width;
-            canvas.height = viewport.height;
-            
-            await page.render({ canvasContext: ctx, viewport: viewport }).promise;
-
-
-            
-                                    // Evento para abrir el menú o deseleccionar al tocar la hoja
-            wrapper.addEventListener('click', function(ev) {
-                if (ev.target.closest('.floating-element')) return; // Si tocamos un elemento, ignorar
-                
-                // Si hay un elemento seleccionado, lo deseleccionamos y NO abrimos el menú
-                const seleccionado = document.querySelector('.floating-element.selected');
-                if (seleccionado) {
-                    document.querySelectorAll('.floating-element').forEach(el => el.classList.remove('selected'));
-                    return;
-                }
-
-                const rect = this.getBoundingClientRect();
-                const x = (ev.clientX - rect.left) / window.pdfGlobalScale;
-                const y = (ev.clientY - rect.top) / window.pdfGlobalScale;
-                
-                mostrarMenuOpciones(this, x, y, pageNum);
-            });
-
-
-
-            
-        }
-        
-        const btnGenerar = document.getElementById('btn-generar-free');
-        btnGenerar.innerText = `✨ Descargar PDF Lleno (${freePdfPageCount} Créditos)`;
-        btnGenerar.style.display = 'block';
-    });
-
-
-    // ==========================================
-    // 9. MENÚ DE OPCIONES (MODAL FIJO)
-    // ==========================================
-    let pendingAction = null;
-
-    function mostrarMenuOpciones(parent, x, y, pageNum) {
-        pendingAction = { parent, x, y, pageNum };
-        document.getElementById('modal-opciones').style.display = 'flex';
-    }
-
-    function cerrarModalOpciones() {
-        document.getElementById('modal-opciones').style.display = 'none';
-    }
-
-    function seleccionarOpcion(opcion) {
-        cerrarModalOpciones();
-        if (!pendingAction) return;
-        const { parent, x, y, pageNum } = pendingAction;
-        
-        if (opcion === 'texto') abrirModalTexto(parent, x, y, pageNum);
-        if (opcion === 'firma') abrirModalFirma(parent, x, y, pageNum);
-        if (opcion === 'simbolo') abrirModalSimbolos(parent, x, y, pageNum);
-    }
-
-
-
-    
-    // ==========================================
-    // 10. MODALES (TEXTO, FIRMA, SÍMBOLOS)
-    // ==========================================
-    let currentTarget = null;
-    let textFormat = { bold: false, italic: false };
-    
-    // NUEVO: Memoria para recordar el último tamaño usado
-    let lastTextSize = 14;
-    let lastSymbolSize = 24;
-
-    // --- MODAL TEXTO ---
-    function abrirModalTexto(parent, x, y, pageNum) {
-        currentTarget = { parent, x, y, pageNum };
-        textFormat = { bold: false, italic: false };
-        document.getElementById('btn-bold').classList.remove('active');
-        document.getElementById('btn-italic').classList.remove('active');
-        
-        const input = document.getElementById('input-texto-modal');
-        input.value = '';
-        input.style.fontWeight = 'normal';
-        input.style.fontStyle = 'normal';
-        
-        // NUEVO: Cargar el último tamaño que el usuario eligió
-        document.getElementById('input-size-texto').value = lastTextSize;
-        
-        renderizarChipsHistorial();
-        document.getElementById('modal-texto').style.display = 'flex';
-        setTimeout(() => input.focus(), 100);
-    }
-
-    function cerrarModalTexto() { document.getElementById('modal-texto').style.display = 'none'; }
-
-    function toggleFormat(type) {
-        textFormat[type] = !textFormat[type];
-        const btn = document.getElementById(`btn-${type}`);
-        const input = document.getElementById('input-texto-modal');
-        
-        if (textFormat[type]) btn.classList.add('active');
-        else btn.classList.remove('active');
-
-        if (type === 'bold') input.style.fontWeight = textFormat.bold ? 'bold' : 'normal';
-        if (type === 'italic') input.style.fontStyle = textFormat.italic ? 'italic' : 'normal';
-    }
-
-    function renderizarChipsHistorial() {
-        const container = document.getElementById('chips-historial');
-        container.innerHTML = '';
-        historialTextos.forEach(texto => {
-            const chip = document.createElement('button');
-            chip.type = 'button';
-            chip.className = 'chip';
-            chip.innerText = texto;
-            chip.onclick = () => { document.getElementById('input-texto-modal').value = texto; };
-            container.appendChild(chip);
-        });
-    }
-
-    function guardarTextoModal() {
-        const texto = document.getElementById('input-texto-modal').value.trim();
-        if (!texto) return cerrarModalTexto();
-
-        // NUEVO: Guardar el tamaño elegido en la memoria
-        lastTextSize = parseInt(document.getElementById('input-size-texto').value) || 14;
-
-        guardarEnHistorial(texto);
-        // NUEVO: Enviamos el tamaño (lastTextSize) a la función creadora
-        crearElementoFlotante(currentTarget.parent, currentTarget.x, currentTarget.y, currentTarget.pageNum, 'text', texto, { ...textFormat }, lastTextSize);
-        cerrarModalTexto();
-    }
-
-
-
-
-    
-
-    // --- MODAL FIRMA ---
-    let sigCanvas, sigCtx, drawing = false;
-
-    function abrirModalFirma(parent, x, y, pageNum) {
-        currentTarget = { parent, x, y, pageNum };
-        document.getElementById('modal-firma').style.display = 'flex';
-        
-        sigCanvas = document.getElementById('canvas-firma');
-        sigCtx = sigCanvas.getContext('2d');
-        sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
-        
-        sigCtx.lineWidth = 1.5; // Trazo fino
-        sigCtx.strokeStyle = '#000';
-        sigCtx.lineCap = 'round';
-        sigCtx.lineJoin = 'round';
-
-        sigCanvas.onmousedown = (e) => { drawing = true; sigCtx.beginPath(); sigCtx.moveTo(e.offsetX, e.offsetY); };
-        sigCanvas.onmousemove = (e) => { if(drawing) { sigCtx.lineTo(e.offsetX, e.offsetY); sigCtx.stroke(); } };
-        sigCanvas.onmouseup = () => drawing = false;
-        sigCanvas.onmouseout = () => drawing = false;
-
-        sigCanvas.ontouchstart = (e) => { 
-            e.preventDefault(); drawing = true; 
-            const pos = getTouchPos(sigCanvas, e);
-            sigCtx.beginPath(); sigCtx.moveTo(pos.x, pos.y); 
-        };
-        sigCanvas.ontouchmove = (e) => { 
-            e.preventDefault(); 
-            if(drawing) { 
-                const pos = getTouchPos(sigCanvas, e);
-                sigCtx.lineTo(pos.x, pos.y); sigCtx.stroke(); 
-            } 
-        };
-        sigCanvas.ontouchend = () => drawing = false;
-    }
-
-    function getTouchPos(canvasDom, touchEvent) {
-        const rect = canvasDom.getBoundingClientRect();
-        return { x: touchEvent.touches[0].clientX - rect.left, y: touchEvent.touches[0].clientY - rect.top };
-    }
-
-    function limpiarFirma() { sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height); }
-    function cerrarModalFirma() { document.getElementById('modal-firma').style.display = 'none'; }
-
-    function guardarFirma() {
-        const dataUrl = sigCanvas.toDataURL('image/png');
-        crearElementoFlotante(currentTarget.parent, currentTarget.x, currentTarget.y, currentTarget.pageNum, 'image', dataUrl);
-        cerrarModalFirma();
-    }
-
-
-
-     // --- MODAL SÍMBOLOS ---
-    function abrirModalSimbolos(parent, x, y, pageNum) {
-        currentTarget = { parent, x, y, pageNum };
-        // NUEVO: Cargar el último tamaño usado
-        document.getElementById('input-size-simbolo').value = lastSymbolSize;
-        document.getElementById('modal-simbolos').style.display = 'flex';
-    }
-
-    function cerrarModalSimbolos() { document.getElementById('modal-simbolos').style.display = 'none'; }
-
-    function guardarSimbolo(simbolo) {
-        // NUEVO: Guardar el tamaño elegido en la memoria
-        lastSymbolSize = parseInt(document.getElementById('input-size-simbolo').value) || 24;
-        
-        // NUEVO: Enviamos el tamaño (lastSymbolSize) a la función creadora
-        crearElementoFlotante(currentTarget.parent, currentTarget.x, currentTarget.y, currentTarget.pageNum, 'symbol', simbolo, null, lastSymbolSize);
-        cerrarModalSimbolos();
-    }
-
-    // ==========================================
-    // 11. CREADOR DE ELEMENTOS Y MOTOR INTERACTIVO
-    // ==========================================
-    // NUEVO: Añadimos "customSize" como último parámetro
-    function crearElementoFlotante(parent, x, y, pageNum, tipo, contenido, formato = null, customSize = null) {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'floating-element';
-        wrapper.style.left = `${x}px`;
-        wrapper.style.top = `${y - 15}px`;
-
-        const btnDelete = document.createElement('button');
-        btnDelete.type = 'button';
-        btnDelete.className = 'btn-delete-float';
-        btnDelete.innerText = '✖';
-        
-        const resizeHandle = document.createElement('div');
-        resizeHandle.className = 'resize-handle';
-
-        let elData = { wrapper, type: tipo, pageNum };
-        let domElement;
-
-        if (tipo === 'text' || tipo === 'symbol') {
-            domElement = document.createElement('span');
-            domElement.className = 'floating-text';
-            domElement.innerText = contenido;
-            
-            // NUEVO: Usar el tamaño personalizado si existe
-            let initialSize = customSize ? customSize : (tipo === 'symbol' ? 24 : 14);
-            domElement.style.fontSize = `${initialSize}px`;
-            
-            if (formato) {
-                if (formato.bold) domElement.style.fontWeight = 'bold';
-                if (formato.italic) domElement.style.fontStyle = 'italic';
-                elData.format = formato;
-            }
-            
-            elData.texto = contenido;
-            elData.size = initialSize;
-        } 
-        else if (tipo === 'image') {
-            domElement = document.createElement('img');
-            domElement.src = contenido;
-            domElement.className = 'floating-img';
-            domElement.style.width = `150px`;
-            
-            elData.dataUrl = contenido;
-            elData.size = 150;
-        }
-
-        elData.element = domElement;
-        
-        btnDelete.onclick = (e) => { e.stopPropagation(); wrapper.remove(); elementosFlotantes = elementosFlotantes.filter(i => i !== elData); };
-
-        wrapper.appendChild(domElement);
-        wrapper.appendChild(btnDelete);
-        wrapper.appendChild(resizeHandle);
-        parent.appendChild(wrapper);
-
-        const seleccionarEsteElemento = () => {
-            document.querySelectorAll('.floating-element').forEach(el => el.classList.remove('selected'));
-            wrapper.classList.add('selected');
-        };
-        wrapper.addEventListener('mousedown', seleccionarEsteElemento);
-        wrapper.addEventListener('touchstart', seleccionarEsteElemento, {passive: true});
-        seleccionarEsteElemento(); 
-
-        elementosFlotantes.push(elData);
-        hacerInteractivo(wrapper, elData, resizeHandle);
-    }
-
-
-
-
-
-
-    
-    
-    function hacerInteractivo(wrapper, elData, resizeHandle) {
-        let isDragging = false, isResizing = false;
-        let startX, startY, initialLeft, initialTop;
-        let initialDistance = 0, initialSize = 0;
-
-        // --- ARRASTRE Y PINCH-TO-ZOOM ---
-        const startDrag = (e) => {
-            if(e.target === resizeHandle || e.target.tagName === 'BUTTON') return;
-            e.preventDefault(); e.stopPropagation();
-            
-            if (e.touches && e.touches.length === 2) {
-                isDragging = false;
-                initialDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-                initialSize = elData.size;
-                return;
-            }
-
-            isDragging = true;
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            startX = clientX; startY = clientY;
-            initialLeft = parseInt(wrapper.style.left || wrapper.offsetLeft);
-            initialTop = parseInt(wrapper.style.top || wrapper.offsetTop);
-        };
-
-        const doDragOrZoom = (e) => {
-            if (e.touches && e.touches.length === 2 && initialDistance > 0) {
-                e.preventDefault(); e.stopPropagation();
-                const currentDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-                const scale = currentDistance / initialDistance;
-                let newSize = initialSize * scale;
-
-
-                // --- NUEVO LÍMITE MÁS PEQUEÑO (Dedos) ---
-                if (elData.type === 'text' || elData.type === 'symbol') {
-                    newSize = Math.max(4, Math.min(newSize, 100)); // Bajamos el mínimo de 8 a 4
-                    elData.element.style.fontSize = `${newSize}px`;
-                } else {
-                    newSize = Math.max(15, Math.min(newSize, 500)); // Bajamos el mínimo de 30 a 15
-                    elData.element.style.width = `${newSize}px`;
-                }
-                elData.size = newSize;
-                return;
-
-
-
-                
-            }
-
-            if (!isDragging) return;
-            e.preventDefault(); e.stopPropagation();
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            wrapper.style.left = (initialLeft + (clientX - startX)) + 'px';
-            wrapper.style.top = (initialTop + (clientY - startY)) + 'px';
-        };
-
-        const stopDrag = (e) => {
-            if (isDragging || initialDistance > 0) {
-                e.stopPropagation();
-                isDragging = false;
-                initialDistance = 0;
-            }
-        };
-
-        // --- REDIMENSIÓN CON MOUSE (Tirador) ---
-        const startResize = (e) => {
-            e.preventDefault(); e.stopPropagation();
-            isResizing = true;
-            startX = e.clientX || e.touches[0].clientX;
-            initialSize = elData.size;
-        };
-
-        const doResize = (e) => {
-            if (!isResizing) return;
-            e.preventDefault(); e.stopPropagation();
-            const clientX = e.clientX || (e.touches && e.touches[0].clientX);
-            const dx = clientX - startX;
-
-
-// --- NUEVO LÍMITE MÁS PEQUEÑO (Mouse) ---
-            let newSize = initialSize + dx;
-            if (elData.type === 'text' || elData.type === 'symbol') {
-                newSize = Math.max(4, Math.min(newSize, 100)); // Bajamos el mínimo de 8 a 4
-                elData.element.style.fontSize = `${newSize}px`;
-            } else {
-                newSize = Math.max(15, Math.min(newSize, 500)); // Bajamos el mínimo de 30 a 15
-                elData.element.style.width = `${newSize}px`;
-            }
-            elData.size = newSize;
-
-            
-           
-        };
-
-
-        
-        const stopResize = () => { isResizing = false; };
-
-        wrapper.addEventListener('mousedown', startDrag);
-        document.addEventListener('mousemove', doDragOrZoom);
-        document.addEventListener('mouseup', stopDrag);
-        wrapper.addEventListener('touchstart', startDrag, {passive: false});
-        document.addEventListener('touchmove', doDragOrZoom, {passive: false});
-        document.addEventListener('touchend', stopDrag);
-
-        resizeHandle.addEventListener('mousedown', startResize);
-        document.addEventListener('mousemove', doResize);
-        document.addEventListener('mouseup', stopResize);
-        resizeHandle.addEventListener('touchstart', startResize, {passive: false});
-        document.addEventListener('touchmove', doResize, {passive: false});
-        document.addEventListener('touchend', stopResize);
-    }
-
-
-    
-    // ==========================================
-    // 12. GENERACIÓN FINAL DEL PDF LIBRE
-    // ==========================================
-    async function generarPdfLibre() {
-        if (!freePdfDoc) return;
-
-        if (usuarioActual.creditos < freePdfPageCount) {
-            alert(`⚠️ Necesitas ${freePdfPageCount} créditos para descargar este documento de ${freePdfPageCount} hojas. Tienes ${usuarioActual.creditos}.`);
-            return;
-        }
-
-        const btn = document.getElementById('btn-generar-free');
-        btn.innerText = "⏳ Procesando...";
-        btn.disabled = true;
-
-        try {
-            const pages = freePdfDoc.getPages();
-            
-            const fontNormal = await freePdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
-            const fontBold = await freePdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
-            const fontItalic = await freePdfDoc.embedFont(PDFLib.StandardFonts.HelveticaOblique);
-            const fontBoldItalic = await freePdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBoldOblique);
-
-            for (const item of elementosFlotantes) {
-                const targetPage = pages[item.pageNum - 1]; 
-                const pdfHeight = targetPage.getHeight();
-                const scale = freeCanvasScales[item.pageNum];
-                
-                const pdfX = (item.wrapper.offsetLeft + 4) / scale;
-                
-                if (item.type === 'text' || item.type === 'symbol') {
-                    const pdfY = pdfHeight - ((item.wrapper.offsetTop + item.size + 4) / scale);
-                    
-                    let selectedFont = fontNormal;
-                    if (item.format && item.format.bold && item.format.italic) selectedFont = fontBoldItalic;
-                    else if (item.format && item.format.bold) selectedFont = fontBold;
-                    else if (item.format && item.format.italic) selectedFont = fontItalic;
-
-                    targetPage.drawText(item.texto, {
-                        x: pdfX,
-                        y: pdfY, 
-                        size: item.size,
-                        font: selectedFont,
-                        color: PDFLib.rgb(0, 0, 0)
-                    });
-                } 
-                else if (item.type === 'image') {
-                    const pngImage = await freePdfDoc.embedPng(item.dataUrl);
-                    const pngDims = pngImage.scale(1);
-                    const ratio = pngDims.height / pngDims.width;
-
-                    const pdfWidth = item.size / scale;
-                    const pdfImgHeight = pdfWidth * ratio;
-                    const pdfY = pdfHeight - ((item.wrapper.offsetTop / scale) + pdfImgHeight);
-
-                    targetPage.drawImage(pngImage, {
-                        x: pdfX,
-                        y: pdfY,
-                        width: pdfWidth,
-                        height: pdfImgHeight
-                    });
-                }
-            }
-
-            const pagado = await descontarCredito(freePdfPageCount);
-            if (!pagado) throw new Error("No se pudo procesar el pago.");
-
-            const pdfBytes = await freePdfDoc.save();
-            download(pdfBytes, `DocuFacil_Rellenado.pdf`, "application/pdf");
-            
-            alert("✅ ¡Documento rellenado y firmado con éxito!");
-            volverAHome();
-
-        } catch (err) {
-            alert("Error: " + err.message);
-        } finally {
-            btn.innerText = `✨ Descargar PDF Lleno (${freePdfPageCount} Créditos)`;
-            btn.disabled = false;
-        }
-    }
-
-
-
-       let voiceTimer;
-    let chatHistory = [];
-    let isAITyping = false;
-    let currentDocumentDraft = null;
-
-    function mostrarScreen(id) {
-        if(id === 'screen-ai-chat') {
-            document.getElementById(id).classList.add('active');
-        } else {
-            showScreen(id);
-        }
-    }
-
-    function cerrarChatAI() {
-        document.getElementById('screen-ai-chat').classList.remove('active');
-    }
-
-    function actualizarBotonChat() {
-        const input = document.getElementById('chat-input');
-        const btn = document.getElementById('btn-chat-action');
-        if (!input || !btn) return;
-        btn.innerText = input.value.trim() === "" ? "🎤" : "➤";
-        btn.style.background = input.value.trim() === "" ? "#3498db" : "#2ecc71";
-    }
-
-
-
-
-
-
-
-function addMessage(sender, text) {
-    var container = document.getElementById('chat-messages');
-    if (!container) return;
-
-    var msgDiv = document.createElement('div');
-    msgDiv.className = 'chat-message ' + sender;
-
-    // Reemplazar saltos de línea por <br>
-    const formattedText = text.replace(/\n/g, '<br>');
-    msgDiv.innerHTML = formattedText;
-
-    container.appendChild(msgDiv);
-    container.scrollTop = container.scrollHeight;
-}
-
-
-
-
-
-    
-    
-    function iniciarVozChat() {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) return alert("Dictado no soportado.");
-        const recognition = new SpeechRecognition();
-        recognition.lang = 'es-ES';
-        recognition.start();
-        recognition.onresult = (e) => {
-            const transcript = e.results[0][0].transcript;
-            document.getElementById('chat-input').value = transcript;
-            actualizarBotonChat();
-            clearTimeout(voiceTimer);
-            voiceTimer = setTimeout(() => { enviarMensajeAI(); }, 2000);
-        };
-    }
-
-
-
-
-    async function enviarMensajeAI() {
-    const input = document.getElementById('chat-input');
-    const texto = input.value.trim();
-    if (!texto || isAITyping) return;
-
-    addMessage('user', texto);
-    input.value = "";
-    actualizarBotonChat();
-    isAITyping = true;
-    chatHistory.push({ role: 'user', content: texto });
-
-    try {
-        const { data, error } = await supabase.functions.invoke('generar-documento', {
-            body: JSON.stringify({ history: chatHistory, user_input: texto, current_draft: currentDocumentDraft }),
-        });
-
-        // SI HAY UN ERROR DE SUPABASE, LO MOSTRAMOS EN EL CHAT
-        if (error) {
-            console.error("Error de Supabase:", error);
-            addMessage('ai', '❌ Error de Supabase: ' + error.message);
-            return;
-        }
-
-        const aiResponse = data.response;
-        addMessage('ai', aiResponse.message);
-        chatHistory.push({ role: 'assistant', content: aiResponse.raw_response });
-
-        if ((aiResponse.action === 'document_draft' || aiResponse.action === 'final_document') && aiResponse.document_content) {
-            currentDocumentDraft = aiResponse.document_content;
-            addMessage('ai', '<b>✨ ¡Documento generado! Previsualizando...</b>');
-            mostrarModalPreviewAI(currentDocumentDraft);
-        }
-    } catch (error) {
-        // SI HAY UN ERROR DE RED O CÓDIGO, LO MOSTRAMOS
-        console.error("Error de red/código:", error);
-        addMessage('ai', '❌ Error de conexión: ' + error.message);
-    } finally {
-        isAITyping = false;
-    }
-}
-
-    
-
-
-
-
-    
-    function accionChat() {
-        const input = document.getElementById('chat-input');
-        if (input.value.trim() === "") iniciarVozChat();
-        else enviarMensajeAI();
-    }
-
-
-    
-async function generarPdfAI() {
-    const editedContent = document.getElementById('edit-ai-content').value;
-    if (!editedContent) return;
-    if (usuarioActual.creditos < 1) return alert("Necesitas 1 crédito.");
-
-    try {
-        const pdfDoc = await PDFLib.PDFDocument.create();
-        let page = pdfDoc.addPage();
-        const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
-        
-        const text = editedContent; // Usamos el contenido editado
-        const margin = 50;
-        const { width, height } = page.getSize();
-        
-        page.drawText(text, {
-            x: margin,
-            y: height - margin - 12,
-            size: 12,
-            font: font,
-            maxWidth: width - (margin * 2),
-            lineHeight: 15
-        });
-
-        const pagado = await descontarCredito(1);
-        if (!pagado) return;
-
-        const pdfBytes = await pdfDoc.save();
-        download(pdfBytes, "Documento_AI.pdf", "application/pdf");
-        alert("✅ ¡Documento generado!");
-        document.getElementById('modal-preview-ai').style.display = 'none';
-        cerrarChatAI();
-        volverAHome();
-    } catch (e) {
-        alert("Error al generar PDF");
-    }
-}
-
-
-    
-
-    
-    function mostrarModalPreviewAI(content) {
-    const modal = document.getElementById('modal-preview-ai');
-    const preview = document.getElementById('preview-content');
-    if (modal && preview) {
-        // Cambiamos el div por un textarea para que puedas editar el texto
-        preview.innerHTML = `<textarea id="edit-ai-content" style="width:100%; height:300px; border:1px solid #ccc; padding:10px; font-family:serif; font-size:14px; resize:none; background:white; color:black;">${content}</textarea>`;
-        modal.style.display = 'flex';
-    }
-}
-
-
-// Activar envío con la tecla Enter en el chat
-document.getElementById('chat-input').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-        e.preventDefault(); // Evita que se cree una nueva línea
-        enviarMensajeAI();
-    }
-});
-
-
-    
-    
-</script>
-
+<!-- PANTALLA CHAT AI -->
 <div id="screen-ai-chat" class="screen">
     <div class="chat-header">
-        <button class="btn-volver" style="margin:0" onclick="cerrarChatAI()">⬅</button>
+        <button onclick="cerrarChatAI()" style="background:none; border:none; color:white; font-size:20px; cursor:pointer;">⬅</button>
         <span style="font-weight:bold;">✨ DocuFácil AI Expert</span>
     </div>
     <div class="chat-messages" id="chat-messages"></div>
@@ -1364,18 +279,252 @@ document.getElementById('chat-input').addEventListener('keydown', (e) => {
     </div>
 </div>
 
-
-<div id="modal-preview-ai" class="modal-overlay">
-    <div class="modal-content">
-        <h3>Previsualización</h3>
-        <div id="preview-content" style="background:white; color:black; padding:15px; border-radius:5px; max-height:300px; overflow-y:auto; white-space:pre-wrap;"></div>
-        <button class="btn-generar" onclick="generarPdfAI()">✅ Descargar PDF (1 Crédito)</button>
-        <button class="btn-volver" onclick="document.getElementById('modal-preview-ai').style.display='none'">Cerrar</button>
+<!-- MODAL DE PREVISUALIZACIÓN MEJORADO -->
+<div id="modal-preview-ai">
+    <div class="preview-modal-content">
+        <div class="preview-header">
+            <h3>✨ Previsualización</h3>
+            <button onclick="cerrarPreviewAI()" style="background:none; border:none; color:white; cursor:pointer;">✕</button>
+        </div>
+        <div class="preview-body">
+            <div class="preview-document">
+                <textarea id="preview-textarea"></textarea>
+            </div>
+            <div class="preview-chat-section">
+                <div class="preview-chat-messages" id="preview-chat-messages"></div>
+                <div class="preview-chat-input">
+                    <input type="text" id="preview-chat-input" placeholder="Refinar..." oninput="actualizarBotonPreviewChat()">
+                    <button id="btn-preview-chat-action" onclick="accionPreviewChat()">🎤</button>
+                </div>
+            </div>
+        </div>
+        <div class="preview-actions">
+            <button class="btn-firmar" onclick="abrirModalFirma()">✍️ Firmar</button>
+            <button class="btn-descargar" onclick="generarPdfAI()">✅ Descargar (1 Crédito)</button>
+        </div>
     </div>
 </div>
 
+<!-- MODAL DE FIRMA -->
+<div id="modal-firma" class="modal-overlay">
+    <div class="modal-content">
+        <h3>Dibuja tu firma</h3>
+        <canvas id="canvas-firma" width="300" height="150" style="background:white; border-radius:5px; cursor:crosshair; touch-action:none; width:100%;"></canvas>
+        <div class="modal-actions">
+            <button onclick="limpiarFirma()" style="background:#e74c3c; color:white; border:none; padding:10px; border-radius:5px;">Limpiar</button>
+            <button onclick="guardarFirma()" style="background:#2ecc71; color:black; border:none; padding:10px; border-radius:5px;">Aceptar</button>
+            <button onclick="cerrarModalFirma()" style="background:#555; color:white; border:none; padding:10px; border-radius:5px;">Cerrar</button>
+        </div>
+    </div>
+</div>
 
-    
-    
+<script>
+    const supabaseUrl = 'https://wpzddhmllctdsiuxenss.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwemRkaG1sbGN0ZHNpdXhlbnNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5NjUyNzQsImV4cCI6MjA5OTU0MTI3NH0.hwSxJ3Sk_RlgbvFyr8S64XRuxW7j55BU4gaIneFTuhY';
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey );
+
+    let usuarioActual = { creditos: 0 };
+    let chatHistory = [];
+    let previewChatHistory = [];
+    let currentDocumentDraft = null;
+    let firmaParaPreview = null;
+    let isAITyping = false;
+    let voiceTimer;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        cargarPlantillas();
+        const codigo = localStorage.getItem('docufacil_codigo');
+        if (codigo) activarCodigo(codigo, true);
+    });
+
+    function cargarPlantillas() {
+        const container = document.getElementById('lista-plantillas');
+        container.innerHTML = `
+            <div class="card" onclick="mostrarScreenAIChat()">
+                <div class="card-icon">✨</div>
+                <div class="card-info">
+                    <h3>Generación de Documento</h3>
+                    <p>Usa IA para crear documentos profesionales</p>
+                </div>
+            </div>
+            <div class="card" onclick="alert('Próximamente')">
+                <div class="card-icon">✍️</div>
+                <div class="card-info">
+                    <h3>Rellenar mi propio PDF</h3>
+                    <p>Sube tu PDF y rellénalo a mano</p>
+                </div>
+            </div>
+        `;
+    }
+
+    function mostrarScreenAIChat() {
+        document.getElementById('screen-ai-chat').classList.add('active');
+        addMessage('ai', '👋 ¡Hola! ¿Qué documento necesitas hoy?');
+    }
+
+    function cerrarChatAI() { document.getElementById('screen-ai-chat').classList.remove('active'); }
+
+    function addMessage(sender, text) {
+        const container = document.getElementById('chat-messages');
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'chat-message ' + sender;
+        msgDiv.innerHTML = text.replace(/\n/g, '  
+');
+        container.appendChild(msgDiv);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function actualizarBotonChat() {
+        const input = document.getElementById('chat-input');
+        const btn = document.getElementById('btn-chat-action');
+        btn.innerText = input.value.trim() === "" ? "🎤" : "➤";
+        btn.style.background = input.value.trim() === "" ? "#3498db" : "#2ecc71";
+    }
+
+    async function enviarMensajeAI() {
+        const input = document.getElementById('chat-input');
+        const texto = input.value.trim();
+        if (!texto || isAITyping) return;
+
+        addMessage('user', texto);
+        input.value = "";
+        actualizarBotonChat();
+        isAITyping = true;
+        chatHistory.push({ role: 'user', content: texto });
+
+        try {
+            const { data, error } = await supabase.functions.invoke('generar-documento', {
+                body: JSON.stringify({ history: chatHistory, user_input: texto, current_draft: currentDocumentDraft }),
+            });
+            if (error) throw error;
+
+            const aiResponse = data.response;
+            addMessage('ai', aiResponse.message);
+            chatHistory.push({ role: 'assistant', content: aiResponse.raw_response });
+
+            if (aiResponse.document_content) {
+                currentDocumentDraft = aiResponse.document_content;
+                mostrarModalPreviewAI(currentDocumentDraft);
+            }
+        } catch (e) {
+            addMessage('ai', '❌ Error: ' + e.message);
+        } finally { isAITyping = false; }
+    }
+
+    function accionChat() {
+        const input = document.getElementById('chat-input');
+        if (input.value.trim() === "") iniciarVoz('chat-input', enviarMensajeAI);
+        else enviarMensajeAI();
+    }
+
+    function mostrarModalPreviewAI(content) {
+        document.getElementById('modal-preview-ai').style.display = 'flex';
+        document.getElementById('preview-textarea').value = content;
+        addPreviewMessage('ai', '💬 ¿Deseas hacer algún cambio?');
+    }
+
+    function cerrarPreviewAI() { document.getElementById('modal-preview-ai').style.display = 'none'; }
+
+    function addPreviewMessage(sender, text) {
+        const container = document.getElementById('preview-chat-messages');
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'preview-chat-message ' + sender;
+        msgDiv.innerHTML = text.replace(/\n/g, '  
+');
+        container.appendChild(msgDiv);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    async function enviarMensajePreviewChat() {
+        const input = document.getElementById('preview-chat-input');
+        const texto = input.value.trim();
+        if (!texto) return;
+
+        addPreviewMessage('user', texto);
+        input.value = "";
+        previewChatHistory.push({ role: 'user', content: texto });
+
+        try {
+            const { data, error } = await supabase.functions.invoke('generar-documento', {
+                body: JSON.stringify({ history: previewChatHistory, user_input: texto, current_draft: document.getElementById('preview-textarea').value }),
+            });
+            if (error) throw error;
+            const aiResponse = data.response;
+            addPreviewMessage('ai', aiResponse.message);
+            if (aiResponse.document_content) document.getElementById('preview-textarea').value = aiResponse.document_content;
+        } catch (e) { addPreviewMessage('ai', '❌ Error'); }
+    }
+
+    function actualizarBotonPreviewChat() {
+        const input = document.getElementById('preview-chat-input');
+        const btn = document.getElementById('btn-preview-chat-action');
+        btn.innerText = input.value.trim() === "" ? "🎤" : "➤";
+    }
+
+    function accionPreviewChat() {
+        const input = document.getElementById('preview-chat-input');
+        if (input.value.trim() === "") iniciarVoz('preview-chat-input', enviarMensajePreviewChat);
+        else enviarMensajePreviewChat();
+    }
+
+    function iniciarVoz(inputId, callback) {
+        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        recognition.lang = 'es-ES';
+        recognition.start();
+        recognition.onresult = (e) => {
+            document.getElementById(inputId).value = e.results[0][0].transcript;
+            setTimeout(callback, 1500);
+        };
+    }
+
+    async function generarPdfAI() {
+        const content = document.getElementById('preview-textarea').value;
+        if (usuarioActual.creditos < 1) return alert("Sin créditos");
+
+        try {
+            const pdfDoc = await PDFLib.PDFDocument.create();
+            let page = pdfDoc.addPage();
+            const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+            page.drawText(content, { x: 50, y: 750, size: 12, font: font, maxWidth: 500 });
+
+            if (firmaParaPreview) {
+                const img = await pdfDoc.embedPng(firmaParaPreview);
+                page.drawImage(img, { x: 50, y: 100, width: 100, height: 50 });
+            }
+
+            const pdfBytes = await pdfDoc.save();
+            download(pdfBytes, "Documento.pdf", "application/pdf");
+            usuarioActual.creditos--;
+            document.getElementById('user-creditos').innerText = usuarioActual.creditos;
+            cerrarPreviewAI();
+        } catch (e) { alert("Error al generar PDF"); }
+    }
+
+    // Funciones de Firma
+    let canvas, ctx, drawing = false;
+    function abrirModalFirma() {
+        document.getElementById('modal-firma').style.display = 'flex';
+        canvas = document.getElementById('canvas-firma');
+        ctx = canvas.getContext('2d');
+        canvas.onmousedown = (e) => { drawing = true; ctx.beginPath(); ctx.moveTo(e.offsetX, e.offsetY); };
+        canvas.onmousemove = (e) => { if(drawing) { ctx.lineTo(e.offsetX, e.offsetY); ctx.stroke(); } };
+        canvas.onmouseup = () => drawing = false;
+        // Touch support
+        canvas.ontouchstart = (e) => { drawing = true; const t = e.touches[0]; const r = canvas.getBoundingClientRect(); ctx.beginPath(); ctx.moveTo(t.clientX - r.left, t.clientY - r.top); };
+        canvas.ontouchmove = (e) => { if(drawing) { e.preventDefault(); const t = e.touches[0]; const r = canvas.getBoundingClientRect(); ctx.lineTo(t.clientX - r.left, t.clientY - r.top); ctx.stroke(); } };
+        canvas.ontouchend = () => drawing = false;
+    }
+    function limpiarFirma() { ctx.clearRect(0,0,300,150); }
+    function guardarFirma() { firmaParaPreview = canvas.toDataURL(); cerrarModalFirma(); alert("Firma guardada"); }
+    function cerrarModalFirma() { document.getElementById('modal-firma').style.display = 'none'; }
+
+    function activarCodigoBoton() { activarCodigo(document.getElementById('input-codigo').value, false); }
+    function activarCodigo(c, auto) {
+        usuarioActual.creditos = 10;
+        document.getElementById('user-creditos').innerText = 10;
+        localStorage.setItem('docufacil_codigo', c);
+        if(!auto) alert("Activado");
+    }
+</script>
 </body>
 </html>
