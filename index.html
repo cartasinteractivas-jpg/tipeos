@@ -150,7 +150,14 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
     .chat-input { flex: 1; background: #000; border: 1px solid #444; color: #fff; padding: 12px 15px; border-radius: 25px; outline: none; }
     .btn-chat-action { background: #3498db; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; font-size: 20px; display: flex; justify-content: center; align-items: center; }
 
-    
+    .upload-area {
+    margin-bottom: 15px;
+}
+
+.upload-area:hover div[style*="border: 2px dashed"] {
+    border-color: #f1c40f !important;
+    background: rgba(241, 196, 15, 0.08);
+}
     
     </style>
 </head>
@@ -305,7 +312,25 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
             <p style="color: #aaa; font-size: 13px;">Sube tu documento, <strong>toca en la pantalla</strong> donde quieras escribir o firmar. Usa dos dedos para ajustar el tamaño.</p>
         </div>
         
-        <input type="file" id="free-pdf-upload" accept="application/pdf" style="width: 100%; color: #fff; background: #2a2a2a; padding: 10px; border-radius: 8px;">
+        <div class="upload-area" id="upload-area">
+    <input type="file" id="free-pdf-upload" accept="application/pdf" style="display: none;">
+    
+    <div onclick="document.getElementById('free-pdf-upload').click()" 
+         style="border: 2px dashed #555; border-radius: 12px; padding: 25px 20px; text-align: center; cursor: pointer; transition: all 0.3s;">
+        
+        <div style="font-size: 42px; margin-bottom: 12px;">📄</div>
+        <div style="color: #f1c40f; font-weight: bold; font-size: 16px; margin-bottom: 6px;">
+            Seleccionar archivo PDF
+        </div>
+        <div style="color: #aaa; font-size: 14px;">
+            Toca aquí para subir tu documento
+        </div>
+        
+        <div id="file-name-display" style="margin-top: 12px; color: #0f0; font-size: 13px; font-weight: 500; display: none;">
+            📌 <span id="selected-file-name"></span>
+        </div>
+    </div>
+</div>
         
         <div class="canvas-container" id="free-canvas-container" style="display: none;">
             <!-- Las hojas del PDF se generarán aquí dinámicamente -->
@@ -665,17 +690,32 @@ document.addEventListener('DOMContentLoaded', () => {
         showScreen('screen-rellenado-libre');
     }
 
+
     document.getElementById('free-pdf-upload').addEventListener('change', async function(e) {
-        if (!e.target.files.length) return;
-        
-        const file = e.target.files[0];
-        const arrayBuffer = await file.arrayBuffer();
-        
-        freePdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
-        const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
-        const pdf = await loadingTask.promise;
-        
-        freePdfPageCount = pdf.numPages; 
+    if (!e.target.files.length) return;
+    
+    const file = e.target.files[0];
+    
+    // === MOSTRAR NOMBRE DEL ARCHIVO ===
+    const fileNameDisplay = document.getElementById('file-name-display');
+    const fileNameSpan = document.getElementById('selected-file-name');
+    if (fileNameDisplay && fileNameSpan) {
+        fileNameSpan.textContent = file.name;
+        fileNameDisplay.style.display = 'block';
+    }
+    
+    // === Resto de tu código original (carga del PDF) ===
+    const arrayBuffer = await file.arrayBuffer();
+    
+    freePdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
+    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+    const pdf = await loadingTask.promise;
+    
+    freePdfPageCount = pdf.numPages; 
+    
+    // ... (el resto de tu código que ya tenías para renderizar las páginas)
+
+   
         
         const container = document.getElementById('free-canvas-container');
         container.innerHTML = ''; 
@@ -708,6 +748,9 @@ document.addEventListener('DOMContentLoaded', () => {
             await page.render({ canvasContext: ctx, viewport: viewport }).promise;
 
 
+
+
+            
             
                                     // Evento para abrir el menú o deseleccionar al tocar la hoja
             wrapper.addEventListener('click', function(ev) {
