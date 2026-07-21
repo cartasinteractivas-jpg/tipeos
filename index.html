@@ -465,8 +465,10 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
     }
 
 
+
+
     
-function renderizarPlantillas() {
+    function renderizarPlantillas() {
     const contenedor = document.getElementById('lista-plantillas');
     if (!contenedor) return;
     contenedor.innerHTML = '';
@@ -475,25 +477,18 @@ function renderizarPlantillas() {
     const claseBloqueado = tieneCreditos ? '' : 'locked';
     const candadoHtml = tieneCreditos ? '' : '<div class="candado-icon">🔒</div>';
 
-
-    
-
-
     // Botón 1: Rellenar mi propio PDF
-contenedor.innerHTML += `
-    <div class="card ${claseBloqueado}" onclick="abrirRellenadoLibre()" style="border-color: #e67e22;">
-        <div class="card-icon">✍️</div>
-        <div class="card-info">
-            <h3 style="color: #e67e22;">Rellenar mi propio PDF</h3>
-            <p>Sube cualquier documento, toca donde quieras escribir o firmar y descárgalo.</p>
+    contenedor.innerHTML += `
+        <div class="card ${claseBloqueado}" onclick="abrirRellenadoLibre()" style="border-color: #e67e22;">
+            <div class="card-icon">✍️</div>
+            <div class="card-info">
+                <h3 style="color: #e67e22;">Rellenar mi propio PDF</h3>
+                <p>Sube cualquier documento, toca donde quieras escribir o firmar y descárgalo.</p>
+            </div>
+            ${candadoHtml}
         </div>
-        ${candadoHtml}
-    </div>
-`;
+    `;
 
-
-
-    
     // Botón 2: IA
     contenedor.innerHTML += `
         <div class="card ${claseBloqueado}" onclick="mostrarScreen('screen-ai-chat')" style="border-color: #3498db;">
