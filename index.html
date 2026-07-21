@@ -411,17 +411,19 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
     }
 
 
+    
 
     
     function renderizarPlantillas() {
         const contenedor = document.getElementById('lista-plantillas');
+        if (!contenedor) return;
         contenedor.innerHTML = '';
         
         const tieneCreditos = usuarioActual && usuarioActual.creditos > 0;
         const claseBloqueado = tieneCreditos ? '' : 'locked';
         const candadoHtml = tieneCreditos ? '' : '<div class="candado-icon">🔒</div>';
 
-        // 1. TU RELLENADOR DE PDF (No se toca)
+        // 1. TU RELLENADOR DE PDF (Original)
         contenedor.innerHTML += `
             <div class="card ${claseBloqueado}" onclick="abrirRellenadoLibre()" style="border-color: #e67e22;">
                 <div class="card-icon">✍️</div>
@@ -433,7 +435,7 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
             </div>
         `;
 
-        // 2. GENERACIÓN DE DOCUMENTO (El nuevo botón para la IA)
+        // 2. GENERACIÓN DE DOCUMENTO (IA)
         contenedor.innerHTML += `
             <div class="card ${claseBloqueado}" onclick="mostrarScreen('screen-ai-chat')" style="border-color: #3498db;">
                 <div class="card-icon">✨</div>
@@ -444,10 +446,9 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
                 ${candadoHtml}
             </div>
         `;
-        
-        // Ya no cargamos ninguna otra plantilla de la base de datos.
     }
 
+    
 
     
     // ==========================================
@@ -1158,13 +1159,10 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
 
 
 
-
-    
-
-        // Variables para el control del chat
+    let voiceTimer;
     let chatHistory = [];
     let isAITyping = false;
-    let voiceTimer;
+    let currentDocumentDraft = null;
 
     function mostrarScreen(id) {
         if(id === 'screen-ai-chat') {
@@ -1181,51 +1179,38 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
     function actualizarBotonChat() {
         const input = document.getElementById('chat-input');
         const btn = document.getElementById('btn-chat-action');
-        if (input.value.trim() === "") {
-            btn.innerText = "🎤";
-            btn.style.background = "#3498db";
-        } else {
-            btn.innerText = "➤";
-            btn.style.background = "#2ecc71";
-        }
+        if (!input || !btn) return;
+        btn.innerText = input.value.trim() === "" ? "🎤" : "➤";
+        btn.style.background = input.value.trim() === "" ? "#3498db" : "#2ecc71";
     }
 
-    function addMessage(sender, text) {
+    
+       function addMessage(sender, text) {
         const container = document.getElementById('chat-messages');
+        if (!container) return;
         const msgDiv = document.createElement('div');
         msgDiv.className = `chat-message ${sender}`;
+        // CORRECCIÓN: Usamos .replace para los saltos de línea sin romper el código
         msgDiv.innerHTML = text.replace(/\n/g, '  
 ');
         container.appendChild(msgDiv);
         container.scrollTop = container.scrollHeight;
     }
 
+
+    
     function iniciarVozChat() {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) return alert("Dictado no soportado.");
-        
-        const btn = document.getElementById('btn-chat-action');
-        const input = document.getElementById('chat-input');
         const recognition = new SpeechRecognition();
-        
         recognition.lang = 'es-ES';
-        btn.style.boxShadow = "0 0 15px #3498db"; // Efecto visual de escucha
         recognition.start();
-
         recognition.onresult = (e) => {
             const transcript = e.results[0][0].transcript;
-            input.value = transcript;
+            document.getElementById('chat-input').value = transcript;
             actualizarBotonChat();
-            
-            // Auto-envío tras 2 segundos de silencio
             clearTimeout(voiceTimer);
-            voiceTimer = setTimeout(() => {
-                enviarMensajeAI();
-            }, 2000);
-        };
-
-        recognition.onend = () => {
-            btn.style.boxShadow = "none";
+            voiceTimer = setTimeout(() => { enviarMensajeAI(); }, 2000);
         };
     }
 
@@ -1234,39 +1219,29 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
         const texto = input.value.trim();
         if (!texto || isAITyping) return;
 
-        // 1. Mostrar mensaje del usuario
         addMessage('user', texto);
         input.value = "";
         actualizarBotonChat();
         isAITyping = true;
-
-        // 2. Guardar en historial
         chatHistory.push({ role: 'user', content: texto });
 
         try {
-            // 3. Llamada a la IA (Supabase Edge Function)
             const { data, error } = await supabase.functions.invoke('generar-documento', {
-                body: JSON.stringify({ 
-                    history: chatHistory, 
-                    user_input: texto 
-                }),
+                body: JSON.stringify({ history: chatHistory, user_input: texto, current_draft: currentDocumentDraft }),
             });
-
             if (error) throw error;
 
-            // 4. Mostrar respuesta de la IA
             const aiResponse = data.response;
             addMessage('ai', aiResponse.message);
             chatHistory.push({ role: 'assistant', content: aiResponse.raw_response });
 
-            // Si la IA generó un borrador, podrías mostrar el modal aquí
-            if (aiResponse.action === 'document_draft') {
-                // mostrarModalPreviewAI(aiResponse.document_content);
+            if (aiResponse.action === 'document_draft' || aiResponse.action === 'final_document') {
+                currentDocumentDraft = aiResponse.document_content;
+                addMessage('ai', '<b>Previsualizando documento...</b>');
+                mostrarModalPreviewAI(currentDocumentDraft);
             }
-
         } catch (error) {
-            addMessage('ai', '❌ Error: No pude conectarme con el experto.');
-            console.error(error);
+            addMessage('ai', '❌ Error al conectar con la IA.');
         } finally {
             isAITyping = false;
         }
@@ -1274,20 +1249,59 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
 
     function accionChat() {
         const input = document.getElementById('chat-input');
-        if (input.value.trim() === "") {
-            iniciarVozChat();
-        } else {
-            enviarMensajeAI();
+        if (input.value.trim() === "") iniciarVozChat();
+        else enviarMensajeAI();
+    }
+
+
+    async function generarPdfAI() {
+        if (!currentDocumentDraft) return;
+        if (usuarioActual.creditos < 1) return alert("Necesitas 1 crédito.");
+
+        try {
+            const pdfDoc = await PDFLib.PDFDocument.create();
+            let page = pdfDoc.addPage();
+            const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+            
+            const text = currentDocumentDraft;
+            const margin = 50;
+            const { width, height } = page.getSize();
+            
+            page.drawText(text, {
+                x: margin,
+                y: height - margin - 12,
+                size: 12,
+                font: font,
+                maxWidth: width - (margin * 2),
+                lineHeight: 15
+            });
+
+            const pagado = await descontarCredito(1);
+            if (!pagado) return;
+
+            const pdfBytes = await pdfDoc.save();
+            download(pdfBytes, "Documento_AI.pdf", "application/pdf");
+            alert("✅ ¡Documento generado!");
+            document.getElementById('modal-preview-ai').style.display = 'none';
+            cerrarChatAI();
+            volverAHome();
+        } catch (e) {
+            alert("Error al generar PDF");
         }
     }
 
-    // Permitir enviar con la tecla Enter
-    document.getElementById('chat-input')?.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') enviarMensajeAI();
-    });
+    function mostrarModalPreviewAI(content) {
+        const modal = document.getElementById('modal-preview-ai');
+        const preview = document.getElementById('preview-content');
+        if (modal && preview) {
+            preview.innerText = content;
+            modal.style.display = 'flex';
+        }
+    }
 
 
 
+    
     
 </script>
 
@@ -1304,6 +1318,17 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
 </div>
 
 
+<div id="modal-preview-ai" class="modal-overlay">
+    <div class="modal-content">
+        <h3>Previsualización</h3>
+        <div id="preview-content" style="background:white; color:black; padding:15px; border-radius:5px; max-height:300px; overflow-y:auto; white-space:pre-wrap;"></div>
+        <button class="btn-generar" onclick="generarPdfAI()">✅ Descargar PDF (1 Crédito)</button>
+        <button class="btn-volver" onclick="document.getElementById('modal-preview-ai').style.display='none'">Cerrar</button>
+    </div>
+</div>
+
+
+    
     
 </body>
 </html>
