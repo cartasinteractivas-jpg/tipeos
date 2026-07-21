@@ -1229,39 +1229,56 @@ function addMessage(sender, text) {
         };
     }
 
+
+
+
     async function enviarMensajeAI() {
-        const input = document.getElementById('chat-input');
-        const texto = input.value.trim();
-        if (!texto || isAITyping) return;
+    const input = document.getElementById('chat-input');
+    const texto = input.value.trim();
+    if (!texto || isAITyping) return;
 
-        addMessage('user', texto);
-        input.value = "";
-        actualizarBotonChat();
-        isAITyping = true;
-        chatHistory.push({ role: 'user', content: texto });
+    addMessage('user', texto);
+    input.value = "";
+    actualizarBotonChat();
+    isAITyping = true;
+    chatHistory.push({ role: 'user', content: texto });
 
-        try {
-            const { data, error } = await supabase.functions.invoke('generar-documento', {
-                body: JSON.stringify({ history: chatHistory, user_input: texto, current_draft: currentDocumentDraft }),
-            });
-            if (error) throw error;
+    try {
+        const { data, error } = await supabase.functions.invoke('generar-documento', {
+            body: JSON.stringify({ history: chatHistory, user_input: texto, current_draft: currentDocumentDraft }),
+        });
 
-            const aiResponse = data.response;
-            addMessage('ai', aiResponse.message);
-            chatHistory.push({ role: 'assistant', content: aiResponse.raw_response });
-
-            if (aiResponse.action === 'document_draft' || aiResponse.action === 'final_document') {
-                currentDocumentDraft = aiResponse.document_content;
-                addMessage('ai', '<b>Previsualizando documento...</b>');
-                mostrarModalPreviewAI(currentDocumentDraft);
-            }
-        } catch (error) {
-            addMessage('ai', '❌ Error al conectar con la IA.');
-        } finally {
-            isAITyping = false;
+        // SI HAY UN ERROR DE SUPABASE, LO MOSTRAMOS EN EL CHAT
+        if (error) {
+            console.error("Error de Supabase:", error);
+            addMessage('ai', '❌ Error de Supabase: ' + error.message);
+            return;
         }
-    }
 
+        const aiResponse = data.response;
+        addMessage('ai', aiResponse.message);
+        chatHistory.push({ role: 'assistant', content: aiResponse.raw_response });
+
+        if ((aiResponse.action === 'document_draft' || aiResponse.action === 'final_document') && aiResponse.document_content) {
+            currentDocumentDraft = aiResponse.document_content;
+            addMessage('ai', '<b>✨ ¡Documento generado! Previsualizando...</b>');
+            mostrarModalPreviewAI(currentDocumentDraft);
+        }
+    } catch (error) {
+        // SI HAY UN ERROR DE RED O CÓDIGO, LO MOSTRAMOS
+        console.error("Error de red/código:", error);
+        addMessage('ai', '❌ Error de conexión: ' + error.message);
+    } finally {
+        isAITyping = false;
+    }
+}
+
+    
+
+
+
+
+    
     function accionChat() {
         const input = document.getElementById('chat-input');
         if (input.value.trim() === "") iniciarVozChat();
