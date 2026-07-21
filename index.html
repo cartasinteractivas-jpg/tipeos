@@ -317,42 +317,38 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
         <button class="btn-generar" id="btn-generar" onclick="generarDocumento()">✨ Generar Documento (1 Crédito)</button>
     </div>
 
-    <!-- PANTALLA 3: RELLENADO LIBRE -->
-    <div id="screen-rellenado-libre" class="screen">
-        <button class="btn-volver" onclick="volverAHome()">⬅ Volver al inicio</button>
-        <div style="background: #222; padding: 15px; border-radius: 10px; border-left: 4px solid #e67e22; margin-bottom: 10px;">
-            <h3 style="color: #e67e22; margin-bottom: 5px;">✍️ Rellenar mi propio PDF</h3>
-            <p style="color: #aaa; font-size: 13px;">Sube tu documento, <strong>toca en la pantalla</strong> donde quieras escribir o firmar. Usa dos dedos para ajustar el tamaño.</p>
-        </div>
-        
-        <div class="upload-area" id="upload-area">
-    <input type="file" id="free-pdf-upload" accept="application/pdf" style="display: none;">
+
+
     
-    <div onclick="document.getElementById('free-pdf-upload').click()" 
-         style="border: 2px dashed #555; border-radius: 12px; padding: 25px 20px; text-align: center; cursor: pointer; transition: all 0.3s;">
-        
-        <div style="font-size: 42px; margin-bottom: 12px;">📄</div>
-        <div style="color: #f1c40f; font-weight: bold; font-size: 16px; margin-bottom: 6px;">
-            Seleccionar archivo PDF
-        </div>
-        <div style="color: #aaa; font-size: 14px;">
-            Toca aquí para subir tu documento
-        </div>
-        
-        <div id="file-name-display" style="margin-top: 12px; color: #0f0; font-size: 13px; font-weight: 500; display: none;">
-            📌 <span id="selected-file-name"></span>
-        </div>
+<!-- PANTALLA 3: RELLENADO LIBRE - DISEÑO MEJORADO -->
+<div id="screen-rellenado-libre" class="screen" style="padding:0; background:#0a0a0a;">
+    
+    <!-- Barra superior flotante -->
+    <div style="position: fixed; top: 0; left: 0; right: 0; background: rgba(0,0,0,0.85); z-index: 100; padding: 12px 15px; display: flex; align-items: center; border-bottom: 1px solid #333;">
+        <button onclick="volverAHome()" style="background:none; border:none; color:white; font-size:24px; padding:5px 10px;">←</button>
+        <div style="flex:1; text-align:center; color:#f1c40f; font-weight:bold;">Rellenar PDF</div>
     </div>
-</div>
-        
-        <div class="canvas-container" id="free-canvas-container" style="display: none;">
-            <!-- Las hojas del PDF se generarán aquí dinámicamente -->
-        </div>
 
-        <button class="btn-generar" id="btn-generar-free" onclick="generarPdfLibre()" style="display: none; background: #e67e22;">✨ Descargar PDF Lleno</button>
-    </div>
+    <!-- Contenedor del PDF -->
+    <div id="free-canvas-container" style="padding-top: 60px; height: 100vh; overflow: auto; background:#111;"></div>
+
+    <!-- Botón flotante para añadir (opcional) -->
+    <button onclick="mostrarMenuFlotante()" 
+            style="position: fixed; bottom: 20px; right: 20px; background: #3498db; color: white; border: none; width: 56px; height: 56px; border-radius: 50%; font-size: 28px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 150;">
+        ✚
+    </button>
 </div>
 
+    
+
+
+
+    
+</div>
+
+
+
+    
 <script>
     // ==========================================
     // 1. CONFIGURACIÓN SUPABASE Y PDF.JS
@@ -1529,6 +1525,12 @@ document.getElementById('chat-input').addEventListener('keydown', (e) => {
         enviarMensajeAI();
     }
 });
+
+
+function mostrarMenuFlotante() {
+    // Puedes abrir directamente el menú de opciones
+    document.getElementById('modal-opciones').style.display = 'flex';
+}
 
 
     
