@@ -362,12 +362,16 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
 <div id="screen-rellenado-libre" class="screen" style="padding:0; background:#121212; flex-direction:column; height:100vh; position:relative;">
     
     <!-- BARRA SUPERIOR FIJA -->
-    <div style="background: #1a1a1a; padding: 12px 15px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #333; width: 100%;">
-        <button onclick="volverAHome()" style="background:#333; border:none; color:white; width:35px; height:35px; border-radius:8px; font-size:18px; cursor:pointer;">←</button>
-        <div style="flex:1; color:#f1c40f; font-weight:bold; font-size:14px;">Rellenar PDF</div>
-        <button onclick="abrirRellenadoLibre()" style="background:#34495e; border:none; color:white; padding:8px 10px; border-radius:6px; font-size:11px; font-weight:bold;">🔄 Cambiar</button>
-        <button id="btn-generar-free" onclick="generarPdfLibre()" style="background:#2ecc71; border:none; color:black; padding:8px 12px; border-radius:6px; font-size:11px; font-weight:bold; display:none;">✅ Descargar</button>
-    </div>
+   <div style="background: #1a1a1a; padding: 12px 15px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #333; width: 100%;">
+    <button onclick="volverAHome()" style="background:#333; border:none; color:white; width:35px; height:35px; border-radius:8px; font-size:18px; cursor:pointer;">←</button>
+    <div style="flex:1; color:#f1c40f; font-weight:bold; font-size:14px;">Rellenar PDF</div>
+    
+    <!-- Botón actualizado -->
+    <button onclick="abrirRellenadoLibre()" style="background:#34495e; border:none; color:white; padding:8px 10px; border-radius:6px; font-size:11px; font-weight:bold;">🔄 Cargar PDF</button>
+    
+    <button id="btn-generar-free" onclick="generarPdfLibre()" style="background:#2ecc71; border:none; color:black; padding:8px 12px; border-radius:6px; font-size:11px; font-weight:bold; display:none;">✅ Descargar</button>
+</div>
+
 
     <!-- ÁREA DE CARGA (CENTRADA) -->
     <div id="upload-placeholder" style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex:1; padding: 20px;">
@@ -746,30 +750,38 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
     }
 
 
+    
 
     
 // ==========================================
 // 8. LÓGICA: RELLENADO LIBRE
 // ==========================================
 function abrirRellenadoLibre() {
+    // 1. Verificamos créditos (opcional, puedes quitarlo si quieres que siempre abra)
     if (!usuarioActual || usuarioActual.creditos <= 0) {
         alert("🔒 Necesitas activar un código con créditos.");
         document.getElementById('seccion-compra').scrollIntoView({ behavior: 'smooth' });
         return;
     }
     
-   document.getElementById('upload-placeholder').style.display = 'flex';
-    document.getElementById('free-canvas-container').style.display = 'none';
-    document.getElementById('free-canvas-container').innerHTML = '';
-    document.getElementById('btn-generar-free').style.display = 'none';
-    document.getElementById('btn-float-add').style.display = 'none';
+    // 2. LIMPIEZA TOTAL
+    document.getElementById('free-pdf-upload').value = ''; // Limpia el archivo seleccionado
+    document.getElementById('free-canvas-container').innerHTML = ''; // Borra las hojas del PDF
     
+    // 3. RESET DE VISIBILIDAD (Aquí estaba el error)
+    document.getElementById('upload-placeholder').style.display = 'flex'; // MUESTRA el cuadro de carga
+    document.getElementById('free-canvas-container').style.display = 'none'; // OCULTA el visor de PDF
+    document.getElementById('btn-generar-free').style.display = 'none'; // OCULTA el botón descargar
+    document.getElementById('btn-float-add').style.display = 'none'; // OCULTA el botón +
+    
+    // 4. Reset de variables
     elementosFlotantes = [];
     freeCanvasScales = {};
+    freePdfPageCount = 0;
     
+    // 5. Mostrar la pantalla
     showScreen('screen-rellenado-libre');
 }
-    
 
 // Evento de selección de archivo PDF
 document.getElementById('free-pdf-upload').addEventListener('change', async function(e) {
