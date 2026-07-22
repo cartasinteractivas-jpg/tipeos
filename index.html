@@ -273,21 +273,21 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
 <div id="modal-simbolos" class="modal-overlay">
     <div class="modal-content">
         <h3>Añadir Símbolo</h3>
-        <!-- NUEVO: Selector numérico de tamaño -->
-        <div style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 10px;">
-            <label style="color: #ccc; font-size: 14px;">Tamaño:</label>
-            <input type="number" id="input-size-simbolo" value="24" min="4" max="100" style="width: 60px; padding: 5px; border-radius: 6px; border: 1px solid #444; background: #111; color: white; text-align: center; outline: none; font-size: 16px;">
+        <div style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 15px;">
+            <label style="color: #ccc;">Tamaño:</label>
+            <input type="number" id="input-size-simbolo" value="24" style="width: 60px; padding: 5px; background: #111; color: white; border: 1px solid #444; border-radius: 5px;">
         </div>
-        <div class="symbol-grid">
-            <button type="button" class="btn-symbol" onclick="guardarSimbolo('✔')">✔</button>
-            <button type="button" class="btn-symbol" onclick="guardarSimbolo('✘')">✘</button>
-            <button type="button" class="btn-symbol" onclick="guardarSimbolo('•')">•</button>
+        <div class="symbol-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+            <button type="button" class="btn-symbol" onclick="guardarSimbolo('✔')" style="font-size: 30px; padding: 10px;">✔</button>
+            <button type="button" class="btn-symbol" onclick="guardarSimbolo('✘')" style="font-size: 30px; padding: 10px;">✘</button>
+            <button type="button" class="btn-symbol" onclick="guardarSimbolo('•')" style="font-size: 30px; padding: 10px;">•</button>
         </div>
-        <div class="modal-actions">
-            <button type="button" onclick="cerrarModalSimbolos()" style="background: #555; color: white; border: none; border-radius: 5px;">Cancelar</button>
+        <div class="modal-actions" style="margin-top: 15px;">
+            <button type="button" onclick="cerrarModalSimbolos()" style="background: #555; color: white; border: none; padding: 10px 20px; border-radius: 5px;">Cancelar</button>
         </div>
     </div>
 </div>
+
 
     
 
@@ -757,31 +757,25 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
 // 8. LÓGICA: RELLENADO LIBRE
 // ==========================================
 function abrirRellenadoLibre() {
-    // 1. Verificamos créditos (opcional, puedes quitarlo si quieres que siempre abra)
-    if (!usuarioActual || usuarioActual.creditos <= 0) {
-        alert("🔒 Necesitas activar un código con créditos.");
-        document.getElementById('seccion-compra').scrollIntoView({ behavior: 'smooth' });
-        return;
-    }
+    // 1. Limpieza de archivos y canvas
+    document.getElementById('free-pdf-upload').value = ''; 
+    document.getElementById('free-canvas-container').innerHTML = ''; 
     
-    // 2. LIMPIEZA TOTAL
-    document.getElementById('free-pdf-upload').value = ''; // Limpia el archivo seleccionado
-    document.getElementById('free-canvas-container').innerHTML = ''; // Borra las hojas del PDF
+    // 2. Reset de visibilidad (Para que aparezca el botón de carga)
+    document.getElementById('upload-placeholder').style.display = 'flex'; 
+    document.getElementById('free-canvas-container').style.display = 'none'; 
+    document.getElementById('btn-generar-free').style.display = 'none'; 
+    document.getElementById('btn-float-add').style.display = 'none'; 
     
-    // 3. RESET DE VISIBILIDAD (Aquí estaba el error)
-    document.getElementById('upload-placeholder').style.display = 'flex'; // MUESTRA el cuadro de carga
-    document.getElementById('free-canvas-container').style.display = 'none'; // OCULTA el visor de PDF
-    document.getElementById('btn-generar-free').style.display = 'none'; // OCULTA el botón descargar
-    document.getElementById('btn-float-add').style.display = 'none'; // OCULTA el botón +
-    
-    // 4. Reset de variables
+    // 3. Reset de datos
     elementosFlotantes = [];
     freeCanvasScales = {};
     freePdfPageCount = 0;
     
-    // 5. Mostrar la pantalla
+    // 4. Mostrar pantalla
     showScreen('screen-rellenado-libre');
 }
+
 
 // Evento de selección de archivo PDF
 document.getElementById('free-pdf-upload').addEventListener('change', async function(e) {
@@ -1257,16 +1251,21 @@ function cerrarModalFirma() {
 
     function cerrarModalSimbolos() { document.getElementById('modal-simbolos').style.display = 'none'; }
 
-    function guardarSimbolo(simbolo) {
-        // NUEVO: Guardar el tamaño elegido en la memoria
-        lastSymbolSize = parseInt(document.getElementById('input-size-simbolo').value) || 24;
-        
-        // NUEVO: Enviamos el tamaño (lastSymbolSize) a la función creadora
-        crearElementoFlotante(currentTarget.parent, currentTarget.x, currentTarget.y, currentTarget.pageNum, 'symbol', simbolo, null, lastSymbolSize);
-        cerrarModalSimbolos();
-    }
+   function guardarSimbolo(simbolo) {
+    // 1. Obtener tamaño
+    const size = parseInt(document.getElementById('input-size-simbolo').value) || 24;
+    
+    // 2. Buscar la primera página para pegarlo
+    const wrapper = document.querySelector('.pdf-page-wrapper');
+    if (!wrapper) return alert("Primero sube un PDF");
 
-
+    // 3. Crear el símbolo (lo ponemos como texto)
+    crearElementoFlotante(wrapper, 50, 50, 1, 'text', simbolo, null, size);
+    
+    // 4. Cerrar modales
+    cerrarModalSimbolos();
+    cerrarModalOpciones();
+}
 
     
     // ==========================================
