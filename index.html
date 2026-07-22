@@ -1028,68 +1028,29 @@ document.addEventListener('DOMContentLoaded', () => {
 function guardarTextoModal() {
     const input = document.getElementById('input-texto-modal');
     const texto = input.value.trim();
-    if (!texto || !clickCoords) return;
+    if (!texto) return;
 
-    const size = document.getElementById('input-size-texto').value || 14;
-    const el = document.createElement('div');
-    el.className = 'floating-element';
-    el.style.left = clickCoords.x + 'px';
-    el.style.top = clickCoords.y + 'px';
-    el.style.position = 'absolute';
+    const size = parseInt(document.getElementById('input-size-texto').value) || 14;
+    const wrapper = document.querySelector('.pdf-page-wrapper'); // Primera página por defecto
     
-    el.innerHTML = `
-        <div class="floating-text" style="font-size:${size}px; color:black; white-space:nowrap;">${texto}</div>
-        <div class="btn-delete-float" style="display:flex;" onclick="this.parentElement.remove()">×</div>
-    `;
-
-    // Importante: Hacerlo arrastrable
-    hacerElementoArrastrable(el);
-    clickCoords.wrapper.appendChild(el);
-    
-    // Guardar para la descarga final
-    elementosFlotantes.push({
-        tipo: 'texto',
-        contenido: texto,
-        x: clickCoords.x * 2, 
-        y: clickCoords.y * 2,
-        pageNum: clickCoords.pageNum,
-        size: size * 2,
-        wrapper: clickCoords.wrapper
-    });
+    // Usamos la lógica de creación del 128
+    crearElementoFlotante(wrapper, 50, 50, 1, 'text', texto, null, size);
 
     cerrarModalTexto();
     input.value = "";
 }
 
+
+
+
+    
 function guardarFirma() {
     const canvas = document.getElementById('canvas-firma');
     const dataUrl = canvas.toDataURL('image/png');
-    if (!clickCoords) return;
-    
-    const el = document.createElement('div');
-    el.className = 'floating-element';
-    el.style.left = clickCoords.x + 'px';
-    el.style.top = clickCoords.y + 'px';
-    el.style.position = 'absolute';
-    
-    el.innerHTML = `
-        <img src="${dataUrl}" style="width:120px; pointer-events:none;">
-        <div class="btn-delete-float" style="display:flex;" onclick="this.parentElement.remove()">×</div>
-    `;
+    const wrapper = document.querySelector('.pdf-page-wrapper');
 
-    hacerElementoArrastrable(el);
-    clickCoords.wrapper.appendChild(el);
-    
-    elementosFlotantes.push({
-        tipo: 'firma',
-        contenido: dataUrl,
-        x: clickCoords.x * 2,
-        y: clickCoords.y * 2,
-        pageNum: clickCoords.pageNum,
-        width: 240,
-        height: 120,
-        wrapper: clickCoords.wrapper
-    });
+    // Usamos la lógica de creación del 128
+    crearElementoFlotante(wrapper, 50, 150, 1, 'image', dataUrl);
 
     cerrarModalFirma();
 }
@@ -1222,78 +1183,61 @@ function cerrarModalFirma() {
         cerrarModalSimbolos();
     }
 
+
+
+    
     // ==========================================
     // 11. CREADOR DE ELEMENTOS Y MOTOR INTERACTIVO
     // ==========================================
     // NUEVO: Añadimos "customSize" como último parámetro
-    function crearElementoFlotante(parent, x, y, pageNum, tipo, contenido, formato = null, customSize = null) {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'floating-element';
-        wrapper.style.left = `${x}px`;
-        wrapper.style.top = `${y - 15}px`;
+ function crearElementoFlotante(parent, x, y, pageNum, tipo, contenido, formato = null, customSize = null) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'floating-element';
+    wrapper.style.left = `${x}px`;
+    wrapper.style.top = `${y}px`;
+    wrapper.style.position = 'absolute';
+    wrapper.style.zIndex = '100';
 
-        const btnDelete = document.createElement('button');
-        btnDelete.type = 'button';
-        btnDelete.className = 'btn-delete-float';
-        btnDelete.innerText = '✖';
-        
-        const resizeHandle = document.createElement('div');
-        resizeHandle.className = 'resize-handle';
+    let elData = { wrapper, type: tipo, pageNum }; 
+    let domElement;
 
-        let elData = { wrapper, type: tipo, pageNum };
-        let domElement;
-
-        if (tipo === 'text' || tipo === 'symbol') {
-            domElement = document.createElement('span');
-            domElement.className = 'floating-text';
-            domElement.innerText = contenido;
-            
-            // NUEVO: Usar el tamaño personalizado si existe
-            let initialSize = customSize ? customSize : (tipo === 'symbol' ? 24 : 14);
-            domElement.style.fontSize = `${initialSize}px`;
-            
-            if (formato) {
-                if (formato.bold) domElement.style.fontWeight = 'bold';
-                if (formato.italic) domElement.style.fontStyle = 'italic';
-                elData.format = formato;
-            }
-            
-            elData.texto = contenido;
-            elData.size = initialSize;
-        } 
-        else if (tipo === 'image') {
-            domElement = document.createElement('img');
-            domElement.src = contenido;
-            domElement.className = 'floating-img';
-            domElement.style.width = `150px`;
-            
-            elData.dataUrl = contenido;
-            elData.size = 150;
-        }
-
-        elData.element = domElement;
-        
-        btnDelete.onclick = (e) => { e.stopPropagation(); wrapper.remove(); elementosFlotantes = elementosFlotantes.filter(i => i !== elData); };
-
-        wrapper.appendChild(domElement);
-        wrapper.appendChild(btnDelete);
-        wrapper.appendChild(resizeHandle);
-        parent.appendChild(wrapper);
-
-        const seleccionarEsteElemento = () => {
-            document.querySelectorAll('.floating-element').forEach(el => el.classList.remove('selected'));
-            wrapper.classList.add('selected');
-        };
-        wrapper.addEventListener('mousedown', seleccionarEsteElemento);
-        wrapper.addEventListener('touchstart', seleccionarEsteElemento, {passive: true});
-        seleccionarEsteElemento(); 
-
-        elementosFlotantes.push(elData);
-        hacerInteractivo(wrapper, elData, resizeHandle);
+    if (tipo === 'text') {
+        domElement = document.createElement('span');
+        domElement.className = 'floating-text';
+        domElement.innerText = contenido;
+        let initialSize = customSize || 14;
+        domElement.style.fontSize = `${initialSize}px`;
+        domElement.style.color = 'black';
+        elData.texto = contenido;
+        elData.size = initialSize;
+    } else if (tipo === 'image') {
+        domElement = document.createElement('img');
+        domElement.src = contenido;
+        domElement.style.width = `120px`;
+        elData.dataUrl = contenido;
+        elData.size = 120;
     }
 
+    const btnDelete = document.createElement('div');
+    btnDelete.innerHTML = '×';
+    btnDelete.style = "position:absolute; top:-10px; right:-10px; background:red; color:white; border-radius:50%; width:20px; height:20px; text-align:center; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:110;";
+    btnDelete.onclick = (e) => { 
+        e.stopPropagation();
+        wrapper.remove(); 
+        elementosFlotantes = elementosFlotantes.filter(i => i !== elData); 
+    };
 
+    wrapper.appendChild(domElement);
+    wrapper.appendChild(btnDelete);
+    parent.appendChild(wrapper);
 
+    // Hacerlo arrastrable con la función que ya tienes
+    if (typeof hacerElementoArrastrable === 'function') {
+        hacerElementoArrastrable(wrapper);
+    }
+    
+    elementosFlotantes.push(elData);
+}
 
 
 
@@ -1415,91 +1359,91 @@ function cerrarModalFirma() {
 
 
     
-    // ==========================================
-    // 12. GENERACIÓN FINAL DEL PDF LIBRE
-    // ==========================================
-    async function generarPdfLibre() {
-        if (!freePdfDoc) return;
+async function generarPdfLibre() {
+    if (!freePdfDoc) return;
 
-        if (usuarioActual.creditos < freePdfPageCount) {
-            alert(`⚠️ Necesitas ${freePdfPageCount} créditos para descargar este documento de ${freePdfPageCount} hojas. Tienes ${usuarioActual.creditos}.`);
-            return;
-        }
-
-        const btn = document.getElementById('btn-generar-free');
-        btn.innerText = "⏳ Procesando...";
-        btn.disabled = true;
-
-        try {
-            const pages = freePdfDoc.getPages();
-            
-            const fontNormal = await freePdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
-            const fontBold = await freePdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
-            const fontItalic = await freePdfDoc.embedFont(PDFLib.StandardFonts.HelveticaOblique);
-            const fontBoldItalic = await freePdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBoldOblique);
-
-            for (const item of elementosFlotantes) {
-                const targetPage = pages[item.pageNum - 1]; 
-                const pdfHeight = targetPage.getHeight();
-                const scale = freeCanvasScales[item.pageNum];
-                
-                // Dentro del bucle de elementosFlotantes en generarPdfLibre
-const pdfX = (item.wrapper.offsetLeft + 4) / (scale / 2);
-const pdfY = pdfHeight - ((item.wrapper.offsetTop + (item.size || 0) + 4) / (scale / 2));
-
-                
-                if (item.type === 'text' || item.type === 'symbol') {
-                    const pdfY = pdfHeight - ((item.wrapper.offsetTop + item.size + 4) / scale);
-                    
-                    let selectedFont = fontNormal;
-                    if (item.format && item.format.bold && item.format.italic) selectedFont = fontBoldItalic;
-                    else if (item.format && item.format.bold) selectedFont = fontBold;
-                    else if (item.format && item.format.italic) selectedFont = fontItalic;
-
-                    targetPage.drawText(item.texto, {
-                        x: pdfX,
-                        y: pdfY, 
-                        size: item.size,
-                        font: selectedFont,
-                        color: PDFLib.rgb(0, 0, 0)
-                    });
-                } 
-                else if (item.type === 'image') {
-                    const pngImage = await freePdfDoc.embedPng(item.dataUrl);
-                    const pngDims = pngImage.scale(1);
-                    const ratio = pngDims.height / pngDims.width;
-
-                    const pdfWidth = item.size / scale;
-                    const pdfImgHeight = pdfWidth * ratio;
-                    const pdfY = pdfHeight - ((item.wrapper.offsetTop / scale) + pdfImgHeight);
-
-                    targetPage.drawImage(pngImage, {
-                        x: pdfX,
-                        y: pdfY,
-                        width: pdfWidth,
-                        height: pdfImgHeight
-                    });
-                }
-            }
-
-            const pagado = await descontarCredito(freePdfPageCount);
-            if (!pagado) throw new Error("No se pudo procesar el pago.");
-
-            const pdfBytes = await freePdfDoc.save();
-            download(pdfBytes, `DocuFacil_Rellenado.pdf`, "application/pdf");
-            
-            alert("✅ ¡Documento rellenado y firmado con éxito!");
-            volverAHome();
-
-        } catch (err) {
-            alert("Error: " + err.message);
-        } finally {
-            btn.innerText = `✨ Descargar PDF Lleno (${freePdfPageCount} Créditos)`;
-            btn.disabled = false;
-        }
+    // Verificación de créditos
+    if (usuarioActual.creditos < freePdfPageCount) {
+        alert(`⚠️ Necesitas ${freePdfPageCount} créditos para descargar este documento. Tienes ${usuarioActual.creditos}.`);
+        return;
     }
 
+    const btn = document.getElementById('btn-generar-free');
+    btn.innerText = "⏳ Procesando...";
+    btn.disabled = true;
 
+    try {
+        // Obtenemos las páginas del documento PDF-lib
+        const pdfLibDoc = await PDFLib.PDFDocument.load(await freePdfDoc.save());
+        const pages = pdfLibDoc.getPages();
+        
+        const fontNormal = await pdfLibDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+        const fontBold = await pdfLibDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
+
+        // La escala que usamos para el renderizado nítido fue 2.0
+        const scale = 2.0;
+
+        for (const item of elementosFlotantes) {
+            const targetPage = pages[item.pageNum - 1]; 
+            const pdfHeight = targetPage.getHeight();
+            
+            // Calculamos la posición X e Y ajustada a la escala HD
+            const pdfX = (item.wrapper.offsetLeft) / scale;
+            
+            if (item.type === 'text') {
+                // Ajuste de Y: PDF-lib cuenta desde abajo, el navegador desde arriba
+                const pdfY = pdfHeight - ((item.wrapper.offsetTop + item.size) / scale);
+                
+                targetPage.drawText(item.texto, {
+                    x: pdfX,
+                    y: pdfY, 
+                    size: item.size,
+                    font: fontNormal,
+                    color: PDFLib.rgb(0, 0, 0)
+                });
+            } 
+            else if (item.type === 'image') {
+                const pngImage = await pdfLibDoc.embedPng(item.dataUrl);
+                const pngDims = pngImage.scale(1);
+                const ratio = pngDims.height / pngDims.width;
+
+                // El ancho en el PDF debe ser el ancho visual / escala
+                const visualWidth = item.wrapper.querySelector('img').offsetWidth;
+                const pdfWidth = visualWidth / scale;
+                const pdfImgHeight = pdfWidth * ratio;
+                
+                const pdfY = pdfHeight - ((item.wrapper.offsetTop / scale) + pdfImgHeight);
+
+                targetPage.drawImage(pngImage, {
+                    x: pdfX,
+                    y: pdfY,
+                    width: pdfWidth,
+                    height: pdfImgHeight
+                });
+            }
+        }
+
+        // Descontar crédito
+        const pagado = await descontarCredito(freePdfPageCount);
+        if (!pagado) throw new Error("No se pudo procesar el pago.");
+
+        const pdfBytes = await pdfLibDoc.save();
+        download(pdfBytes, `DocuFacil_Final.pdf`, "application/pdf");
+        
+        alert("✅ ¡Documento generado con éxito!");
+        volverAHome();
+
+    } catch (err) {
+        console.error(err);
+        alert("Error al generar el PDF: " + err.message);
+    } finally {
+        btn.innerText = `✨ Descargar PDF Lleno (${freePdfPageCount} Créditos)`;
+        btn.disabled = false;
+    }
+}
+
+
+    
 
        let voiceTimer;
     let chatHistory = [];
