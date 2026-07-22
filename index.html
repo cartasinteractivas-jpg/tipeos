@@ -16,9 +16,9 @@
 
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #121212; color: #ffffff; display: flex; justify-content: center; min-height: 100vh; }
+        body { background-color: #121212; color: #ffffff; display: flex; justify-content: center; min-height: 100vh; overflow: hidden; }
         
-        .app-container { background: #1e1e1e; width: 100%; max-width: 480px; min-height: 100vh; display: flex; flex-direction: column; position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+        .app-container { background: #1e1e1e; width: 100%; max-width: 480px; height: 100vh; display: flex; flex-direction: column; position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.5); overflow: hidden; }
         
         .header { background: #2c3e50; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; border-bottom: 2px solid #34495e; }
         .header h1 { color: #fff; font-size: 20px; display: flex; align-items: center; gap: 8px; }
@@ -54,18 +54,8 @@
         .card.locked::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 1; }
         .candado-icon { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); font-size: 24px; z-index: 2; }
 
-        /* --- FORMULARIOS --- */
-        .input-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; }
-        .input-group label { color: #ccc; font-weight: bold; font-size: 14px; }
-        .input-with-mic { display: flex; gap: 10px; }
-        .input-with-mic input, .input-with-mic textarea { flex: 1; padding: 12px; background: #000; color: #fff; border: 1px solid #444; border-radius: 8px; outline: none; font-size: 15px; }
-        .btn-mic { background: #3498db; color: white; border: none; width: 48px; border-radius: 8px; cursor: pointer; font-size: 20px; display: flex; justify-content: center; align-items: center; }
-        
-        .btn-generar { background: #2ecc71; color: #000; border: none; padding: 15px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; width: 100%; margin-top: 10px; }
-        .btn-volver { background: transparent; color: #aaa; border: 1px solid #555; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 13px; width: fit-content; margin-bottom: 10px; }
-
         /* --- RELLENADO LIBRE --- */
-        .canvas-container { width: 100%; height: calc(100vh - 60px); overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; align-items: center; background: #000; position: relative; padding: 10px; }
+        .canvas-container { width: 100%; height: calc(100vh - 60px); overflow: auto; display: flex; flex-direction: column; align-items: center; background: #000; position: relative; padding: 10px; scroll-behavior: smooth; }
         .pdf-page-wrapper { position: relative; background: white; box-shadow: 0 4px 15px rgba(0,0,0,0.5); margin-bottom: 20px; transform-origin: top left; width: 100% !important; max-width: 100%; }
         .free-pdf-canvas { display: block; width: 100%; height: auto; }
         
@@ -89,7 +79,7 @@
         .chip { background: #444; color: #fff; padding: 6px 12px; border-radius: 15px; font-size: 12px; cursor: pointer; border: none; }
         .chip:hover { background: #f1c40f; color: #000; }
         .modal-actions { display: flex; gap: 10px; justify-content: center; margin-top: 10px; }
-        .modal-actions button { margin: 0; width: auto; padding: 10px 20px; }
+        .modal-actions button { margin: 0; width: auto; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
         .symbol-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
         .btn-symbol { background: #333; color: white; border: 1px solid #555; font-size: 30px; padding: 10px; border-radius: 8px; cursor: pointer; display: flex; justify-content: center; align-items: center; }
         .btn-symbol:hover { background: #f1c40f; color: #000; }
@@ -105,6 +95,11 @@
         .chat-input-area { padding: 15px; background: #1e1e1e; display: flex; gap: 10px; border-top: 1px solid #333; }
         .chat-input { flex: 1; background: #000; border: 1px solid #444; color: #fff; padding: 12px 15px; border-radius: 25px; outline: none; }
         .btn-chat-action { background: #3498db; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; font-size: 20px; display: flex; justify-content: center; align-items: center; }
+
+        /* --- MARGENES AI --- */
+        .margin-selector { display: flex; gap: 10px; justify-content: center; margin: 10px 0; }
+        .btn-margin { background: #333; color: white; border: 1px solid #555; padding: 8px 12px; border-radius: 6px; font-size: 13px; cursor: pointer; }
+        .btn-margin.active { background: #f1c40f; color: #000; border-color: #f1c40f; }
     </style>
 </head>
 <body>
@@ -140,26 +135,11 @@
         <div id="lista-plantillas" class="lista-plantillas"></div>
     </div>
 
-    <!-- PANTALLA 2: FORMULARIO DE PLANTILLAS -->
-    <div id="screen-formulario" class="screen">
-        <button class="btn-volver" onclick="volverAHome()">⬅ Volver al inicio</button>
-        <div style="background: #222; padding: 15px; border-radius: 10px; border-left: 4px solid #3498db; margin-bottom: 10px;">
-            <h3 id="form-titulo" style="color: #3498db; margin-bottom: 5px;">Nombre</h3>
-            <p id="form-desc" style="color: #aaa; font-size: 13px;">Descripción</p>
-        </div>
-        <div class="input-group" style="background: #2a2a2a; padding: 15px; border-radius: 8px; border: 1px dashed #555;">
-            <label style="color: #f1c40f;">📄 Sube el PDF base (Plantilla)</label>
-            <input type="file" id="user-pdf-upload" accept="application/pdf" style="width: 100%; color: #fff;">
-        </div>
-        <div id="form-campos" style="display: flex; flex-direction: column; gap: 5px;"></div>
-        <button class="btn-generar" id="btn-generar" onclick="generarDocumento()">✨ Generar Documento (1 Crédito)</button>
-    </div>
-
     <!-- PANTALLA: RELLENADO LIBRE -->
     <div id="screen-rellenado-libre" class="screen" style="padding:0; background:#121212; flex-direction:column; height:100vh; position:relative;">
         <div style="background: #1a1a1a; padding: 12px 15px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #333; width: 100%; z-index: 100;">
             <button onclick="volverAHome()" style="background:#333; border:none; color:white; width:35px; height:35px; border-radius:8px; font-size:18px; cursor:pointer;">←</button>
-            <div style="flex:1; color:#f1c40f; font-weight:bold; font-size:14px;">Rellenar PDF</div>
+            <div style="flex:1; color:#f1c40f; font-weight:bold; font-size:14px;">Editor de PDF</div>
             <button onclick="abrirRellenadoLibre()" style="background:#34495e; border:none; color:white; padding:8px 10px; border-radius:6px; font-size:11px; font-weight:bold;">🔄 Cargar PDF</button>
             <button id="btn-generar-free" onclick="generarPdfLibre()" style="background:#2ecc71; border:none; color:black; padding:8px 12px; border-radius:6px; font-size:11px; font-weight:bold; display:none;">✅ Descargar</button>
         </div>
@@ -198,8 +178,8 @@
         <input type="text" id="input-texto-modal" placeholder="Escribe aquí..." style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #444; background: #111; color: white; font-size: 16px; outline: none;">
         <div id="chips-historial" class="chips-container"></div>
         <div class="modal-actions">
-            <button type="button" onclick="cerrarModalTexto()" style="background: #555; color: white; border: none; border-radius: 5px;">Cancelar</button>
-            <button type="button" onclick="guardarTextoModal()" style="background: #2ecc71; color: black; border: none; border-radius: 5px;">Aceptar</button>
+            <button type="button" onclick="cerrarModalTexto()" style="background: #555; color: white;">Cancelar</button>
+            <button type="button" onclick="guardarTextoModal()" style="background: #2ecc71; color: black;">Aceptar</button>
         </div>
     </div>
 </div>
@@ -233,17 +213,26 @@
             <button type="button" class="btn-symbol" onclick="guardarSimbolo('•')">•</button>
         </div>
         <div class="modal-actions">
-            <button type="button" onclick="cerrarModalSimbolos()" style="background: #555; color: white; border: none; border-radius: 5px;">Cancelar</button>
+            <button type="button" onclick="cerrarModalSimbolos()" style="background: #555; color: white;">Cancelar</button>
         </div>
     </div>
 </div>
 
 <div id="screen-ai-chat" class="screen">
     <div class="chat-header">
-        <button class="btn-volver" style="margin:0" onclick="cerrarChatAI()">⬅</button>
-        <span style="font-weight:bold;">✨ DocuFácil AI Expert</span>
+        <button class="btn-volver" style="margin:0; background:#333; border:none; color:white; width:35px; height:35px; border-radius:8px;" onclick="cerrarChatAI()">←</button>
+        <span style="font-weight:bold; color:white; margin-left:10px;">✨ DocuFácil AI Expert</span>
     </div>
     <div class="chat-messages" id="chat-messages"></div>
+    
+    <div id="ai-options-area" style="padding: 10px 15px; background: #1a1a1a; border-top: 1px solid #333; display: none; flex-direction: column; gap: 10px;">
+        <p style="font-size: 12px; color: #aaa; text-align: center;">Selecciona el margen para tu documento A4:</p>
+        <div class="margin-selector">
+            <button class="btn-margin active" id="margin-1" onclick="setMargin(1)">Margen 1.0 cm</button>
+            <button class="btn-margin" id="margin-05" onclick="setMargin(0.5)">Margen 0.5 cm</button>
+        </div>
+    </div>
+
     <div class="chat-input-area">
         <input type="text" id="chat-input" class="chat-input" placeholder="Escribe o usa el micro..." oninput="actualizarBotonChat()">
         <button id="btn-chat-action" class="btn-chat-action" onclick="accionChat()">🎤</button>
@@ -251,11 +240,14 @@
 </div>
 
 <div id="modal-preview-ai" class="modal-overlay">
-    <div class="modal-content">
-        <h3>Previsualización</h3>
-        <div id="preview-content" style="background:white; color:black; padding:15px; border-radius:5px; max-height:300px; overflow-y:auto; white-space:pre-wrap;"></div>
-        <button class="btn-generar" onclick="generarPdfAI()">✅ Descargar PDF (1 Crédito)</button>
-        <button class="btn-volver" onclick="document.getElementById('modal-preview-ai').style.display='none'">Cerrar</button>
+    <div class="modal-content" style="max-width: 450px;">
+        <h3>Previsualización y Edición</h3>
+        <p style="font-size: 12px; color: #aaa; text-align: center; margin-bottom: 10px;">Puedes editar el texto antes de pasarlo al editor final.</p>
+        <div id="preview-content" style="background:white; color:black; padding:10px; border-radius:5px; max-height:350px; overflow-y:auto;"></div>
+        <div class="modal-actions" style="flex-direction: column;">
+            <button class="btn-generar" onclick="enviarAlEditorFinal()" style="background:#2ecc71; color:black; width:100%; padding:15px;">🚀 Pasar al Editor Final (Firma/Sellos)</button>
+            <button class="btn-volver" onclick="document.getElementById('modal-preview-ai').style.display='none'" style="background:transparent; color:#aaa; border:1px solid #555; width:100%; margin-top:5px;">Seguir editando en Chat</button>
+        </div>
     </div>
 </div>
 
@@ -266,8 +258,6 @@
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
     let usuarioActual = null;
-    let plantillaSeleccionada = null;
-    let plantillasGlobales = [];
     let freePdfDoc = null;
     let freeCanvasScales = {};
     let elementosFlotantes = []; 
@@ -284,6 +274,7 @@
     let chatHistory = [];
     let isAITyping = false;
     let currentDocumentDraft = null;
+    let selectedMargin = 1.0;
     window.pdfGlobalScale = 1;
     let initialPdfDist = 0;
     let initialPdfScale = 1;
@@ -335,7 +326,7 @@
         window.scrollTo(0, 0);
     }
 
-    function volverAHome() { plantillaSeleccionada = null; showScreen('screen-home'); }
+    function volverAHome() { showScreen('screen-home'); }
 
     async function activarCodigoBoton() {
         const codigo = document.getElementById('input-codigo').value.trim();
@@ -377,7 +368,6 @@
 
     async function cargarPlantillas() {
         const { data, error } = await supabase.from('plantillas').select('*');
-        plantillasGlobales = data || [];
         renderizarPlantillas();
     }
 
@@ -430,8 +420,11 @@
 
     document.getElementById('free-pdf-upload').addEventListener('change', async function(e) {
         if (!e.target.files.length) return;
-        const file = e.target.files[0];
-        const arrayBuffer = await file.arrayBuffer();
+        cargarPdfEnEditor(e.target.files[0]);
+    });
+
+    async function cargarPdfEnEditor(fileOrBlob) {
+        const arrayBuffer = await (fileOrBlob instanceof Blob ? fileOrBlob.arrayBuffer() : fileOrBlob.arrayBuffer());
         freePdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
         const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
         const pdf = await loadingTask.promise;
@@ -467,7 +460,8 @@
         const btnGenerar = document.getElementById('btn-generar-free');
         btnGenerar.innerText = `✨ Descargar PDF Lleno (${freePdfPageCount} Créditos)`;
         btnGenerar.style.display = 'block';
-    });
+        showScreen('screen-rellenado-libre');
+    }
 
     function toggleMenuMas() {
         menuMasAbierto = !menuMasAbierto;
@@ -478,8 +472,12 @@
     function getViewportCenter() {
         const container = document.getElementById('free-canvas-container');
         const scrollTop = container.scrollTop;
+        const scrollLeft = container.scrollLeft;
         const containerHeight = container.clientHeight;
+        const containerWidth = container.clientWidth;
+        
         const centerY = scrollTop + (containerHeight / 2);
+        const centerX = scrollLeft + (containerWidth / 2);
         
         const wrappers = document.querySelectorAll('.pdf-page-wrapper');
         let targetWrapper = wrappers[0];
@@ -492,8 +490,9 @@
             }
         });
 
-        const relativeY = (centerY - targetWrapper.offsetTop);
-        const relativeX = targetWrapper.offsetWidth / 2;
+        // Ajustar coordenadas relativas a la hoja y al zoom
+        const relativeY = (centerY - targetWrapper.offsetTop) / window.pdfGlobalScale;
+        const relativeX = (centerX - targetWrapper.offsetLeft) / window.pdfGlobalScale;
         
         return { 
             wrapper: targetWrapper, 
@@ -743,15 +742,9 @@
             for (const el of elementosFlotantes) {
                 const page = pages[el.pageNum - 1];
                 const { width, height } = page.getSize();
-                
-                // Mapeo de coordenadas:
-                // El canvas en pantalla tiene un ancho visual (wrapper.offsetWidth)
-                // El PDF real tiene un ancho real (width)
                 const ratio = width / el.wrapper.parentElement.offsetWidth;
-                
                 const pdfX = el.wrapper.offsetLeft * ratio;
                 const pdfY = height - (el.wrapper.offsetTop * ratio) - (el.wrapper.offsetHeight * ratio);
-                
                 if (el.type === 'text') {
                     page.drawText(el.texto, { x: pdfX, y: pdfY, size: el.size * ratio, color: PDFLib.rgb(0, 0, 0) });
                 } else if (el.type === 'image') {
@@ -762,7 +755,7 @@
             const pagado = await descontarCredito(freePdfPageCount);
             if (!pagado) throw new Error("No se pudo procesar el pago.");
             const pdfBytes = await freePdfDoc.save();
-            download(pdfBytes, "Documento_Lleno.pdf", "application/pdf");
+            download(pdfBytes, "Documento_Final.pdf", "application/pdf");
             alert("✅ ¡Documento descargado!");
             volverAHome();
         } catch (err) { alert("Error: " + err.message); }
@@ -770,10 +763,21 @@
     }
 
     function mostrarScreen(id) {
-        if(id === 'screen-ai-chat') { document.getElementById(id).classList.add('active'); }
+        if(id === 'screen-ai-chat') { 
+            document.getElementById(id).classList.add('active'); 
+            if (chatHistory.length === 0) {
+                addMessage('ai', '¡Hola! Soy tu experto en documentos. ¿Qué necesitas redactar hoy? (Contratos, cartas, solicitudes, etc.)');
+                document.getElementById('ai-options-area').style.display = 'flex';
+            }
+        }
         else { showScreen(id); }
     }
     function cerrarChatAI() { document.getElementById('screen-ai-chat').classList.remove('active'); }
+    function setMargin(val) {
+        selectedMargin = val;
+        document.getElementById('margin-1').classList.toggle('active', val === 1);
+        document.getElementById('margin-05').classList.toggle('active', val === 0.5);
+    }
     function accionChat() {
         const input = document.getElementById('chat-input');
         if (input.value.trim() === "") { iniciarVozChat(); } else { enviarMensajeAI(); }
@@ -826,37 +830,64 @@
         } catch (error) { addMessage('ai', '❌ Error: ' + error.message); }
         finally { isAITyping = false; }
     }
-    async function generarPdfAI() {
-        const textarea = document.getElementById('edit-ai-content');
-        if (!textarea) return;
-        let text = textarea.value.trim();
-        if (!usuarioActual || usuarioActual.creditos < 1) return alert("Necesitas 1 crédito.");
-        try {
-            const pdfDoc = await PDFLib.PDFDocument.create();
-            let page = pdfDoc.addPage();
-            const { width, height } = page.getSize();
-            const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
-            const margin = 50; let currentY = height - margin;
-            const paragraphs = text.split('\n');
-            for (let para of paragraphs) {
-                if (para.trim() === "") { currentY -= 15; continue; }
-                page.drawText(para, { x: margin, y: currentY, size: 11, font: font, maxWidth: width - (margin * 2), lineHeight: 14 });
-                const lines = Math.ceil(font.widthOfTextAtSize(para, 11) / (width - margin * 2));
-                currentY -= (lines * 14) + 12;
-                if (currentY < margin + 50) { page = pdfDoc.addPage(); currentY = height - margin; }
-            }
-            const pagado = await descontarCredito(1);
-            if (!pagado) return;
-            const pdfBytes = await pdfDoc.save();
-            download(pdfBytes, "Documento_AI.pdf", "application/pdf");
-            document.getElementById('modal-preview-ai').style.display = 'none';
-        } catch (e) { alert("Error: " + e.message); }
-    }
     function mostrarModalPreviewAI(content) {
         const modal = document.getElementById('modal-preview-ai');
         const preview = document.getElementById('preview-content');
         preview.innerHTML = `<textarea id="edit-ai-content" style="width:100%; height:300px; border:1px solid #ccc; padding:10px; font-family:serif; font-size:14px; resize:none; background:white; color:black;">${content}</textarea>`;
         modal.style.display = 'flex';
+    }
+    async function enviarAlEditorFinal() {
+        const textarea = document.getElementById('edit-ai-content');
+        if (!textarea) return;
+        let text = textarea.value.trim();
+        
+        try {
+            const pdfDoc = await PDFLib.PDFDocument.create();
+            let page = pdfDoc.addPage(PDFLib.PageSizes.A4);
+            const { width, height } = page.getSize();
+            const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+            
+            // Convertir cm a puntos (1 cm = 28.35 puntos)
+            const marginPoints = selectedMargin * 28.35;
+            let currentY = height - marginPoints;
+            const maxWidth = width - (marginPoints * 2);
+            
+            const paragraphs = text.split('\n');
+            for (let para of paragraphs) {
+                if (para.trim() === "") { currentY -= 15; continue; }
+                
+                const words = para.split(' ');
+                let line = '';
+                for (let word of words) {
+                    const testLine = line + word + ' ';
+                    if (font.widthOfTextAtSize(testLine, 11) > maxWidth) {
+                        page.drawText(line, { x: marginPoints, y: currentY, size: 11, font: font });
+                        currentY -= 14;
+                        line = word + ' ';
+                        if (currentY < marginPoints) {
+                            page = pdfDoc.addPage(PDFLib.PageSizes.A4);
+                            currentY = height - marginPoints;
+                        }
+                    } else {
+                        line = testLine;
+                    }
+                }
+                page.drawText(line, { x: marginPoints, y: currentY, size: 11, font: font });
+                currentY -= 20;
+                if (currentY < marginPoints) {
+                    page = pdfDoc.addPage(PDFLib.PageSizes.A4);
+                    currentY = height - marginPoints;
+                }
+            }
+            
+            const pdfBytes = await pdfDoc.save();
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            
+            document.getElementById('modal-preview-ai').style.display = 'none';
+            cerrarChatAI();
+            cargarPdfEnEditor(blob);
+            alert("✅ Documento cargado en el editor. Ahora puedes añadir firmas o sellos.");
+        } catch (e) { alert("Error al procesar: " + e.message); }
     }
     function guardarEnHistorial(texto) {
         if (texto && !historialTextos.includes(texto)) {
