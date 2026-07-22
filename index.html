@@ -357,41 +357,35 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
 
 
     
+    
 <div id="screen-rellenado-libre" class="screen" style="padding:0; background:#0a0a0a; display:none; flex-direction:column; height:100vh;">
     
-    <!-- NUEVA BARRA DE HERRAMIENTAS PROFESIONAL -->
-    <div style="position: sticky; top: 0; left: 0; right: 0; background: #1a1a1a; z-index: 1000; padding: 10px 15px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #333; box-shadow: 0 2px 10px rgba(0,0,0,0.5);">
-        <!-- Botón Atrás -->
-        <button onclick="volverAHome()" style="background:#333; border:none; color:white; width:40px; height:40px; border-radius:8px; font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center;" title="Volver al inicio">←</button>
-        
-        <div style="flex:1; color:#f1c40f; font-weight:bold; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Rellenar PDF</div>
-
-        <!-- Botón Volver a Cargar -->
-        <button onclick="abrirRellenadoLibre()" style="background:#34495e; border:none; color:white; padding:8px 12px; border-radius:6px; font-size:12px; font-weight:bold; cursor:pointer; display:flex; align-items:center; gap:5px;">
-            🔄 <span class="hide-mobile">Cambiar</span>
-        </button>
-
-        <!-- Botón Descargar (Se activa cuando hay PDF) -->
-        <button id="btn-generar-free" onclick="generarPdfLibre()" style="background:#2ecc71; border:none; color:black; padding:8px 15px; border-radius:6px; font-size:12px; font-weight:bold; cursor:pointer; display:none;">
-            ✅ Descargar
-        </button>
+   <!-- BARRA DE HERRAMIENTAS -->
+    <div style="position: sticky; top: 0; left: 0; right: 0; background: #1a1a1a; z-index: 1000; padding: 10px 15px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #333;">
+        <button onclick="volverAHome()" style="background:#333; border:none; color:white; width:40px; height:40px; border-radius:8px; font-size:20px;">←</button>
+        <div style="flex:1; color:#f1c40f; font-weight:bold; font-size:14px;">Rellenar PDF</div>
+        <button onclick="abrirRellenadoLibre()" style="background:#34495e; border:none; color:white; padding:8px 12px; border-radius:6px; font-size:12px; font-weight:bold;">🔄 Cambiar</button>
+        <button id="btn-generar-free" onclick="generarPdfLibre()" style="background:#2ecc71; border:none; color:black; padding:8px 15px; border-radius:6px; font-size:12px; font-weight:bold; display:none;">✅ Descargar</button>
     </div>
 
+
+
+    
     <!-- ÁREA DE CARGA (Se ve al inicio) -->
-    <div id="upload-placeholder" style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex:1; padding: 20px; text-align: center;">
+   <div id="upload-placeholder" style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex:1; padding: 20px; text-align: center;">
         <div style="background: #1e1e1e; border: 2px dashed #444; padding: 40px 20px; border-radius: 15px; width: 100%; max-width: 300px;">
             <div style="font-size: 50px; margin-bottom: 15px;">📄</div>
             <h3 style="color: #fff; margin-bottom: 10px;">Sube tu PDF</h3>
-            <p style="color: #aaa; font-size: 13px; margin-bottom: 20px;">Para rellenar, firmar o editar libremente</p>
-            <label for="free-pdf-upload" style="background: #3498db; color: white; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-weight: bold; display: inline-block;">
-                Seleccionar Archivo
-            </label>
+            <label for="free-pdf-upload" style="background: #3498db; color: white; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-weight: bold; display: inline-block;">Seleccionar Archivo</label>
             <input type="file" id="free-pdf-upload" accept="application/pdf" style="display: none;">
         </div>
     </div>
 
+
+    
     <!-- CONTENEDOR DEL PDF -->
-    <div id="free-canvas-container" class="canvas-container" style="display: none; flex:1; overflow:auto; padding-top:10px;">
+   <div id="free-canvas-container" class="canvas-container" style="display: none; flex:1; overflow:auto;"></div>
+
         <!-- Aquí se renderizan las páginas -->
     </div>
 
@@ -405,22 +399,17 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
 </div>
 
 
-
-    
    <button id="btn-float-add" onclick="toggleMenuMas()" ...>✚</button>
 
 
-
     
 </div>
 
 
     
-
-
-
-    
 </div>
+
+
 
 
 
@@ -728,6 +717,7 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
 
 
 
+    
 // ==========================================
 // 8. LÓGICA: RELLENADO LIBRE
 // ==========================================
@@ -738,14 +728,14 @@ function abrirRellenadoLibre() {
         return;
     }
     
-    document.getElementById('free-pdf-upload').value = '';
-    document.getElementById('free-canvas-container').innerHTML = ''; 
+   document.getElementById('upload-placeholder').style.display = 'flex';
     document.getElementById('free-canvas-container').style.display = 'none';
+    document.getElementById('free-canvas-container').innerHTML = '';
     document.getElementById('btn-generar-free').style.display = 'none';
+    document.getElementById('btn-float-add').style.display = 'none';
     
     elementosFlotantes = [];
     freeCanvasScales = {};
-    freePdfPageCount = 0;
     
     showScreen('screen-rellenado-libre');
 }
@@ -819,12 +809,14 @@ wrapper.addEventListener('click', function(ev) {
         
     }
     document.getElementById('upload-placeholder').style.display = 'none';
-    document.getElementById('free-canvas-container').style.display = 'flex';
-    document.getElementById('btn-generar-free').style.display = 'block'; // Muestra el botón descargar
-    document.getElementById('btn-float-add').style.display = 'block'; // Muestra el botón +
+document.getElementById('free-canvas-container').style.display = 'flex';
+document.getElementById('btn-generar-free').style.display = 'block'; // Muestra el botón de la barra
+document.getElementById('btn-float-add').style.display = 'block'; // Muestra el botón +
 });
 
     
+
+
     
 // ==========================================
 // ZOOM MEJORADO - ELEMENTOS FLOTANTES PEGADOS AL PDF
@@ -871,6 +863,9 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
     
+
+
+
     
 
     // ==========================================
