@@ -479,7 +479,7 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
 
     // Botón 1: Rellenar mi propio PDF
     contenedor.innerHTML += `
-        <div class="card ${claseBloqueado}" onclick="abrirRellenadoLibre()" style="border-color: #e67e22;">
+       <div class="card ${claseBloqueado}" onclick="showScreen('screen-rellenado-libre')" style="border-color: #e67e22;">
             <div class="card-icon">✍️</div>
             <div class="card-info">
                 <h3 style="color: #e67e22;">Rellenar mi propio PDF</h3>
@@ -752,10 +752,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     
 
-
-
-
-    
     // ==========================================
     // 8. LÓGICA: RELLENADO LIBRE (CARGA DE PDF)
     // ==========================================
@@ -784,7 +780,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const file = e.target.files[0];
         const arrayBuffer = await file.arrayBuffer();
         
+        // Cargamos el PDF con PDF-Lib para la descarga final
         freePdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
+        
+        // Cargamos el PDF con PDF.js para la visualización en pantalla
         const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
         const pdf = await loadingTask.promise;
         
@@ -798,57 +797,67 @@ document.addEventListener('DOMContentLoaded', () => {
         
         for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
             const page = await pdf.getPage(pageNum);
+            
+            // --- MEJORA DE NITIDEZ (HD) ---
+            // Usamos escala 2.0 para que al hacer zoom se vea claro
+            const viewportHD = page.getViewport({ scale: 2.0 });
+            
             const wrapper = document.createElement('div');
             wrapper.className = 'pdf-page-wrapper';
             wrapper.dataset.pageNum = pageNum;
+            wrapper.style.position = 'relative';
+            wrapper.style.width = '100%';
+            wrapper.style.maxWidth = (viewportHD.width / 2) + 'px'; // Tamaño visual normal
+            wrapper.style.margin = '0 auto 20px auto';
+            wrapper.style.backgroundColor = 'white';
+            wrapper.style.boxShadow = '0 4px 15px rgba(0,0,0,0.5)';
             
             const canvas = document.createElement('canvas');
             canvas.className = 'free-pdf-canvas';
+            const ctx = canvas.getContext('2d');
+            
+            // El canvas tiene el doble de píxeles (HD)
+            canvas.width = viewportHD.width;
+            canvas.height = viewportHD.height;
+            
+            // Pero se ve al tamaño de la pantalla
+            canvas.style.width = '100%';
+            canvas.style.height = 'auto';
+            canvas.style.display = 'block';
+            
+            // Guardamos la escala 2.0 para que la descarga sea precisa
+            freeCanvasScales[pageNum] = 2.0;
             
             wrapper.appendChild(canvas);
             container.appendChild(wrapper);
             
-            const ctx = canvas.getContext('2d');
-            const containerWidth = container.clientWidth - 20; 
-            const unscaledViewport = page.getViewport({ scale: 1 });
-            const scale = containerWidth / unscaledViewport.width;
-            freeCanvasScales[pageNum] = scale;
-            
-            const viewport = page.getViewport({ scale: scale });
-            canvas.width = viewport.width;
-            canvas.height = viewport.height;
-            
-            await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+            // Renderizamos la página en HD
+            await page.render({ canvasContext: ctx, viewport: viewportHD }).promise;
 
-
-            
-                                    // Evento para abrir el menú o deseleccionar al tocar la hoja
+            // Evento de clic corregido para alta resolución
             wrapper.addEventListener('click', function(ev) {
-                if (ev.target.closest('.floating-element')) return; // Si tocamos un elemento, ignorar
+                if (ev.target.closest('.floating-element')) return; 
                 
-                // Si hay un elemento seleccionado, lo deseleccionamos y NO abrimos el menú
                 const seleccionado = document.querySelector('.floating-element.selected');
                 if (seleccionado) {
                     document.querySelectorAll('.floating-element').forEach(el => el.classList.remove('selected'));
                     return;
                 }
 
-                const rect = this.getBoundingClientRect();
-                const x = (ev.clientX - rect.left) / window.pdfGlobalScale;
-                const y = (ev.clientY - rect.top) / window.pdfGlobalScale;
+                const rect = canvas.getBoundingClientRect();
+                // Calculamos la posición relativa al tamaño real del canvas HD
+                const x = (ev.clientX - rect.left) * (canvas.width / rect.width);
+                const y = (ev.clientY - rect.top) * (canvas.height / rect.height);
                 
                 mostrarMenuOpciones(this, x, y, pageNum);
             });
-
-
-
-            
         }
         
         const btnGenerar = document.getElementById('btn-generar-free');
         btnGenerar.innerText = `✨ Descargar PDF Lleno (${freePdfPageCount} Créditos)`;
         btnGenerar.style.display = 'block';
     });
+
 
     
 
@@ -1313,7 +1322,10 @@ function guardarFirma() {
                 const pdfHeight = targetPage.getHeight();
                 const scale = freeCanvasScales[item.pageNum];
                 
-                const pdfX = (item.wrapper.offsetLeft + 4) / scale;
+                // Dentro del bucle de elementosFlotantes en generarPdfLibre
+const pdfX = (item.wrapper.offsetLeft + 4) / (scale / 2);
+const pdfY = pdfHeight - ((item.wrapper.offsetTop + (item.size || 0) + 4) / (scale / 2));
+
                 
                 if (item.type === 'text' || item.type === 'symbol') {
                     const pdfY = pdfHeight - ((item.wrapper.offsetTop + item.size + 4) / scale);
