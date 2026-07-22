@@ -701,15 +701,31 @@ document.getElementById('free-pdf-upload').addEventListener('change', async func
         
         await page.render({ canvasContext: ctx, viewport: viewport }).promise;
 
-        wrapper.addEventListener('click', function(ev) {
-            if (ev.target.closest('.floating-element')) return;
-            
-            const rect = this.getBoundingClientRect();
-            const x = (ev.clientX - rect.left) / window.pdfGlobalScale;
-            const y = (ev.clientY - rect.top) / window.pdfGlobalScale;
-            
-            mostrarMenuOpciones(this, x, y, pageNum);
-        });
+
+
+        
+       // Dentro del bucle for de las páginas en el evento 'change'
+wrapper.addEventListener('click', function(ev) {
+    if (ev.target.closest('.floating-element')) return; 
+    
+    const seleccionado = document.querySelector('.floating-element.selected');
+    if (seleccionado) {
+        document.querySelectorAll('.floating-element').forEach(el => el.classList.remove('selected'));
+        return;
+    }
+
+    const rect = this.getBoundingClientRect();
+    // Guardamos la posición exacta donde tocó el dedo en la pantalla
+    const x = ev.clientX - rect.left;
+    const y = ev.clientY - rect.top;
+    
+    // Guardamos estas coordenadas para usarlas al "pegar"
+    clickCoords = { x, y, pageNum: pageNum, wrapper: this };
+    
+    mostrarMenuOpciones(this, x, y, pageNum);
+});
+
+        
     }
     document.getElementById('upload-placeholder').style.display = 'none'; // Oculta el botón de carga
     document.getElementById('free-canvas-container').style.display = 'flex'; // Muestra el PDF
@@ -960,19 +976,38 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+
+    
     function guardarTextoModal() {
-        const texto = document.getElementById('input-texto-modal').value.trim();
-        if (!texto) return cerrarModalTexto();
+    const texto = document.getElementById('input-texto-modal').value;
+    if (!texto || !clickCoords) return;
 
-        // NUEVO: Guardar el tamaño elegido en la memoria
-        lastTextSize = parseInt(document.getElementById('input-size-texto').value) || 14;
+    const el = document.createElement('div');
+    el.className = 'floating-element';
+    el.style.left = clickCoords.x + 'px';
+    el.style.top = clickCoords.y + 'px';
+    
+    const size = document.getElementById('input-size-texto').value || 14;
+    
+    el.innerHTML = `
+        <div class="floating-text" style="font-size:${size}px;">${texto}</div>
+        <div class="btn-delete-float" onclick="this.parentElement.remove()">×</div>
+    `;
 
-        guardarEnHistorial(texto);
-        // NUEVO: Enviamos el tamaño (lastTextSize) a la función creadora
-        crearElementoFlotante(currentTarget.parent, currentTarget.x, currentTarget.y, currentTarget.pageNum, 'text', texto, { ...textFormat }, lastTextSize);
-        cerrarModalTexto();
-    }
+    clickCoords.wrapper.appendChild(el);
+    
+    // Guardamos para el PDF final (aquí sí multiplicamos por 2 por ser HD)
+    elementosFlotantes.push({
+        tipo: 'texto',
+        contenido: texto,
+        x: clickCoords.x * 2, 
+        y: clickCoords.y * 2,
+        pageNum: clickCoords.pageNum,
+        size: size * 2
+    });
 
+    cerrarModalTexto();
+}
 
 
 
@@ -1072,26 +1107,38 @@ function cerrarModalFirma() {
     document.getElementById('modal-firma').style.display = 'none';
 }
 
+
+
     
 function guardarFirma() {
     const canvas = document.getElementById('canvas-firma');
-    const dataUrl = canvas.toDataURL('image/png', 0.92);
+    const dataUrl = canvas.toDataURL('image/png');
     
-    // Cerrar modal
-    document.getElementById('modal-firma').style.display = 'none';
+    const el = document.createElement('div');
+    el.className = 'floating-element';
+    el.style.left = clickCoords.x + 'px';
+    el.style.top = clickCoords.y + 'px';
     
-    // Crear elemento flotante (imagen) en el PDF
-    if (currentTarget) {
-        crearElementoFlotante(
-            currentTarget.parent, 
-            currentTarget.x, 
-            currentTarget.y, 
-            currentTarget.pageNum, 
-            'image', 
-            dataUrl
-        );
-    }
+    el.innerHTML = `
+        <img src="${dataUrl}" style="width:100px;" class="floating-img">
+        <div class="btn-delete-float" onclick="this.parentElement.remove()">×</div>
+    `;
+
+    clickCoords.wrapper.appendChild(el);
+    
+    elementosFlotantes.push({
+        tipo: 'firma',
+        contenido: dataUrl,
+        x: clickCoords.x * 2,
+        y: clickCoords.y * 2,
+        pageNum: clickCoords.pageNum,
+        width: 200, // Ajustado para HD
+        height: 100
+    });
+
+    cerrarModalFirma();
 }
+
     
 
 
