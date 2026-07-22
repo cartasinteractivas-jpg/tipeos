@@ -191,6 +191,23 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
     transition: all 0.3s;
 }
 
+
+
+.canvas-container {
+    width: 100%;
+    height: calc(100vh - 60px); /* Resta el alto de la barra superior */
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #000;
+}
+
+
+
+
+
         
     </style>
 </head>
@@ -340,30 +357,46 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
 
 
     
-<div id="screen-rellenado-libre" class="screen" style="padding:0; background:#0a0a0a;">
-    <!-- Barra superior -->
-    <div style="position: fixed; top: 0; left: 0; right: 0; background: rgba(0,0,0,0.9); z-index: 100; padding: 12px 15px; display: flex; align-items: center; border-bottom: 1px solid #333;">
-        <button onclick="volverAHome()" style="background:none; border:none; color:white; font-size:24px;">←</button>
-        <div style="flex:1; text-align:center; color:#f1c40f; font-weight:bold;">Rellenar PDF</div>
-    </div>
-
-    <!-- ÁREA DE CARGA (Se ve cuando no hay PDF) -->
-    <div id="upload-placeholder" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; padding: 20px; text-align: center;">
-        <div style="font-size: 60px; margin-bottom: 20px;">📄</div>
-        <h3 style="color: white; margin-bottom: 10px;">Sube tu documento</h3>
-        <p style="color: #aaa; margin-bottom: 20px;">Toca el botón de abajo para seleccionar el PDF que quieres rellenar o firmar.</p>
+<div id="screen-rellenado-libre" class="screen" style="padding:0; background:#0a0a0a; display:none; flex-direction:column; height:100vh;">
+    
+    <!-- NUEVA BARRA DE HERRAMIENTAS PROFESIONAL -->
+    <div style="position: sticky; top: 0; left: 0; right: 0; background: #1a1a1a; z-index: 1000; padding: 10px 15px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #333; box-shadow: 0 2px 10px rgba(0,0,0,0.5);">
+        <!-- Botón Atrás -->
+        <button onclick="volverAHome()" style="background:#333; border:none; color:white; width:40px; height:40px; border-radius:8px; font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center;" title="Volver al inicio">←</button>
         
-        <!-- El input real está oculto, el label es el botón visual -->
-        <input type="file" id="free-pdf-upload" accept="application/pdf" style="display: none;">
-        <label for="free-pdf-upload" style="background: #3498db; color: white; padding: 15px 30px; border-radius: 30px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4);">
-            📁 Seleccionar PDF
-        </label>
+        <div style="flex:1; color:#f1c40f; font-weight:bold; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Rellenar PDF</div>
+
+        <!-- Botón Volver a Cargar -->
+        <button onclick="abrirRellenadoLibre()" style="background:#34495e; border:none; color:white; padding:8px 12px; border-radius:6px; font-size:12px; font-weight:bold; cursor:pointer; display:flex; align-items:center; gap:5px;">
+            🔄 <span class="hide-mobile">Cambiar</span>
+        </button>
+
+        <!-- Botón Descargar (Se activa cuando hay PDF) -->
+        <button id="btn-generar-free" onclick="generarPdfLibre()" style="background:#2ecc71; border:none; color:black; padding:8px 15px; border-radius:6px; font-size:12px; font-weight:bold; cursor:pointer; display:none;">
+            ✅ Descargar
+        </button>
     </div>
 
-    <!-- Contenedor del PDF (Se llena al cargar) -->
-    <div id="free-canvas-container" style="padding-top: 60px; display: none; flex-direction: column; background:#111;"></div>
+    <!-- ÁREA DE CARGA (Se ve al inicio) -->
+    <div id="upload-placeholder" style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex:1; padding: 20px; text-align: center;">
+        <div style="background: #1e1e1e; border: 2px dashed #444; padding: 40px 20px; border-radius: 15px; width: 100%; max-width: 300px;">
+            <div style="font-size: 50px; margin-bottom: 15px;">📄</div>
+            <h3 style="color: #fff; margin-bottom: 10px;">Sube tu PDF</h3>
+            <p style="color: #aaa; font-size: 13px; margin-bottom: 20px;">Para rellenar, firmar o editar libremente</p>
+            <label for="free-pdf-upload" style="background: #3498db; color: white; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-weight: bold; display: inline-block;">
+                Seleccionar Archivo
+            </label>
+            <input type="file" id="free-pdf-upload" accept="application/pdf" style="display: none;">
+        </div>
+    </div>
+
+    <!-- CONTENEDOR DEL PDF -->
+    <div id="free-canvas-container" class="canvas-container" style="display: none; flex:1; overflow:auto; padding-top:10px;">
+        <!-- Aquí se renderizan las páginas -->
+    </div>
 
 
+    
     
       <!-- Botón flotante y su menú (Línea 342 aprox) -->
    <div id="menu-flotante-opciones" style="display: none; position: fixed; bottom: 85px; right: 20px; flex-direction: column; gap: 10px; z-index: 200;">
@@ -785,10 +818,10 @@ wrapper.addEventListener('click', function(ev) {
 
         
     }
-    document.getElementById('upload-placeholder').style.display = 'none'; // Oculta el botón de carga
-    document.getElementById('free-canvas-container').style.display = 'flex'; // Muestra el PDF
+    document.getElementById('upload-placeholder').style.display = 'none';
+    document.getElementById('free-canvas-container').style.display = 'flex';
+    document.getElementById('btn-generar-free').style.display = 'block'; // Muestra el botón descargar
     document.getElementById('btn-float-add').style.display = 'block'; // Muestra el botón +
-    document.getElementById('btn-generar-free').style.display = 'block';
 });
 
     
