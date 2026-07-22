@@ -66,7 +66,7 @@
 
         /* --- RELLENADO LIBRE --- */
         .canvas-container { width: 100%; height: calc(100vh - 60px); overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; align-items: center; background: #000; position: relative; padding: 10px; }
-        .pdf-page-wrapper { position: relative; background: white; box-shadow: 0 4px 15px rgba(0,0,0,0.5); margin-bottom: 20px; transform-origin: top left; }
+        .pdf-page-wrapper { position: relative; background: white; box-shadow: 0 4px 15px rgba(0,0,0,0.5); margin-bottom: 20px; transform-origin: top left; width: 100% !important; max-width: 100%; }
         .free-pdf-canvas { display: block; width: 100%; height: auto; }
         
         /* Elementos Flotantes */
@@ -157,7 +157,7 @@
 
     <!-- PANTALLA: RELLENADO LIBRE -->
     <div id="screen-rellenado-libre" class="screen" style="padding:0; background:#121212; flex-direction:column; height:100vh; position:relative;">
-        <div style="background: #1a1a1a; padding: 12px 15px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #333; width: 100%;">
+        <div style="background: #1a1a1a; padding: 12px 15px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #333; width: 100%; z-index: 100;">
             <button onclick="volverAHome()" style="background:#333; border:none; color:white; width:35px; height:35px; border-radius:8px; font-size:18px; cursor:pointer;">←</button>
             <div style="flex:1; color:#f1c40f; font-weight:bold; font-size:14px;">Rellenar PDF</div>
             <button onclick="abrirRellenadoLibre()" style="background:#34495e; border:none; color:white; padding:8px 10px; border-radius:6px; font-size:11px; font-weight:bold;">🔄 Cargar PDF</button>
@@ -175,9 +175,10 @@
 
         <div id="free-canvas-container" class="canvas-container" style="display: none;"></div>
 
-        <button id="btn-float-add" onclick="toggleMenuMas()" style="position: absolute; bottom: 25px; right: 20px; background: #3498db; color: white; border: none; width: 56px; height: 56px; border-radius: 50%; font-size: 28px; z-index: 2001; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: none;">✚</button>
+        <!-- BOTÓN FLOTANTE FIJO -->
+        <button id="btn-float-add" onclick="toggleMenuMas()" style="position: fixed; bottom: 25px; right: 20px; background: #3498db; color: white; border: none; width: 56px; height: 56px; border-radius: 50%; font-size: 28px; z-index: 2001; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: none;">✚</button>
 
-        <div id="menu-flotante-opciones" style="display: none; position: absolute; bottom: 90px; right: 20px; flex-direction: column; gap: 10px; z-index: 2000;">
+        <div id="menu-flotante-opciones" style="display: none; position: fixed; bottom: 90px; right: 20px; flex-direction: column; gap: 10px; z-index: 2000;">
             <button onclick="abrirModalTextoDesdeMas()" style="background: #3498db; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; width: 120px; display: flex; align-items: center; gap: 8px; justify-content: center;">📝 Texto</button>
             <button onclick="abrirModalFirmaDesdeMas()" style="background: #e67e22; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; width: 120px; display: flex; align-items: center; gap: 8px; justify-content: center;">✍️ Firma</button>
             <button onclick="abrirModalSimbolosDesdeMas()" style="background: #9b59b6; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; width: 120px; display: flex; align-items: center; gap: 8px; justify-content: center;">✅ Símbolo</button>
@@ -447,16 +448,12 @@
             const wrapper = document.createElement('div');
             wrapper.className = 'pdf-page-wrapper';
             wrapper.dataset.pageNum = pageNum;
-            wrapper.style.width = (viewportHD.width / 2) + 'px';
-            wrapper.style.height = (viewportHD.height / 2) + 'px';
             
             const canvas = document.createElement('canvas');
             canvas.className = 'free-pdf-canvas';
             const ctx = canvas.getContext('2d');
             canvas.width = viewportHD.width;
             canvas.height = viewportHD.height;
-            canvas.style.width = '100%';
-            canvas.style.height = '100%';
             freeCanvasScales[pageNum] = 2.0;
             wrapper.appendChild(canvas);
             container.appendChild(wrapper);
@@ -486,10 +483,8 @@
         
         const wrappers = document.querySelectorAll('.pdf-page-wrapper');
         let targetWrapper = wrappers[0];
-        let minDiff = Infinity;
         
         wrappers.forEach(w => {
-            const rect = w.getBoundingClientRect();
             const wrapperTop = w.offsetTop;
             const wrapperBottom = wrapperTop + w.offsetHeight;
             if (centerY >= wrapperTop && centerY <= wrapperBottom) {
@@ -502,8 +497,8 @@
         
         return { 
             wrapper: targetWrapper, 
-            x: relativeX * 2, // Multiplicamos por 2 por la escala HD
-            y: relativeY * 2, 
+            x: relativeX, 
+            y: relativeY, 
             pageNum: parseInt(targetWrapper.dataset.pageNum) 
         };
     }
@@ -639,10 +634,9 @@
     function crearElementoFlotante(parent, x, y, pageNum, tipo, contenido, formato = null, customSize = null) {
         const wrapper = document.createElement('div');
         wrapper.className = 'floating-element';
-        // Ajustamos para que aparezca centrado (restando la mitad del tamaño estimado)
         const initialSize = customSize || (tipo === 'text' ? 14 : 120);
-        wrapper.style.left = `${(x / 2) - (initialSize / 2)}px`;
-        wrapper.style.top = `${(y / 2) - (initialSize / 2)}px`;
+        wrapper.style.left = `${x - (initialSize / 2)}px`;
+        wrapper.style.top = `${y - (initialSize / 2)}px`;
         wrapper.style.position = 'absolute';
         wrapper.style.transform = `scale(${window.pdfGlobalScale})`;
         const resizeHandle = document.createElement('div');
@@ -749,14 +743,20 @@
             for (const el of elementosFlotantes) {
                 const page = pages[el.pageNum - 1];
                 const { width, height } = page.getSize();
-                const pdfX = el.wrapper.offsetLeft;
-                const pdfY = height - el.wrapper.offsetTop - el.wrapper.offsetHeight;
+                
+                // Mapeo de coordenadas:
+                // El canvas en pantalla tiene un ancho visual (wrapper.offsetWidth)
+                // El PDF real tiene un ancho real (width)
+                const ratio = width / el.wrapper.parentElement.offsetWidth;
+                
+                const pdfX = el.wrapper.offsetLeft * ratio;
+                const pdfY = height - (el.wrapper.offsetTop * ratio) - (el.wrapper.offsetHeight * ratio);
                 
                 if (el.type === 'text') {
-                    page.drawText(el.texto, { x: pdfX, y: pdfY, size: el.size, color: PDFLib.rgb(0, 0, 0) });
+                    page.drawText(el.texto, { x: pdfX, y: pdfY, size: el.size * ratio, color: PDFLib.rgb(0, 0, 0) });
                 } else if (el.type === 'image') {
                     const img = await freePdfDoc.embedPng(el.dataUrl);
-                    page.drawImage(img, { x: pdfX, y: pdfY, width: el.size, height: el.wrapper.offsetHeight });
+                    page.drawImage(img, { x: pdfX, y: pdfY, width: el.size * ratio, height: (el.wrapper.offsetHeight * ratio) });
                 }
             }
             const pagado = await descontarCredito(freePdfPageCount);
