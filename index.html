@@ -327,24 +327,36 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
 
 
     
-<!-- PANTALLA 3: RELLENADO LIBRE - DISEÑO MEJORADO -->
 <div id="screen-rellenado-libre" class="screen" style="padding:0; background:#0a0a0a;">
-    
-    <!-- Barra superior flotante -->
-    <div style="position: fixed; top: 0; left: 0; right: 0; background: rgba(0,0,0,0.85); z-index: 100; padding: 12px 15px; display: flex; align-items: center; border-bottom: 1px solid #333;">
-        <button onclick="volverAHome()" style="background:none; border:none; color:white; font-size:24px; padding:5px 10px;">←</button>
+    <!-- Barra superior -->
+    <div style="position: fixed; top: 0; left: 0; right: 0; background: rgba(0,0,0,0.9); z-index: 100; padding: 12px 15px; display: flex; align-items: center; border-bottom: 1px solid #333;">
+        <button onclick="volverAHome()" style="background:none; border:none; color:white; font-size:24px;">←</button>
         <div style="flex:1; text-align:center; color:#f1c40f; font-weight:bold;">Rellenar PDF</div>
     </div>
 
-    <!-- Contenedor del PDF -->
-    <div id="free-canvas-container" style="padding-top: 60px; height: 100vh; overflow: auto; background:#111;"></div>
+    <!-- ÁREA DE CARGA (Se ve cuando no hay PDF) -->
+    <div id="upload-placeholder" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; padding: 20px; text-align: center;">
+        <div style="font-size: 60px; margin-bottom: 20px;">📄</div>
+        <h3 style="color: white; margin-bottom: 10px;">Sube tu documento</h3>
+        <p style="color: #aaa; margin-bottom: 20px;">Toca el botón de abajo para seleccionar el PDF que quieres rellenar o firmar.</p>
+        
+        <!-- El input real está oculto, el label es el botón visual -->
+        <input type="file" id="free-pdf-upload" accept="application/pdf" style="display: none;">
+        <label for="free-pdf-upload" style="background: #3498db; color: white; padding: 15px 30px; border-radius: 30px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4);">
+            📁 Seleccionar PDF
+        </label>
+    </div>
 
-    <!-- Botón flotante para añadir (opcional) -->
-    <button onclick="mostrarMenuFlotante()" 
-            style="position: fixed; bottom: 20px; right: 20px; background: #3498db; color: white; border: none; width: 56px; height: 56px; border-radius: 50%; font-size: 28px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 150;">
+    <!-- Contenedor del PDF (Se llena al cargar) -->
+    <div id="free-canvas-container" style="padding-top: 60px; display: none; flex-direction: column; background:#111;"></div>
+
+    <!-- Botón flotante para añadir elementos (Solo se ve cuando hay PDF) -->
+    <button id="btn-float-add" onclick="mostrarMenuFlotante()" 
+            style="position: fixed; bottom: 20px; right: 20px; background: #3498db; color: white; border: none; width: 56px; height: 56px; border-radius: 50%; font-size: 28px; display: none; z-index: 150;">
         ✚
     </button>
 </div>
+
 
     
 
@@ -699,7 +711,9 @@ document.getElementById('free-pdf-upload').addEventListener('change', async func
             mostrarMenuOpciones(this, x, y, pageNum);
         });
     }
-    
+    document.getElementById('upload-placeholder').style.display = 'none'; // Oculta el botón de carga
+    document.getElementById('free-canvas-container').style.display = 'flex'; // Muestra el PDF
+    document.getElementById('btn-float-add').style.display = 'block'; // Muestra el botón +
     document.getElementById('btn-generar-free').style.display = 'block';
 });
 
@@ -1397,15 +1411,37 @@ const pdfY = pdfHeight - ((item.wrapper.offsetTop + (item.size || 0) + 4) / (sca
         document.getElementById('screen-ai-chat').classList.remove('active');
     }
 
-    function actualizarBotonChat() {
-        const input = document.getElementById('chat-input');
-        const btn = document.getElementById('btn-chat-action');
-        if (!input || !btn) return;
-        btn.innerText = input.value.trim() === "" ? "🎤" : "➤";
-        btn.style.background = input.value.trim() === "" ? "#3498db" : "#2ecc71";
+
+
+function accionChat() {
+    const input = document.getElementById('chat-input');
+    const texto = input.value.trim();
+    
+    if (texto === "") {
+        iniciarVozChat(); // Si está vacío, usa el micro
+    } else {
+        enviarMensajeAI(); // Si tiene texto, envía
     }
+}
 
 
+
+
+    
+    function actualizarBotonChat() {
+    const input = document.getElementById('chat-input');
+    const btn = document.getElementById('btn-chat-action');
+    if (input.value.trim() !== "") {
+        btn.innerHTML = "➤"; // Icono de enviar
+        btn.style.background = "#2ecc71"; // Color verde
+    } else {
+        btn.innerHTML = "🎤"; // Icono de micro
+        btn.style.background = "#3498db"; // Color azul
+    }
+}
+
+// 3. Vincula el evento 'input' en tu DOMContentLoaded
+document.getElementById('chat-input').addEventListener('input', actualizarBotonChat);
 
 
 
@@ -1497,11 +1533,7 @@ function addMessage(sender, text) {
 
 
     
-    function accionChat() {
-        const input = document.getElementById('chat-input');
-        if (input.value.trim() === "") iniciarVozChat();
-        else enviarMensajeAI();
-    }
+   
 
 
 
