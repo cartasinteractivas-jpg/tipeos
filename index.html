@@ -82,17 +82,30 @@
         .floating-element:hover, .floating-element:active { border: 1px dashed #3498db; background: rgba(255,255,255,0.8); }
         .floating-element:active { cursor: grabbing; }
 
+
+        
                 /* Nuevo: Estado Seleccionado */
         .floating-element.selected { border: 2px dashed #3498db !important; background: rgba(255,255,255,0.9); }
-        .floating-element.selected .btn-delete-float, .floating-element.selected .resize-handle { display: flex !important; }
+.floating-element.selected .btn-delete-float, 
+.floating-element.selected .resize-handle { display: flex !important; }
 
         
         .floating-text { color: #000; font-family: sans-serif; white-space: nowrap; pointer-events: none; user-select: none; }
         .floating-img { pointer-events: none; user-select: none; }
         
         /* Botón de borrar y tirador de tamaño */
+       
         .btn-delete-float { position: absolute; top: -10px; right: -10px; background: #e74c3c; color: white; border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 10px; font-weight: bold; cursor: pointer; display: none; justify-content: center; align-items: center; z-index: 50; }
-        .resize-handle { position: absolute; bottom: -8px; right: -8px; width: 16px; height: 16px; background: #3498db; border-radius: 50%; cursor: nwse-resize; display: none; z-index: 50; border: 2px solid white; }
+       
+
+.resize-handle { 
+    position: absolute; bottom: -8px; right: -8px; 
+    width: 16px; height: 16px; background: #3498db; 
+    border-radius: 50%; cursor: nwse-resize; 
+    display: none; z-index: 50; border: 2px solid white; 
+}
+
+        
         .floating-element:hover .btn-delete-float, .floating-element:hover .resize-handle { display: flex; }
 
         /* --- MODALES --- */
@@ -1190,15 +1203,17 @@ function cerrarModalFirma() {
     // 11. CREADOR DE ELEMENTOS Y MOTOR INTERACTIVO
     // ==========================================
     // NUEVO: Añadimos "customSize" como último parámetro
- function crearElementoFlotante(parent, x, y, pageNum, tipo, contenido, formato = null, customSize = null) {
+function crearElementoFlotante(parent, x, y, pageNum, tipo, contenido, formato = null, customSize = null) {
     const wrapper = document.createElement('div');
     wrapper.className = 'floating-element';
     wrapper.style.left = `${x}px`;
     wrapper.style.top = `${y}px`;
     wrapper.style.position = 'absolute';
-    wrapper.style.zIndex = '100';
 
-    let elData = { wrapper, type: tipo, pageNum }; 
+    const resizeHandle = document.createElement('div');
+    resizeHandle.className = 'resize-handle';
+
+    let elData = { wrapper, type: tipo, pageNum };
     let domElement;
 
     if (tipo === 'text') {
@@ -1220,143 +1235,124 @@ function cerrarModalFirma() {
 
     const btnDelete = document.createElement('div');
     btnDelete.innerHTML = '×';
-    btnDelete.style = "position:absolute; top:-10px; right:-10px; background:red; color:white; border-radius:50%; width:20px; height:20px; text-align:center; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:110;";
-    btnDelete.onclick = (e) => { 
-        e.stopPropagation();
-        wrapper.remove(); 
-        elementosFlotantes = elementosFlotantes.filter(i => i !== elData); 
-    };
+    btnDelete.className = 'btn-delete-float';
+    btnDelete.onclick = (e) => { e.stopPropagation(); wrapper.remove(); elementosFlotantes = elementosFlotantes.filter(i => i !== elData); };
 
     wrapper.appendChild(domElement);
     wrapper.appendChild(btnDelete);
+    wrapper.appendChild(resizeHandle); // Añadimos el tirador
     parent.appendChild(wrapper);
 
-    // Hacerlo arrastrable con la función que ya tienes
-    if (typeof hacerElementoArrastrable === 'function') {
-        hacerElementoArrastrable(wrapper);
-    }
-    
+    // Lógica de Selección: Al tocar se selecciona
+    const seleccionar = (e) => {
+        e.stopPropagation();
+        document.querySelectorAll('.floating-element').forEach(el => el.classList.remove('selected'));
+        wrapper.classList.add('selected');
+    };
+    wrapper.addEventListener('mousedown', seleccionar);
+    wrapper.addEventListener('touchstart', seleccionar);
+
+    // Hacerlo interactivo (Arrastrar y Agrandar)
+    hacerInteractivo(wrapper, elData, resizeHandle);
     elementosFlotantes.push(elData);
 }
 
 
+function hacerInteractivo(wrapper, elData, resizeHandle) {
+    let isDragging = false, isResizing = false;
+    let startX, startY, initialLeft, initialTop;
+    let initialDistance = 0, initialSize = 0;
 
-    
-    
-    function hacerInteractivo(wrapper, elData, resizeHandle) {
-        let isDragging = false, isResizing = false;
-        let startX, startY, initialLeft, initialTop;
-        let initialDistance = 0, initialSize = 0;
+    // --- INICIO DEL MOVIMIENTO O ZOOM ---
+    const start = (e) => {
+        // Si tocamos el botón de borrar, no hacemos nada aquí
+        if (e.target.classList.contains('btn-delete-float')) return;
+        
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
-        // --- ARRASTRE Y PINCH-TO-ZOOM ---
-        const startDrag = (e) => {
-            if(e.target === resizeHandle || e.target.tagName === 'BUTTON') return;
-            e.preventDefault(); e.stopPropagation();
-            
-            if (e.touches && e.touches.length === 2) {
-                isDragging = false;
-                initialDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-                initialSize = elData.size;
-                return;
-            }
+        // ZOOM CON DOS DEDOS
+        if (e.touches && e.touches.length === 2) {
+            isDragging = false;
+            initialDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+            initialSize = elData.size;
+            return;
+        }
 
+        // REDIMENSIÓN CON TIRADOR
+        if (e.target === resizeHandle) {
+            isResizing = true;
+            initialSize = elData.size;
+            startX = clientX;
+        } 
+        // ARRASTRE NORMAL
+        else {
             isDragging = true;
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            startX = clientX; startY = clientY;
-            initialLeft = parseInt(wrapper.style.left || wrapper.offsetLeft);
-            initialTop = parseInt(wrapper.style.top || wrapper.offsetTop);
-        };
+            startX = clientX;
+            startY = clientY;
+            initialLeft = wrapper.offsetLeft;
+            initialTop = wrapper.offsetTop;
+        }
+        e.stopPropagation();
+    };
 
-        const doDragOrZoom = (e) => {
-            if (e.touches && e.touches.length === 2 && initialDistance > 0) {
-                e.preventDefault(); e.stopPropagation();
-                const currentDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-                const scale = currentDistance / initialDistance;
-                let newSize = initialSize * scale;
+    // --- DURANTE EL MOVIMIENTO ---
+    const move = (e) => {
+        if (!isDragging && !isResizing && (!e.touches || e.touches.length !== 2)) return;
 
+        // LÓGICA ZOOM (DOS DEDOS)
+        if (e.touches && e.touches.length === 2 && initialDistance > 0) {
+            const currentDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+            const scale = currentDistance / initialDistance;
+            actualizarTamano(initialSize * scale);
+            e.preventDefault();
+            return;
+        }
 
-                // --- NUEVO LÍMITE MÁS PEQUEÑO (Dedos) ---
-                if (elData.type === 'text' || elData.type === 'symbol') {
-                    newSize = Math.max(4, Math.min(newSize, 100)); // Bajamos el mínimo de 8 a 4
-                    elData.element.style.fontSize = `${newSize}px`;
-                } else {
-                    newSize = Math.max(15, Math.min(newSize, 500)); // Bajamos el mínimo de 30 a 15
-                    elData.element.style.width = `${newSize}px`;
-                }
-                elData.size = newSize;
-                return;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
-
-
-                
-            }
-
-            if (!isDragging) return;
-            e.preventDefault(); e.stopPropagation();
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        // LÓGICA ARRASTRE
+        if (isDragging) {
             wrapper.style.left = (initialLeft + (clientX - startX)) + 'px';
             wrapper.style.top = (initialTop + (clientY - startY)) + 'px';
-        };
-
-        const stopDrag = (e) => {
-            if (isDragging || initialDistance > 0) {
-                e.stopPropagation();
-                isDragging = false;
-                initialDistance = 0;
-            }
-        };
-
-        // --- REDIMENSIÓN CON MOUSE (Tirador) ---
-        const startResize = (e) => {
-            e.preventDefault(); e.stopPropagation();
-            isResizing = true;
-            startX = e.clientX || e.touches[0].clientX;
-            initialSize = elData.size;
-        };
-
-        const doResize = (e) => {
-            if (!isResizing) return;
-            e.preventDefault(); e.stopPropagation();
-            const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+        } 
+        // LÓGICA REDIMENSIÓN (TIRADOR)
+        else if (isResizing) {
             const dx = clientX - startX;
+            actualizarTamano(initialSize + dx);
+        }
+        e.preventDefault();
+    };
 
-
-// --- NUEVO LÍMITE MÁS PEQUEÑO (Mouse) ---
-            let newSize = initialSize + dx;
-            if (elData.type === 'text' || elData.type === 'symbol') {
-                newSize = Math.max(4, Math.min(newSize, 100)); // Bajamos el mínimo de 8 a 4
-                elData.element.style.fontSize = `${newSize}px`;
-            } else {
-                newSize = Math.max(15, Math.min(newSize, 500)); // Bajamos el mínimo de 30 a 15
-                elData.element.style.width = `${newSize}px`;
-            }
-            elData.size = newSize;
-
-            
-           
-        };
-
-
-        
-        const stopResize = () => { isResizing = false; };
-
-        wrapper.addEventListener('mousedown', startDrag);
-        document.addEventListener('mousemove', doDragOrZoom);
-        document.addEventListener('mouseup', stopDrag);
-        wrapper.addEventListener('touchstart', startDrag, {passive: false});
-        document.addEventListener('touchmove', doDragOrZoom, {passive: false});
-        document.addEventListener('touchend', stopDrag);
-
-        resizeHandle.addEventListener('mousedown', startResize);
-        document.addEventListener('mousemove', doResize);
-        document.addEventListener('mouseup', stopResize);
-        resizeHandle.addEventListener('touchstart', startResize, {passive: false});
-        document.addEventListener('touchmove', doResize, {passive: false});
-        document.addEventListener('touchend', stopResize);
+    // FUNCIÓN AUXILIAR PARA CAMBIAR EL TAMAÑO
+    function actualizarTamano(newSize) {
+        if (elData.type === 'text') {
+            newSize = Math.max(6, Math.min(newSize, 120));
+            elData.wrapper.querySelector('.floating-text').style.fontSize = newSize + 'px';
+        } else if (elData.type === 'image') {
+            newSize = Math.max(20, Math.min(newSize, 600));
+            elData.wrapper.querySelector('img').style.width = newSize + 'px';
+        }
+        elData.size = newSize;
     }
 
+    const stop = () => {
+        isDragging = false;
+        isResizing = false;
+        initialDistance = 0;
+    };
+
+    // Eventos para Mouse y Touch
+    wrapper.addEventListener('mousedown', start);
+    wrapper.addEventListener('touchstart', start, {passive: false});
+    
+    document.addEventListener('mousemove', move);
+    document.addEventListener('touchmove', move, {passive: false});
+    
+    document.addEventListener('mouseup', stop);
+    document.addEventListener('touchend', stop);
+}
 
     
 async function generarPdfLibre() {
