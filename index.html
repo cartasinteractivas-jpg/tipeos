@@ -2,9 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <!-- ¡IMPORTANTE! Quité el "user-scalable=no" para permitir el Zoom con los dedos en todo el PDF -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
     <title>DocuFácil - Generador de Documentos</title>
     
     <!-- Supabase -->
@@ -20,7 +18,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: #121212; color: #ffffff; display: flex; justify-content: center; min-height: 100vh; }
         
-        .app-container { background: #1e1e1e; width: 100%; max-width: 480px; min-height: 100vh; display: flex; flex-direction: column; position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.5  ); }
+        .app-container { background: #1e1e1e; width: 100%; max-width: 480px; min-height: 100vh; display: flex; flex-direction: column; position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
         
         .header { background: #2c3e50; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; border-bottom: 2px solid #34495e; }
         .header h1 { color: #fff; font-size: 20px; display: flex; align-items: center; gap: 8px; }
@@ -52,7 +50,6 @@
         .card-info { flex: 1; }
         .card-info h3 { color: #fff; font-size: 16px; margin-bottom: 4px; }
         .card-info p { color: #aaa; font-size: 12px; line-height: 1.3; }
-        
         .card.locked { opacity: 0.7; border-color: #333; }
         .card.locked::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 1; }
         .candado-icon { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); font-size: 24px; z-index: 2; }
@@ -68,244 +65,50 @@
         .btn-volver { background: transparent; color: #aaa; border: 1px solid #555; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 13px; width: fit-content; margin-bottom: 10px; }
 
         /* --- RELLENADO LIBRE --- */
-        .canvas-container { width: 100%; overflow: auto; border: 1px solid #444; border-radius: 8px; background: #222; position: relative; margin-top: 10px; display: flex; flex-direction: column; gap: 10px; padding: 10px; }
-        .pdf-page-wrapper { position: relative; width: 100%; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
-        .free-pdf-canvas { display: block; width: 100%; cursor: crosshair; }
+        .canvas-container { width: 100%; height: calc(100vh - 60px); overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; align-items: center; background: #000; position: relative; padding: 10px; }
+        .pdf-page-wrapper { position: relative; background: white; box-shadow: 0 4px 15px rgba(0,0,0,0.5); margin-bottom: 20px; transform-origin: top left; }
+        .free-pdf-canvas { display: block; width: 100%; height: auto; }
         
-        /* Menú al hacer clic */
-        .click-menu { position: absolute; background: #fff; border-radius: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: flex; flex-direction: column; z-index: 90; overflow: hidden; border: 1px solid #ccc; min-width: 150px; }
-        .click-menu button { background: none; border: none; padding: 12px 20px; cursor: pointer; font-weight: bold; font-size: 14px; color: #333; text-align: left; border-bottom: 1px solid #eee; transition: 0.2s; margin: 0; width: 100%; }
-        .click-menu button:hover { background: #f1c40f; color: #000; }
-
-        /* Elementos Flotantes (Texto, Firma, Símbolos) */
-        .floating-element { position: absolute; z-index: 40; cursor: grab; padding: 4px; border: 1px dashed transparent; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
-        .floating-element:hover, .floating-element:active { border: 1px dashed #3498db; background: rgba(255,255,255,0.8); }
-        .floating-element:active { cursor: grabbing; }
-
-
-        
-                /* Nuevo: Estado Seleccionado */
+        /* Elementos Flotantes */
+        .floating-element { position: absolute; z-index: 40; cursor: grab; padding: 4px; border: 1px dashed transparent; border-radius: 4px; display: flex; align-items: center; justify-content: center; transform-origin: top left; will-change: transform; }
         .floating-element.selected { border: 2px dashed #3498db !important; background: rgba(255,255,255,0.9); }
-.floating-element.selected .btn-delete-float, 
-.floating-element.selected .resize-handle { display: flex !important; }
-
-        
         .floating-text { color: #000; font-family: sans-serif; white-space: nowrap; pointer-events: none; user-select: none; }
-        .floating-img { pointer-events: none; user-select: none; }
-        
-        /* Botón de borrar y tirador de tamaño */
-       
         .btn-delete-float { position: absolute; top: -10px; right: -10px; background: #e74c3c; color: white; border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 10px; font-weight: bold; cursor: pointer; display: none; justify-content: center; align-items: center; z-index: 50; }
-       
-
-.resize-handle { 
-    position: absolute; bottom: -8px; right: -8px; 
-    width: 16px; height: 16px; background: #3498db; 
-    border-radius: 50%; cursor: nwse-resize; 
-    display: none; z-index: 50; border: 2px solid white; 
-}
-
-        
-        .floating-element:hover .btn-delete-float, .floating-element:hover .resize-handle { display: flex; }
+        .resize-handle { position: absolute; bottom: -8px; right: -8px; width: 16px; height: 16px; background: #3498db; border-radius: 50%; cursor: nwse-resize; display: none; z-index: 50; border: 2px solid white; }
+        .floating-element:hover .btn-delete-float, .floating-element:hover .resize-handle,
+        .floating-element.selected .btn-delete-float, .floating-element.selected .resize-handle { display: flex !important; }
 
         /* --- MODALES --- */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center; padding: 20px; }
         .modal-content { background: #222; padding: 20px; border-radius: 10px; border: 1px solid #555; width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 15px; }
         .modal-content h3 { color: #f1c40f; text-align: center; margin-bottom: 5px; }
-        
-        /* Formato de texto */
         .format-toolbar { display: flex; gap: 10px; justify-content: center; }
-        .btn-format { background: #333;
-color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; font-size: 16px; cursor: pointer; }
+        .btn-format { background: #333; color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; font-size: 16px; cursor: pointer; }
         .btn-format.active { background: #3498db; border-color: #2980b9; }
-        
-        /* Historial Chips */
         .chips-container { display: flex; flex-wrap: wrap; gap: 8px; max-height: 80px; overflow-y: auto; }
         .chip { background: #444; color: #fff; padding: 6px 12px; border-radius: 15px; font-size: 12px; cursor: pointer; border: none; }
         .chip:hover { background: #f1c40f; color: #000; }
-
         .modal-actions { display: flex; gap: 10px; justify-content: center; margin-top: 10px; }
         .modal-actions button { margin: 0; width: auto; padding: 10px 20px; }
-
-        /* Símbolos */
-        .symbol-grid { display: flex; justify-content: center; gap: 15px; margin-bottom: 10px; }
-        .btn-symbol { background: #333; color: white; border: 1px solid #555; font-size: 24px; width: 50px; height: 50px; border-radius: 8px; cursor: pointer; display: flex; justify-content: center; align-items: center; }
+        .symbol-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .btn-symbol { background: #333; color: white; border: 1px solid #555; font-size: 30px; padding: 10px; border-radius: 8px; cursor: pointer; display: flex; justify-content: center; align-items: center; }
         .btn-symbol:hover { background: #f1c40f; color: #000; }
-   
-        /* Pantalla de Chat sobrepuesta para celular */
-    #screen-ai-chat {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: #121212;
-        z-index: 2000;
-        display: none; /* Se activa con JS */
-        flex-direction: column;
-    }
-    #screen-ai-chat.active { display: flex; }
 
-    .chat-header {
-        background: #2c3e50;
-        padding: 15px;
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        border-bottom: 2px solid #34495e;
-    }
-    .chat-messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-    .chat-message { max-width: 85%; padding: 10px 15px; border-radius: 15px; font-size: 15px; line-height: 1.4; }
-    .chat-message.user { background: #3498db; align-self: flex-end; border-bottom-right-radius: 2px; }
-    .chat-message.ai { background: #2a2a2a; border: 1px solid #444; align-self: flex-start; border-bottom-left-radius: 2px; }
-    
-    .chat-input-area { padding: 15px; background: #1e1e1e; display: flex; gap: 10px; border-top: 1px solid #333; }
-    .chat-input { flex: 1; background: #000; border: 1px solid #444; color: #fff; padding: 12px 15px; border-radius: 25px; outline: none; }
-    .btn-chat-action { background: #3498db; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; font-size: 20px; display: flex; justify-content: center; align-items: center; }
-
-    .upload-area {
-    margin-bottom: 15px;
-}
-
-.upload-area:hover div[style*="border: 2px dashed"] {
-    border-color: #f1c40f !important;
-    background: rgba(241, 196, 15, 0.08);
-}
-
-
-.pdf-page-wrapper {
-    position: relative;
-    transform-origin: top left;
-}
-
-.floating-element {
-    position: absolute;
-    transform-origin: top left;
-    will-change: transform;
-}
-
-
-.card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
-    transition: all 0.3s;
-}
-
-
-
-.canvas-container {
-    width: 100%;
-    height: calc(100vh - 60px); /* Resta el alto de la barra superior */
-    overflow-y: auto;
-    overflow-x: hidden;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    background: #000;
-}
-
-
-
-
-
-        
+        /* --- CHAT AI --- */
+        #screen-ai-chat { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #121212; z-index: 2000; display: none; flex-direction: column; }
+        #screen-ai-chat.active { display: flex; }
+        .chat-header { background: #2c3e50; padding: 15px; display: flex; align-items: center; gap: 15px; border-bottom: 2px solid #34495e; }
+        .chat-messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .chat-message { max-width: 85%; padding: 10px 15px; border-radius: 15px; font-size: 15px; line-height: 1.4; }
+        .chat-message.user { background: #3498db; align-self: flex-end; border-bottom-right-radius: 2px; }
+        .chat-message.ai { background: #2a2a2a; border: 1px solid #444; align-self: flex-start; border-bottom-left-radius: 2px; }
+        .chat-input-area { padding: 15px; background: #1e1e1e; display: flex; gap: 10px; border-top: 1px solid #333; }
+        .chat-input { flex: 1; background: #000; border: 1px solid #444; color: #fff; padding: 12px 15px; border-radius: 25px; outline: none; }
+        .btn-chat-action { background: #3498db; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; font-size: 20px; display: flex; justify-content: center; align-items: center; }
     </style>
 </head>
 <body>
 
-
-    
-<!-- MODAL DE TEXTO -->
-<div id="modal-texto" class="modal-overlay">
-    <div class="modal-content">
-        <h3>Añadir Texto</h3>
-        
-                <div class="format-toolbar">
-            <button type="button" id="btn-bold" class="btn-format" onclick="toggleFormat('bold')"><b>B</b></button>
-            <button type="button" id="btn-italic" class="btn-format" onclick="toggleFormat('italic')"><i>I</i></button>
-            <!-- NUEVO: Selector numérico de tamaño -->
-            <input type="number" id="input-size-texto" value="14" min="4" max="100" style="width: 60px; padding: 5px; border-radius: 6px; border: 1px solid #444; background: #111; color: white; text-align: center; outline: none; font-size: 16px;" title="Tamaño del texto">
-        </div>
-
-
-
-        
-        <input type="text" id="input-texto-modal" placeholder="Escribe aquí..." style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #444; background: #111; color: white; font-size: 16px; outline: none;">
-        
-        <div id="chips-historial" class="chips-container">
-            <!-- Los chips de historial aparecerán aquí -->
-        </div>
-
-        <div class="modal-actions">
-            <button type="button" onclick="cerrarModalTexto()" style="background: #555; color: white; border: none; border-radius: 5px;">Cancelar</button>
-            <button type="button" onclick="guardarTextoModal()" style="background: #2ecc71; color: black; border: none; border-radius: 5px;">Aceptar</button>
-        </div>
-    </div>
-</div>
-
-
-<!-- MODAL DE FIRMA MEJORADO -->
-<div id="modal-firma" class="modal-overlay">
-    <div class="modal-content">
-        <h3>Dibuja tu firma</h3>
-        
-        <!-- Selector de color -->
-        <div style="text-align:center; margin-bottom:10px;">
-            <label style="color:#ccc; font-size:14px;">Color: </label>
-            <input type="color" id="firma-color" value="#1a1a1a" style="width:60px; height:30px; border:none; background:none; cursor:pointer;">
-        </div>
-
-        <canvas id="canvas-firma" width="380" height="200" 
-                style="background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); touch-action: none; width: 100%;">
-        </canvas>
-
-        <div class="modal-actions" style="margin-top:15px; display:flex; gap:10px; justify-content:center;">
-            <button type="button" onclick="limpiarFirma()" style="background: #e74c3c; color: white; padding:10px 20px;">Limpiar</button>
-            <button type="button" onclick="cerrarModalFirma()" style="background: #555; color: white; padding:10px 20px;">Cancelar</button>
-            <button type="button" onclick="guardarFirma()" style="background: #2ecc71; color: black; padding:10px 20px;">Aceptar</button>
-        </div>
-    </div>
-</div>
-
-    
-    
-<!-- MODAL DE SÍMBOLOS -->
-<div id="modal-simbolos" class="modal-overlay">
-    <div class="modal-content">
-        <h3>Añadir Símbolo</h3>
-        <div style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 15px;">
-            <label style="color: #ccc;">Tamaño:</label>
-            <input type="number" id="input-size-simbolo" value="24" style="width: 60px; padding: 5px; background: #111; color: white; border: 1px solid #444; border-radius: 5px;">
-        </div>
-        <div class="symbol-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
-            <button type="button" class="btn-symbol" onclick="guardarSimbolo('✔')" style="font-size: 30px; padding: 10px;">✔</button>
-            <button type="button" class="btn-symbol" onclick="guardarSimbolo('✘')" style="font-size: 30px; padding: 10px;">✘</button>
-            <button type="button" class="btn-symbol" onclick="guardarSimbolo('•')" style="font-size: 30px; padding: 10px;">•</button>
-        </div>
-        <div class="modal-actions" style="margin-top: 15px;">
-            <button type="button" onclick="cerrarModalSimbolos()" style="background: #555; color: white; border: none; padding: 10px 20px; border-radius: 5px;">Cancelar</button>
-        </div>
-    </div>
-</div>
-
-
-    
-
-
-    
-<!-- MODAL DE OPCIONES (Reemplaza al menú flotante) -->
-<div id="modal-opciones" class="modal-overlay">
-    <div class="modal-content" style="gap: 10px;">
-        <h3>¿Qué deseas añadir?</h3>
-        <button type="button" class="btn-generar" style="margin-top:0; background:#3498db; color:white;" onclick="seleccionarOpcion('texto')">📝 Añadir Texto</button>
-        <button type="button" class="btn-generar" style="margin-top:0; background:#9b59b6; color:white;" onclick="seleccionarOpcion('firma')">✍️ Añadir Firma</button>
-        <button type="button" class="btn-generar" style="margin-top:0; background:#e67e22; color:white;" onclick="seleccionarOpcion('simbolo')">✅ Añadir Símbolo</button>
-        <button type="button" class="btn-volver" style="margin: 10px auto 0 auto;" onclick="cerrarModalOpciones()">❌ Cancelar</button>
-    </div>
-</div>
-
-
-    
 <div class="app-container">
     <div class="header">
         <h1>📄 DocuFácil</h1>
@@ -328,15 +131,13 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
         <div class="activar-section">
             <h3>🔑 ¿Ya tienes un código? Actívalo aquí:</h3>
             <div class="input-codigo-wrapper">
-                <input type="text" id="input-codigo" class="input-codigo" placeholder="EJ: MANU-123" oninput="this.value = this.value.toUpperCase( ).replace(/[^A-Z0-9-]/g, '')">
+                <input type="text" id="input-codigo" class="input-codigo" placeholder="EJ: MANU-123" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9-]/g, '')">
                 <button class="btn-activar" onclick="activarCodigoBoton()">Activar</button>
             </div>
         </div>
 
         <h2 class="section-title">📚 Documentos Disponibles</h2>
-        <div id="lista-plantillas" class="lista-plantillas">
-            <!-- Se llena con JS -->
-        </div>
+        <div id="lista-plantillas" class="lista-plantillas"></div>
     </div>
 
     <!-- PANTALLA 2: FORMULARIO DE PLANTILLAS -->
@@ -354,1456 +155,96 @@ color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; fon
         <button class="btn-generar" id="btn-generar" onclick="generarDocumento()">✨ Generar Documento (1 Crédito)</button>
     </div>
 
-
-
-
-    
-<!-- PANTALLA: RELLENADO LIBRE (VERSIÓN FINAL CORREGIDA) -->
-<div id="screen-rellenado-libre" class="screen" style="padding:0; background:#121212; flex-direction:column; height:100vh; position:relative;">
-    
-    <!-- BARRA SUPERIOR FIJA -->
-   <div style="background: #1a1a1a; padding: 12px 15px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #333; width: 100%;">
-    <button onclick="volverAHome()" style="background:#333; border:none; color:white; width:35px; height:35px; border-radius:8px; font-size:18px; cursor:pointer;">←</button>
-    <div style="flex:1; color:#f1c40f; font-weight:bold; font-size:14px;">Rellenar PDF</div>
-    
-    <!-- Botón actualizado -->
-    <button onclick="abrirRellenadoLibre()" style="background:#34495e; border:none; color:white; padding:8px 10px; border-radius:6px; font-size:11px; font-weight:bold;">🔄 Cargar PDF</button>
-    
-    <button id="btn-generar-free" onclick="generarPdfLibre()" style="background:#2ecc71; border:none; color:black; padding:8px 12px; border-radius:6px; font-size:11px; font-weight:bold; display:none;">✅ Descargar</button>
-</div>
-
-
-    <!-- ÁREA DE CARGA (CENTRADA) -->
-    <div id="upload-placeholder" style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex:1; padding: 20px;">
-        <div style="background: #1e1e1e; border: 2px dashed #f1c40f; padding: 40px 20px; border-radius: 15px; width: 100%; max-width: 280px; text-align: center;">
-            <div style="font-size: 40px; margin-bottom: 10px;">📂</div>
-            <h3 style="color: #fff; margin-bottom: 15px; font-size: 16px;">Selecciona un PDF</h3>
-            <label for="free-pdf-upload" style="background: #3498db; color: white; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; display: block;">Elegir Archivo</label>
-            <input type="file" id="free-pdf-upload" accept="application/pdf" style="display: none;">
+    <!-- PANTALLA: RELLENADO LIBRE -->
+    <div id="screen-rellenado-libre" class="screen" style="padding:0; background:#121212; flex-direction:column; height:100vh; position:relative;">
+        <div style="background: #1a1a1a; padding: 12px 15px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #333; width: 100%;">
+            <button onclick="volverAHome()" style="background:#333; border:none; color:white; width:35px; height:35px; border-radius:8px; font-size:18px; cursor:pointer;">←</button>
+            <div style="flex:1; color:#f1c40f; font-weight:bold; font-size:14px;">Rellenar PDF</div>
+            <button onclick="abrirRellenadoLibre()" style="background:#34495e; border:none; color:white; padding:8px 10px; border-radius:6px; font-size:11px; font-weight:bold;">🔄 Cargar PDF</button>
+            <button id="btn-generar-free" onclick="generarPdfLibre()" style="background:#2ecc71; border:none; color:black; padding:8px 12px; border-radius:6px; font-size:11px; font-weight:bold; display:none;">✅ Descargar</button>
         </div>
-    </div>
 
-    <!-- CONTENEDOR DEL PDF -->
-    <div id="free-canvas-container" class="canvas-container" style="display: none; flex:1; overflow:auto; width:100%; background:#000;">
-        <!-- Aquí aparecerá el PDF -->
-    </div>
-
-    <!-- BOTÓN FLOTANTE "+" -->
-    <button id="btn-float-add" onclick="toggleMenuMas()" 
-            style="position: absolute; bottom: 25px; right: 20px; background: #3498db; color: white; border: none; width: 56px; height: 56px; border-radius: 50%; font-size: 28px; z-index: 2001; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: none;">
-        ✚
-    </button>
-
-    <!-- MENÚ DEL BOTÓN "+" -->
-    <div id="menu-flotante-opciones" style="display: none; position: absolute; bottom: 90px; right: 20px; flex-direction: column; gap: 10px; z-index: 2000;">
-        <button onclick="abrirModalTextoDesdeMas()" style="background: #3498db; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; width: 120px;">📝 Texto</button>
-        <button onclick="abrirModalFirmaDesdeMas()" style="background: #e67e22; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; width: 120px;">✍️ Firma</button>
-    </div>
-</div>
-
-
-    
-
-    
-    
-      <!-- Botón flotante y su menú (Línea 342 aprox) -->
-   <div id="menu-flotante-opciones" style="display: none; position: fixed; bottom: 85px; right: 20px; flex-direction: column; gap: 10px; z-index: 200;">
-    <button onclick="abrirModalTextoDesdeMas()" style="background: #3498db; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold;">📝 Añadir Texto</button>
-    <button onclick="abrirModalFirmaDesdeMas()" style="background: #e67e22; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold;">✍️ Añadir Firma</button>
-</div>
-
-
-  <button id="btn-float-add" onclick="toggleMenuMas()" 
-        style="position: fixed; bottom: 20px; right: 20px; background: #3498db; color: white; border: none; width: 56px; height: 56px; border-radius: 50%; font-size: 28px; z-index: 2001; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: none;">
-    ✚
-</button>
-
-
-
-    
-</div>
-
-
-    
-</div>
-
-
-
-
-
-    
-<script>
-    // ==========================================
-    // 1. CONFIGURACIÓN SUPABASE Y PDF.JS
-    // ==========================================
-    const supabaseUrl = 'https://wpzddhmllctdsiuxenss.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwemRkaG1sbGN0ZHNpdXhlbnNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5NjUyNzQsImV4cCI6MjA5OTU0MTI3NH0.hwSxJ3Sk_RlgbvFyr8S64XRuxW7j55BU4gaIneFTuhY';
-    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey );
-    
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-
-    // ==========================================
-    // 2. VARIABLES GLOBALES
-    // ==========================================
-   
-    let firmaDataUrl = null;
-
-    let usuarioActual = null;
-    let plantillaSeleccionada = null;
-    let plantillasGlobales = [];
-
-    // Variables para Rellenado Libre
-    let freePdfDoc = null;
-    let freeCanvasScales = {};
-    let elementosFlotantes = []; 
-    let freePdfPageCount = 0; 
-    let historialTextos = JSON.parse(localStorage.getItem('docufacil_historial' )) || [];
-    let clickCoords = null; 
-
-
-    // ==========================================
-    // 3. INICIALIZACIÓN Y AUTO-LOGIN
-    // ==========================================
-
-
-    // --- LÓGICA DEL BOTÓN "+" ---
-    let menuMasAbierto = false;
-
-    function toggleMenuMas() {
-        menuMasAbierto = !menuMasAbierto;
-        const menu = document.getElementById('menu-flotante-opciones');
-        if (menu) menu.style.display = menuMasAbierto ? 'flex' : 'none';
-    }
-
-    function abrirModalTextoDesdeMas() {
-        toggleMenuMas();
-        const primeraPagina = document.querySelector('.pdf-page-wrapper');
-        if (!primeraPagina) return alert("Primero sube un PDF");
-        // Aparecerá arriba a la izquierda por defecto
-        clickCoords = { x: 50, y: 50, pageNum: 1, wrapper: primeraPagina };
-        abrirModalTexto();
-    }
-
-    function abrirModalFirmaDesdeMas() {
-        toggleMenuMas();
-        const primeraPagina = document.querySelector('.pdf-page-wrapper');
-        if (!primeraPagina) return alert("Primero sube un PDF");
-        // Aparecerá un poco más abajo
-        clickCoords = { x: 50, y: 150, pageNum: 1, wrapper: primeraPagina };
-        abrirModalFirma();
-    }
-
-
-
-    
-    document.addEventListener('DOMContentLoaded', async () => {
-        cargarPlantillas();
-        
-        const codigoGuardado = localStorage.getItem('docufacil_codigo');
-        if (codigoGuardado) {
-            document.getElementById('input-codigo').value = codigoGuardado;
-            await activarCodigo(codigoGuardado, true); 
-        }
-    });
-
-
-    
-    function showScreen(screenId) {
-    // Ocultamos todas las pantallas
-    document.querySelectorAll('.screen').forEach(s => {
-        s.style.display = 'none';
-        s.classList.remove('active');
-    });
-    
-    // Mostramos la pantalla elegida
-    const target = document.getElementById(screenId);
-    if (target) {
-        target.style.display = 'flex'; // Forzamos el flex
-        target.classList.add('active');
-    }
-    window.scrollTo(0, 0);
-}
-
-
-
-
-    
-    function volverAHome() {
-        plantillaSeleccionada = null;
-        showScreen('screen-home');
-    }
-
-    // ==========================================
-    // 4. SISTEMA DE CRÉDITOS
-    // ==========================================
-    async function activarCodigoBoton() {
-        const codigo = document.getElementById('input-codigo').value.trim();
-        if (!codigo) return alert("Ingresa un código válido.");
-        await activarCodigo(codigo, false);
-    }
-
-    async function activarCodigo(codigo, silencioso = false) {
-        const { data, error } = await supabase.from('usuarios_codigos').select('*').eq('codigo', codigo).single();
-        
-        if (error || !data) {
-            localStorage.removeItem('docufacil_codigo');
-            if (!silencioso) alert("❌ Código incorrecto o no existe.");
-            return;
-        }
-        
-        if (data.creditos <= 0) {
-            if (!silencioso) alert("⚠️ Este código ya no tiene créditos.");
-            return;
-        }
-
-        usuarioActual = data;
-        localStorage.setItem('docufacil_codigo', codigo);
-        document.getElementById('user-creditos').innerText = usuarioActual.creditos;
-        
-        if (!silencioso) {
-            document.getElementById('input-codigo').value = '';
-            alert(`✅ ¡Código activado! Tienes ${usuarioActual.creditos} créditos disponibles.`);
-        }
-        renderizarPlantillas();
-    }
-
-    async function descontarCredito(cantidad = 1) {
-        if (!usuarioActual || usuarioActual.creditos < cantidad) return false;
-        const nuevoSaldo = usuarioActual.creditos - cantidad;
-        const { error } = await supabase.from('usuarios_codigos').update({ creditos: nuevoSaldo }).eq('id', usuarioActual.id);
-        if (error) {
-            alert("Error al procesar el crédito.");
-            return false;
-        }
-        usuarioActual.creditos = nuevoSaldo;
-        document.getElementById('user-creditos').innerText = nuevoSaldo;
-        if (nuevoSaldo === 0) renderizarPlantillas(); 
-        return true;
-    }
-
-    // ==========================================
-    // 5. CARGA Y RENDERIZADO DE PLANTILLAS
-    // ==========================================
-    async function cargarPlantillas() {
-        const { data, error } = await supabase.from('plantillas').select('*');
-        plantillasGlobales = data || [];
-        renderizarPlantillas();
-    }
-
-
-
-
-    
-    function renderizarPlantillas() {
-    const contenedor = document.getElementById('lista-plantillas');
-    if (!contenedor) return;
-    contenedor.innerHTML = '';
-    
-    const tieneCreditos = usuarioActual && usuarioActual.creditos > 0;
-    const claseBloqueado = tieneCreditos ? '' : 'locked';
-    const candadoHtml = tieneCreditos ? '' : '<div class="candado-icon">🔒</div>';
-
-    // Botón 1: Rellenar mi propio PDF
-    contenedor.innerHTML += `
-       <div class="card ${claseBloqueado}" onclick="showScreen('screen-rellenado-libre')" style="border-color: #e67e22;">
-            <div class="card-icon">✍️</div>
-            <div class="card-info">
-                <h3 style="color: #e67e22;">Rellenar mi propio PDF</h3>
-                <p>Sube cualquier documento, toca donde quieras escribir o firmar y descárgalo.</p>
+        <div id="upload-placeholder" style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex:1; padding: 20px;">
+            <div style="background: #1e1e1e; border: 2px dashed #f1c40f; padding: 40px 20px; border-radius: 15px; width: 100%; max-width: 280px; text-align: center;">
+                <div style="font-size: 40px; margin-bottom: 10px;">📂</div>
+                <h3 style="color: #fff; margin-bottom: 15px; font-size: 16px;">Selecciona un PDF</h3>
+                <label for="free-pdf-upload" style="background: #3498db; color: white; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; display: block;">Elegir Archivo</label>
+                <input type="file" id="free-pdf-upload" accept="application/pdf" style="display: none;">
             </div>
-            ${candadoHtml}
         </div>
-    `;
 
-    // Botón 2: IA
-    contenedor.innerHTML += `
-        <div class="card ${claseBloqueado}" onclick="mostrarScreen('screen-ai-chat')" style="border-color: #3498db;">
-            <div class="card-icon">✨</div>
-            <div class="card-info">
-                <h3 style="color: #3498db;">Generación de documento</h3>
-                <p>Crea documentos personalizados con ayuda de nuestro experto AI.</p>
-            </div>
-            ${candadoHtml}
+        <div id="free-canvas-container" class="canvas-container" style="display: none;"></div>
+
+        <button id="btn-float-add" onclick="toggleMenuMas()" style="position: absolute; bottom: 25px; right: 20px; background: #3498db; color: white; border: none; width: 56px; height: 56px; border-radius: 50%; font-size: 28px; z-index: 2001; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: none;">✚</button>
+
+        <div id="menu-flotante-opciones" style="display: none; position: absolute; bottom: 90px; right: 20px; flex-direction: column; gap: 10px; z-index: 2000;">
+            <button onclick="abrirModalTextoDesdeMas()" style="background: #3498db; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; width: 120px;">📝 Texto</button>
+            <button onclick="abrirModalFirmaDesdeMas()" style="background: #e67e22; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; width: 120px;">✍️ Firma</button>
         </div>
-    `;
-}
-
-    
-
-
-
-    
-    
-
-    
-    // ==========================================
-    // 6. LÓGICA: PLANTILLAS PREDEFINIDAS
-    // ==========================================
-    function clickPlantilla(tpl) {
-        if (!usuarioActual || usuarioActual.creditos <= 0) {
-            alert("🔒 Necesitas activar un código con créditos.");
-            document.getElementById('seccion-compra').scrollIntoView({ behavior: 'smooth' });
-            return;
-        }
-        abrirFormulario(tpl);
-    }
-
-    function abrirFormulario(tpl) {
-        plantillaSeleccionada = tpl;
-        document.getElementById('form-titulo').innerText = tpl.nombre;
-        document.getElementById('form-desc').innerText = tpl.descripcion || '';
-        document.getElementById('user-pdf-upload').value = '';
-        
-        const contenedorCampos = document.getElementById('form-campos');
-        contenedorCampos.innerHTML = '';
-
-        if (tpl.configuracion && tpl.configuracion.campos) {
-            tpl.configuracion.campos.forEach(campo => {
-                contenedorCampos.innerHTML += `
-                    <div class="input-group">
-                        <label>${campo.nombre.toUpperCase()}</label>
-                        <div class="input-with-mic">
-                            <input type="text" id="campo-${campo.nombre}" placeholder="Escribe aquí...">
-                            <button class="btn-mic" onclick="iniciarReconocimientoVoz('campo-${campo.nombre}')">🎤</button>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-        showScreen('screen-formulario');
-    }
-
-    function iniciarReconocimientoVoz(inputId) {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) return alert("Tu navegador no soporta dictado por voz.");
-        
-        const recognition = new SpeechRecognition();
-        recognition.lang = 'es-ES';
-        recognition.start();
-        
-        const input = document.getElementById(inputId);
-        input.placeholder = "Escuchando...";
-        
-        recognition.onresult = function(event) {
-            input.value = event.results[0][0].transcript;
-            input.placeholder = "Escribe aquí...";
-        };
-        recognition.onerror = function() {
-            input.placeholder = "Error al escuchar. Intenta de nuevo.";
-        };
-    }
-
-    async function generarDocumento() {
-        const fileInput = document.getElementById('user-pdf-upload');
-        if (!fileInput.files.length) return alert("Por favor, sube el PDF base de la plantilla.");
-
-        const btn = document.getElementById('btn-generar');
-        btn.innerText = "⏳ Generando...";
-        btn.disabled = true;
-
-        try {
-            const file = fileInput.files[0];
-            const arrayBuffer = await file.arrayBuffer();
-            const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
-            const pages = pdfDoc.getPages();
-            const firstPage = pages[0];
-
-            if (plantillaSeleccionada.configuracion && plantillaSeleccionada.configuracion.campos) {
-                plantillaSeleccionada.configuracion.campos.forEach(campo => {
-                    const valor = document.getElementById(`campo-${campo.nombre}`).value;
-                    if (valor) {
-                        firstPage.drawText(valor, {
-                            x: campo.x,
-                            y: campo.y,
-                            size: 12,
-                            color: PDFLib.rgb(0, 0, 0)
-                        });
-                    }
-                });
-            }
-
-            const pagado = await descontarCredito(1);
-            if (!pagado) throw new Error("No se pudo procesar el pago.");
-
-            const pdfBytes = await pdfDoc.save();
-            download(pdfBytes, `DocuFacil_${plantillaSeleccionada.nombre}.pdf`, "application/pdf");
-            
-            alert("✅ ¡Documento generado con éxito!");
-            volverAHome();
-
-        } catch (err) {
-            alert("Error: " + err.message);
-        } finally {
-            btn.innerText = "✨ Generar Documento (1 Crédito)";
-            btn.disabled = false;
-        }
-    }
-
-    // ==========================================
-    // 7. HISTORIAL (AUTOCOMPLETADO)
-    // ==========================================
-    function guardarEnHistorial(texto) {
-        if (texto && !historialTextos.includes(texto)) {
-            historialTextos.push(texto);
-            localStorage.setItem('docufacil_historial', JSON.stringify(historialTextos));
-        }
-    }
-
-
-    
-
-    
-// ==========================================
-// 8. LÓGICA: RELLENADO LIBRE
-// ==========================================
-function abrirRellenadoLibre() {
-    // 1. Limpieza de archivos y canvas
-    document.getElementById('free-pdf-upload').value = ''; 
-    document.getElementById('free-canvas-container').innerHTML = ''; 
-    
-    // 2. Reset de visibilidad (Para que aparezca el botón de carga)
-    document.getElementById('upload-placeholder').style.display = 'flex'; 
-    document.getElementById('free-canvas-container').style.display = 'none'; 
-    document.getElementById('btn-generar-free').style.display = 'none'; 
-    document.getElementById('btn-float-add').style.display = 'none'; 
-    
-    // 3. Reset de datos
-    elementosFlotantes = [];
-    freeCanvasScales = {};
-    freePdfPageCount = 0;
-    
-    // 4. Mostrar pantalla
-    showScreen('screen-rellenado-libre');
-}
-
-
-// Evento de selección de archivo PDF
-document.getElementById('free-pdf-upload').addEventListener('change', async function(e) {
-    if (!e.target.files.length) return;
-    
-    const file = e.target.files[0];
-    const arrayBuffer = await file.arrayBuffer();
-    
-    freePdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
-    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
-    const pdf = await loadingTask.promise;
-    
-    freePdfPageCount = pdf.numPages; 
-    
-    const container = document.getElementById('free-canvas-container');
-    container.innerHTML = ''; 
-    container.style.display = 'flex';
-    
-    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-        const page = await pdf.getPage(pageNum);
-        const wrapper = document.createElement('div');
-        wrapper.className = 'pdf-page-wrapper';
-        wrapper.dataset.pageNum = pageNum;
-        
-        const canvas = document.createElement('canvas');
-        canvas.className = 'free-pdf-canvas';
-        
-        wrapper.appendChild(canvas);
-        container.appendChild(wrapper);
-        
-        const ctx = canvas.getContext('2d');
-        const containerWidth = container.clientWidth - 20;
-        const unscaledViewport = page.getViewport({ scale: 1 });
-        const scale = containerWidth / unscaledViewport.width;
-        freeCanvasScales[pageNum] = scale;
-        
-        const viewport = page.getViewport({ scale: scale });
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-        
-        await page.render({ canvasContext: ctx, viewport: viewport }).promise;
-
-
-
-        
-       // Dentro del bucle for de las páginas en el evento 'change'
-wrapper.addEventListener('click', function(ev) {
-    if (ev.target.closest('.floating-element')) return; 
-    
-    const seleccionado = document.querySelector('.floating-element.selected');
-    if (seleccionado) {
-        document.querySelectorAll('.floating-element').forEach(el => el.classList.remove('selected'));
-        return;
-    }
-
-    const rect = this.getBoundingClientRect();
-    // Guardamos la posición exacta donde tocó el dedo en la pantalla
-    const x = ev.clientX - rect.left;
-    const y = ev.clientY - rect.top;
-    
-    // Guardamos estas coordenadas para usarlas al "pegar"
-    clickCoords = { x, y, pageNum: pageNum, wrapper: this };
-    
-    mostrarMenuOpciones(this, x, y, pageNum);
-});
-
-        
-    }
-    document.getElementById('upload-placeholder').style.display = 'none';
-document.getElementById('free-canvas-container').style.display = 'flex';
-document.getElementById('btn-generar-free').style.display = 'block'; // Muestra el botón de la barra
-document.getElementById('btn-float-add').style.display = 'block'; // Muestra el botón +
-});
-
-    
-
-
-    
-// ==========================================
-// ZOOM MEJORADO - ELEMENTOS FLOTANTES PEGADOS AL PDF
-// ==========================================
-window.pdfGlobalScale = 1;
-let initialPdfDist = 0;
-let initialPdfScale = 1;
-
-document.addEventListener('DOMContentLoaded', () => {
-    const container = document.getElementById('free-canvas-container');
-    
-    container.addEventListener('touchstart', (e) => {
-        if (e.touches.length === 2) {
-            initialPdfDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-            initialPdfScale = window.pdfGlobalScale;
-        }
-    }, {passive: false});
-
-    container.addEventListener('touchmove', (e) => {
-        if (e.touches.length === 2 && initialPdfDist > 0) {
-            e.preventDefault();
-            
-            const currentDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-            const scaleFactor = currentDist / initialPdfDist;
-            window.pdfGlobalScale = Math.max(0.5, Math.min(initialPdfScale * scaleFactor, 5));
-
-            // Aplicar zoom al PDF
-            document.querySelectorAll('.pdf-page-wrapper').forEach(wrapper => {
-                wrapper.style.transform = `scale(${window.pdfGlobalScale})`;
-                wrapper.style.transformOrigin = 'top left';
-            });
-
-            // Aplicar el mismo zoom a los elementos flotantes (para que queden pegados)
-            document.querySelectorAll('.floating-element').forEach(el => {
-                el.style.transform = `scale(${window.pdfGlobalScale})`;
-                el.style.transformOrigin = 'top left';
-            });
-        }
-    }, {passive: false});
-
-    container.addEventListener('touchend', () => {
-        initialPdfDist = 0;
-    });
-});
-
-    
-
-
-
-    
-
-    // ==========================================
-    // 8. LÓGICA: RELLENADO LIBRE (CARGA DE PDF)
-    // ==========================================
-    function abrirRellenadoLibre() {
-        if (!usuarioActual || usuarioActual.creditos <= 0) {
-            alert("🔒 Necesitas activar un código con créditos.");
-            document.getElementById('seccion-compra').scrollIntoView({ behavior: 'smooth' });
-            return;
-        }
-        
-        document.getElementById('free-pdf-upload').value = '';
-        document.getElementById('free-canvas-container').style.display = 'none';
-        document.getElementById('free-canvas-container').innerHTML = ''; 
-        document.getElementById('btn-generar-free').style.display = 'none';
-        
-        elementosFlotantes = [];
-        freeCanvasScales = {};
-        freePdfPageCount = 0;
-        
-        showScreen('screen-rellenado-libre');
-    }
-
-    document.getElementById('free-pdf-upload').addEventListener('change', async function(e) {
-        if (!e.target.files.length) return;
-        
-        const file = e.target.files[0];
-        const arrayBuffer = await file.arrayBuffer();
-        
-        // Cargamos el PDF con PDF-Lib para la descarga final
-        freePdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
-        
-        // Cargamos el PDF con PDF.js para la visualización en pantalla
-        const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
-        const pdf = await loadingTask.promise;
-        
-        freePdfPageCount = pdf.numPages; 
-        
-        const container = document.getElementById('free-canvas-container');
-        container.innerHTML = ''; 
-        elementosFlotantes = [];
-        freeCanvasScales = {};
-        container.style.display = 'flex';
-        
-        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-            const page = await pdf.getPage(pageNum);
-            
-            // --- MEJORA DE NITIDEZ (HD) ---
-            // Usamos escala 2.0 para que al hacer zoom se vea claro
-            const viewportHD = page.getViewport({ scale: 2.0 });
-            
-            const wrapper = document.createElement('div');
-            wrapper.className = 'pdf-page-wrapper';
-            wrapper.dataset.pageNum = pageNum;
-            wrapper.style.position = 'relative';
-            wrapper.style.width = '100%';
-            wrapper.style.maxWidth = (viewportHD.width / 2) + 'px'; // Tamaño visual normal
-            wrapper.style.margin = '0 auto 20px auto';
-            wrapper.style.backgroundColor = 'white';
-            wrapper.style.boxShadow = '0 4px 15px rgba(0,0,0,0.5)';
-            
-            const canvas = document.createElement('canvas');
-            canvas.className = 'free-pdf-canvas';
-            const ctx = canvas.getContext('2d');
-            
-            // El canvas tiene el doble de píxeles (HD)
-            canvas.width = viewportHD.width;
-            canvas.height = viewportHD.height;
-            
-            // Pero se ve al tamaño de la pantalla
-            canvas.style.width = '100%';
-            canvas.style.height = 'auto';
-            canvas.style.display = 'block';
-            
-            // Guardamos la escala 2.0 para que la descarga sea precisa
-            freeCanvasScales[pageNum] = 2.0;
-            
-            wrapper.appendChild(canvas);
-            container.appendChild(wrapper);
-            
-            // Renderizamos la página en HD
-            await page.render({ canvasContext: ctx, viewport: viewportHD }).promise;
-
-            // Evento de clic corregido para alta resolución
-            wrapper.addEventListener('click', function(ev) {
-                if (ev.target.closest('.floating-element')) return; 
-                
-                const seleccionado = document.querySelector('.floating-element.selected');
-                if (seleccionado) {
-                    document.querySelectorAll('.floating-element').forEach(el => el.classList.remove('selected'));
-                    return;
-                }
-
-                const rect = canvas.getBoundingClientRect();
-                // Calculamos la posición relativa al tamaño real del canvas HD
-                const x = (ev.clientX - rect.left) * (canvas.width / rect.width);
-                const y = (ev.clientY - rect.top) * (canvas.height / rect.height);
-                
-                mostrarMenuOpciones(this, x, y, pageNum);
-            });
-        }
-        
-        const btnGenerar = document.getElementById('btn-generar-free');
-        btnGenerar.innerText = `✨ Descargar PDF Lleno (${freePdfPageCount} Créditos)`;
-        btnGenerar.style.display = 'block';
-    });
-
-
-    
-
-    
-    // ==========================================
-    // 9. MENÚ DE OPCIONES (MODAL FIJO)
-    // ==========================================
-    let pendingAction = null;
-
-    function mostrarMenuOpciones(parent, x, y, pageNum) {
-        pendingAction = { parent, x, y, pageNum };
-        document.getElementById('modal-opciones').style.display = 'flex';
-    }
-
-    function cerrarModalOpciones() {
-        document.getElementById('modal-opciones').style.display = 'none';
-    }
-
-    function seleccionarOpcion(opcion) {
-        cerrarModalOpciones();
-        if (!pendingAction) return;
-        const { parent, x, y, pageNum } = pendingAction;
-        
-        if (opcion === 'texto') abrirModalTexto(parent, x, y, pageNum);
-        if (opcion === 'firma') abrirModalFirma(parent, x, y, pageNum);
-        if (opcion === 'simbolo') abrirModalSimbolos(parent, x, y, pageNum);
-    }
-
-
-
-    
-    // ==========================================
-    // 10. MODALES (TEXTO, FIRMA, SÍMBOLOS)
-    // ==========================================
-    let currentTarget = null;
-    let textFormat = { bold: false, italic: false };
-    
-    // NUEVO: Memoria para recordar el último tamaño usado
-    let lastTextSize = 14;
-    let lastSymbolSize = 24;
-
-    // --- MODAL TEXTO ---
-    function abrirModalTexto(parent, x, y, pageNum) {
-        currentTarget = { parent, x, y, pageNum };
-        textFormat = { bold: false, italic: false };
-        document.getElementById('btn-bold').classList.remove('active');
-        document.getElementById('btn-italic').classList.remove('active');
-        
-        const input = document.getElementById('input-texto-modal');
-        input.value = '';
-        input.style.fontWeight = 'normal';
-        input.style.fontStyle = 'normal';
-        
-        // NUEVO: Cargar el último tamaño que el usuario eligió
-        document.getElementById('input-size-texto').value = lastTextSize;
-        
-        renderizarChipsHistorial();
-        document.getElementById('modal-texto').style.display = 'flex';
-        setTimeout(() => input.focus(), 100);
-    }
-
-    function cerrarModalTexto() { document.getElementById('modal-texto').style.display = 'none'; }
-
-    function toggleFormat(type) {
-        textFormat[type] = !textFormat[type];
-        const btn = document.getElementById(`btn-${type}`);
-        const input = document.getElementById('input-texto-modal');
-        
-        if (textFormat[type]) btn.classList.add('active');
-        else btn.classList.remove('active');
-
-        if (type === 'bold') input.style.fontWeight = textFormat.bold ? 'bold' : 'normal';
-        if (type === 'italic') input.style.fontStyle = textFormat.italic ? 'italic' : 'normal';
-    }
-
-    function renderizarChipsHistorial() {
-        const container = document.getElementById('chips-historial');
-        container.innerHTML = '';
-        historialTextos.forEach(texto => {
-            const chip = document.createElement('button');
-            chip.type = 'button';
-            chip.className = 'chip';
-            chip.innerText = texto;
-            chip.onclick = () => { document.getElementById('input-texto-modal').value = texto; };
-            container.appendChild(chip);
-        });
-    }
-
-
-
-    
-    
-function guardarTextoModal() {
-    const input = document.getElementById('input-texto-modal');
-    const texto = input.value.trim();
-    if (!texto) return;
-
-    const size = parseInt(document.getElementById('input-size-texto').value) || 14;
-    const wrapper = document.querySelector('.pdf-page-wrapper'); // Primera página por defecto
-    
-    // Usamos la lógica de creación del 128
-    crearElementoFlotante(wrapper, 50, 50, 1, 'text', texto, null, size);
-
-    cerrarModalTexto();
-    input.value = "";
-}
-
-
-
-
-    
-function guardarFirma() {
-    const canvas = document.getElementById('canvas-firma');
-    const dataUrl = canvas.toDataURL('image/png');
-    const wrapper = document.querySelector('.pdf-page-wrapper');
-
-    // Usamos la lógica de creación del 128
-    crearElementoFlotante(wrapper, 50, 150, 1, 'image', dataUrl);
-
-    cerrarModalFirma();
-}
-
-
-
-    
-
-
-
-// ==================== FIRMA MEJORADA ====================
-let sigCanvas, sigCtx, isDrawing = false;
-let lastX = 0, lastY = 0;
-let currentColor = '#1a1a1a';
-
-function abrirModalFirma(parent, x, y, pageNum) {
-    currentTarget = { parent, x, y, pageNum };
-    document.getElementById('modal-firma').style.display = 'flex';
-    
-    sigCanvas = document.getElementById('canvas-firma');
-    sigCtx = sigCanvas.getContext('2d', { alpha: true });
-    
-    // Limpiar canvas
-    sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
-    
-    // Configuración inicial
-    currentColor = document.getElementById('firma-color').value;
-    actualizarEstiloFirma();
-
-    // Eventos
-    sigCanvas.onmousedown = startDrawing;
-    sigCanvas.onmousemove = draw;
-    sigCanvas.onmouseup = stopDrawing;
-    sigCanvas.onmouseout = stopDrawing;
-
-    sigCanvas.ontouchstart = (e) => { e.preventDefault(); startDrawing(e); };
-    sigCanvas.ontouchmove = (e) => { e.preventDefault(); draw(e); };
-    sigCanvas.ontouchend = stopDrawing;
-
-    // Cambiar color en tiempo real
-    document.getElementById('firma-color').oninput = function() {
-        currentColor = this.value;
-        actualizarEstiloFirma();
-    };
-}
-
-function actualizarEstiloFirma() {
-    sigCtx.strokeStyle = currentColor;
-    sigCtx.lineCap = 'round';
-    sigCtx.lineJoin = 'round';
-    sigCtx.shadowColor = currentColor === '#1a1a1a' ? 'rgba(0,0,0,0.4)' : 'transparent';
-    sigCtx.shadowBlur = 1;
-}
-
-function startDrawing(e) {
-    isDrawing = true;
-    const pos = getPos(e);
-    lastX = pos.x;
-    lastY = pos.y;
-}
-
-function draw(e) {
-    if (!isDrawing) return;
-
-    const pos = getPos(e);
-    const lineWidth = calculateLineWidth(lastX, lastY, pos.x, pos.y);
-
-    sigCtx.lineWidth = lineWidth;
-    sigCtx.beginPath();
-    sigCtx.moveTo(lastX, lastY);
-    sigCtx.lineTo(pos.x, pos.y);
-    sigCtx.stroke();
-
-    lastX = pos.x;
-    lastY = pos.y;
-}
-
-function stopDrawing() {
-    isDrawing = false;
-}
-
-function getPos(e) {
-    const rect = sigCanvas.getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    
-    return {
-        x: (clientX - rect.left) * (sigCanvas.width / rect.width),
-        y: (clientY - rect.top) * (sigCanvas.height / rect.height)
-    };
-}
-
-function calculateLineWidth(x1, y1, x2, y2) {
-    const dist = Math.hypot(x2 - x1, y2 - y1);
-    return Math.max(2.5, Math.min(6.5, 5 - dist * 0.12)); // trazo suave
-}
-
-function limpiarFirma() {
-    sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
-}
-
-function cerrarModalFirma() {
-    document.getElementById('modal-firma').style.display = 'none';
-}
-
-
-
-    
-
-    
-
-
-
-     // --- MODAL SÍMBOLOS ---
-    function abrirModalSimbolos(parent, x, y, pageNum) {
-        currentTarget = { parent, x, y, pageNum };
-        // NUEVO: Cargar el último tamaño usado
-        document.getElementById('input-size-simbolo').value = lastSymbolSize;
-        document.getElementById('modal-simbolos').style.display = 'flex';
-    }
-
-    function cerrarModalSimbolos() { document.getElementById('modal-simbolos').style.display = 'none'; }
-
-   function guardarSimbolo(simbolo) {
-    // 1. Obtener tamaño
-    const size = parseInt(document.getElementById('input-size-simbolo').value) || 24;
-    
-    // 2. Buscar la primera página para pegarlo
-    const wrapper = document.querySelector('.pdf-page-wrapper');
-    if (!wrapper) return alert("Primero sube un PDF");
-
-    // 3. Crear el símbolo (lo ponemos como texto)
-    crearElementoFlotante(wrapper, 50, 50, 1, 'text', simbolo, null, size);
-    
-    // 4. Cerrar modales
-    cerrarModalSimbolos();
-    cerrarModalOpciones();
-}
-
-    
-    // ==========================================
-    // 11. CREADOR DE ELEMENTOS Y MOTOR INTERACTIVO
-    // ==========================================
-    // NUEVO: Añadimos "customSize" como último parámetro
-function crearElementoFlotante(parent, x, y, pageNum, tipo, contenido, formato = null, customSize = null) {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'floating-element';
-    wrapper.style.left = `${x}px`;
-    wrapper.style.top = `${y}px`;
-    wrapper.style.position = 'absolute';
-
-    const resizeHandle = document.createElement('div');
-    resizeHandle.className = 'resize-handle';
-
-    let elData = { wrapper, type: tipo, pageNum };
-    let domElement;
-
-    if (tipo === 'text') {
-        domElement = document.createElement('span');
-        domElement.className = 'floating-text';
-        domElement.innerText = contenido;
-        let initialSize = customSize || 14;
-        domElement.style.fontSize = `${initialSize}px`;
-        domElement.style.color = 'black';
-        elData.texto = contenido;
-        elData.size = initialSize;
-    } else if (tipo === 'image') {
-        domElement = document.createElement('img');
-        domElement.src = contenido;
-        domElement.style.width = `120px`;
-        elData.dataUrl = contenido;
-        elData.size = 120;
-    }
-
-    const btnDelete = document.createElement('div');
-    btnDelete.innerHTML = '×';
-    btnDelete.className = 'btn-delete-float';
-    btnDelete.onclick = (e) => { e.stopPropagation(); wrapper.remove(); elementosFlotantes = elementosFlotantes.filter(i => i !== elData); };
-
-    wrapper.appendChild(domElement);
-    wrapper.appendChild(btnDelete);
-    wrapper.appendChild(resizeHandle); // Añadimos el tirador
-    parent.appendChild(wrapper);
-
-    // Lógica de Selección: Al tocar se selecciona
-    const seleccionar = (e) => {
-        e.stopPropagation();
-        document.querySelectorAll('.floating-element').forEach(el => el.classList.remove('selected'));
-        wrapper.classList.add('selected');
-    };
-    wrapper.addEventListener('mousedown', seleccionar);
-    wrapper.addEventListener('touchstart', seleccionar);
-
-    // Hacerlo interactivo (Arrastrar y Agrandar)
-    hacerInteractivo(wrapper, elData, resizeHandle);
-    elementosFlotantes.push(elData);
-}
-
-
-function hacerInteractivo(wrapper, elData, resizeHandle) {
-    let isDragging = false, isResizing = false;
-    let startX, startY, initialLeft, initialTop;
-    let initialDistance = 0, initialSize = 0;
-
-    // --- INICIO DEL MOVIMIENTO O ZOOM ---
-    const start = (e) => {
-        // Si tocamos el botón de borrar, no hacemos nada aquí
-        if (e.target.classList.contains('btn-delete-float')) return;
-        
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-
-        // ZOOM CON DOS DEDOS
-        if (e.touches && e.touches.length === 2) {
-            isDragging = false;
-            initialDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-            initialSize = elData.size;
-            return;
-        }
-
-        // REDIMENSIÓN CON TIRADOR
-        if (e.target === resizeHandle) {
-            isResizing = true;
-            initialSize = elData.size;
-            startX = clientX;
-        } 
-        // ARRASTRE NORMAL
-        else {
-            isDragging = true;
-            startX = clientX;
-            startY = clientY;
-            initialLeft = wrapper.offsetLeft;
-            initialTop = wrapper.offsetTop;
-        }
-        e.stopPropagation();
-    };
-
-    // --- DURANTE EL MOVIMIENTO ---
-    const move = (e) => {
-        if (!isDragging && !isResizing && (!e.touches || e.touches.length !== 2)) return;
-
-        // LÓGICA ZOOM (DOS DEDOS)
-        if (e.touches && e.touches.length === 2 && initialDistance > 0) {
-            const currentDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-            const scale = currentDistance / initialDistance;
-            actualizarTamano(initialSize * scale);
-            e.preventDefault();
-            return;
-        }
-
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-
-        // LÓGICA ARRASTRE
-        if (isDragging) {
-            wrapper.style.left = (initialLeft + (clientX - startX)) + 'px';
-            wrapper.style.top = (initialTop + (clientY - startY)) + 'px';
-        } 
-        // LÓGICA REDIMENSIÓN (TIRADOR)
-        else if (isResizing) {
-            const dx = clientX - startX;
-            actualizarTamano(initialSize + dx);
-        }
-        e.preventDefault();
-    };
-
-    // FUNCIÓN AUXILIAR PARA CAMBIAR EL TAMAÑO
-    function actualizarTamano(newSize) {
-        if (elData.type === 'text') {
-            newSize = Math.max(6, Math.min(newSize, 120));
-            elData.wrapper.querySelector('.floating-text').style.fontSize = newSize + 'px';
-        } else if (elData.type === 'image') {
-            newSize = Math.max(20, Math.min(newSize, 600));
-            elData.wrapper.querySelector('img').style.width = newSize + 'px';
-        }
-        elData.size = newSize;
-    }
-
-    const stop = () => {
-        isDragging = false;
-        isResizing = false;
-        initialDistance = 0;
-    };
-
-    // Eventos para Mouse y Touch
-    wrapper.addEventListener('mousedown', start);
-    wrapper.addEventListener('touchstart', start, {passive: false});
-    
-    document.addEventListener('mousemove', move);
-    document.addEventListener('touchmove', move, {passive: false});
-    
-    document.addEventListener('mouseup', stop);
-    document.addEventListener('touchend', stop);
-}
-
-    
-async function generarPdfLibre() {
-    if (!freePdfDoc) return;
-
-    // Verificación de créditos
-    if (usuarioActual.creditos < freePdfPageCount) {
-        alert(`⚠️ Necesitas ${freePdfPageCount} créditos para descargar este documento. Tienes ${usuarioActual.creditos}.`);
-        return;
-    }
-
-    const btn = document.getElementById('btn-generar-free');
-    btn.innerText = "⏳ Procesando...";
-    btn.disabled = true;
-
-    try {
-        // Obtenemos las páginas del documento PDF-lib
-        const pdfLibDoc = await PDFLib.PDFDocument.load(await freePdfDoc.save());
-        const pages = pdfLibDoc.getPages();
-        
-        const fontNormal = await pdfLibDoc.embedFont(PDFLib.StandardFonts.Helvetica);
-        const fontBold = await pdfLibDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
-
-        // La escala que usamos para el renderizado nítido fue 2.0
-        const scale = 2.0;
-
-        for (const item of elementosFlotantes) {
-            const targetPage = pages[item.pageNum - 1]; 
-            const pdfHeight = targetPage.getHeight();
-            
-            // Calculamos la posición X e Y ajustada a la escala HD
-            const pdfX = (item.wrapper.offsetLeft) / scale;
-            
-            if (item.type === 'text') {
-                // Ajuste de Y: PDF-lib cuenta desde abajo, el navegador desde arriba
-                const pdfY = pdfHeight - ((item.wrapper.offsetTop + item.size) / scale);
-                
-                targetPage.drawText(item.texto, {
-                    x: pdfX,
-                    y: pdfY, 
-                    size: item.size,
-                    font: fontNormal,
-                    color: PDFLib.rgb(0, 0, 0)
-                });
-            } 
-            else if (item.type === 'image') {
-                const pngImage = await pdfLibDoc.embedPng(item.dataUrl);
-                const pngDims = pngImage.scale(1);
-                const ratio = pngDims.height / pngDims.width;
-
-                // El ancho en el PDF debe ser el ancho visual / escala
-                const visualWidth = item.wrapper.querySelector('img').offsetWidth;
-                const pdfWidth = visualWidth / scale;
-                const pdfImgHeight = pdfWidth * ratio;
-                
-                const pdfY = pdfHeight - ((item.wrapper.offsetTop / scale) + pdfImgHeight);
-
-                targetPage.drawImage(pngImage, {
-                    x: pdfX,
-                    y: pdfY,
-                    width: pdfWidth,
-                    height: pdfImgHeight
-                });
-            }
-        }
-
-        // Descontar crédito
-        const pagado = await descontarCredito(freePdfPageCount);
-        if (!pagado) throw new Error("No se pudo procesar el pago.");
-
-        const pdfBytes = await pdfLibDoc.save();
-        download(pdfBytes, `DocuFacil_Final.pdf`, "application/pdf");
-        
-        alert("✅ ¡Documento generado con éxito!");
-        volverAHome();
-
-    } catch (err) {
-        console.error(err);
-        alert("Error al generar el PDF: " + err.message);
-    } finally {
-        btn.innerText = `✨ Descargar PDF Lleno (${freePdfPageCount} Créditos)`;
-        btn.disabled = false;
-    }
-}
-
-
-    
-
-       let voiceTimer;
-    let chatHistory = [];
-    let isAITyping = false;
-    let currentDocumentDraft = null;
-
-    function mostrarScreen(id) {
-        if(id === 'screen-ai-chat') {
-            document.getElementById(id).classList.add('active');
-        } else {
-            showScreen(id);
-        }
-    }
-
-    function cerrarChatAI() {
-        document.getElementById('screen-ai-chat').classList.remove('active');
-    }
-
-
-
-function accionChat() {
-    const input = document.getElementById('chat-input');
-    const texto = input.value.trim();
-    
-    if (texto === "") {
-        iniciarVozChat(); // Si está vacío, usa el micro
-    } else {
-        enviarMensajeAI(); // Si tiene texto, envía
-    }
-}
-
-
-
-
-    
-    function actualizarBotonChat() {
-    const input = document.getElementById('chat-input');
-    const btn = document.getElementById('btn-chat-action');
-    if (input.value.trim() !== "") {
-        btn.innerHTML = "➤"; // Icono de enviar
-        btn.style.background = "#2ecc71"; // Color verde
-    } else {
-        btn.innerHTML = "🎤"; // Icono de micro
-        btn.style.background = "#3498db"; // Color azul
-    }
-}
-
-// 3. Vincula el evento 'input' en tu DOMContentLoaded
-document.getElementById('chat-input').addEventListener('input', actualizarBotonChat);
-
-
-
-
-
-function addMessage(sender, text) {
-    var container = document.getElementById('chat-messages');
-    if (!container) return;
-
-    var msgDiv = document.createElement('div');
-    msgDiv.className = 'chat-message ' + sender;
-
-    // Reemplazar saltos de línea por <br>
-    const formattedText = text.replace(/\n/g, '<br>');
-    msgDiv.innerHTML = formattedText;
-
-    container.appendChild(msgDiv);
-    container.scrollTop = container.scrollHeight;
-}
-
-
-
-
-
-    
-    
-    function iniciarVozChat() {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) return alert("Dictado no soportado.");
-        const recognition = new SpeechRecognition();
-        recognition.lang = 'es-ES';
-        recognition.start();
-        recognition.onresult = (e) => {
-            const transcript = e.results[0][0].transcript;
-            document.getElementById('chat-input').value = transcript;
-            actualizarBotonChat();
-            clearTimeout(voiceTimer);
-            voiceTimer = setTimeout(() => { enviarMensajeAI(); }, 2000);
-        };
-    }
-
-
-
-
-    async function enviarMensajeAI() {
-    const input = document.getElementById('chat-input');
-    const texto = input.value.trim();
-    if (!texto || isAITyping) return;
-
-    addMessage('user', texto);
-    input.value = "";
-    actualizarBotonChat();
-    isAITyping = true;
-    chatHistory.push({ role: 'user', content: texto });
-
-    try {
-        const { data, error } = await supabase.functions.invoke('generar-documento', {
-            body: JSON.stringify({ history: chatHistory, user_input: texto, current_draft: currentDocumentDraft }),
-        });
-
-        // SI HAY UN ERROR DE SUPABASE, LO MOSTRAMOS EN EL CHAT
-        if (error) {
-            console.error("Error de Supabase:", error);
-            addMessage('ai', '❌ Error de Supabase: ' + error.message);
-            return;
-        }
-
-        const aiResponse = data.response;
-        addMessage('ai', aiResponse.message);
-        chatHistory.push({ role: 'assistant', content: aiResponse.raw_response });
-
-        if ((aiResponse.action === 'document_draft' || aiResponse.action === 'final_document') && aiResponse.document_content) {
-            currentDocumentDraft = aiResponse.document_content;
-            addMessage('ai', '<b>✨ ¡Documento generado! Previsualizando...</b>');
-            mostrarModalPreviewAI(currentDocumentDraft);
-        }
-    } catch (error) {
-        // SI HAY UN ERROR DE RED O CÓDIGO, LO MOSTRAMOS
-        console.error("Error de red/código:", error);
-        addMessage('ai', '❌ Error de conexión: ' + error.message);
-    } finally {
-        isAITyping = false;
-    }
-}
-
-    
-
-
-
-
-    
-   
-
-
-
-    
-    
-
-
-
-
-    async function generarPdfAI() {
-    const textarea = document.getElementById('edit-ai-content');
-    if (!textarea) return alert("No se encontró el contenido del documento");
-    
-    let text = textarea.value.trim();
-    text = text.replace(/\\n/g, '\n'); // Limpia saltos de línea falsos
-
-    if (!usuarioActual || usuarioActual.creditos < 1) {
-        return alert("Necesitas 1 crédito para descargar.");
-    }
-
-    try {
-        const pdfDoc = await PDFLib.PDFDocument.create();
-        let page = pdfDoc.addPage();
-        const { width, height } = page.getSize();
-        const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
-        
-        const margin = 50;
-        let currentY = height - margin;
-        const paragraphs = text.split('\n');
-
-        for (let para of paragraphs) {
-            if (para.trim() === "") {
-                currentY -= 15;
-                continue;
-            }
-
-            page.drawText(para, {
-                x: margin,
-                y: currentY,
-                size: 11,
-                font: font,
-                maxWidth: width - (margin * 2),
-                lineHeight: 14
-            });
-
-            const lines = Math.ceil(font.widthOfTextAtSize(para, 11) / (width - margin * 2));
-            currentY -= (lines * 14) + 12;
-
-            if (currentY < margin + 100) {
-                page = pdfDoc.addPage();
-                currentY = height - margin;
-            }
-        }
-
-        // FIRMA: Solo se añade si realmente has firmado algo
-        if (typeof firmaDataUrl !== 'undefined' && firmaDataUrl) {
-            const firmaImg = await pdfDoc.embedPng(firmaDataUrl);
-            page.drawImage(firmaImg, { 
-                x: margin, 
-                y: currentY - 60, 
-                width: 100, 
-                height: 50 
-            });
-        }
-
-        const pagado = await descontarCredito(1);
-        if (!pagado) return;
-
-        const pdfBytes = await pdfDoc.save();
-        download(pdfBytes, "Documento_DocuFacil.pdf", "application/pdf");
-        
-        alert("✅ ¡Documento descargado!");
-        document.getElementById('modal-preview-ai').style.display = 'none';
-    } catch (e) {
-        console.error(e);
-        alert("Error al generar PDF: " + e.message);
-    }
-}
-
-
-
-    
-
-    
-
-    
-    function mostrarModalPreviewAI(content) {
-    const modal = document.getElementById('modal-preview-ai');
-    const preview = document.getElementById('preview-content');
-    if (modal && preview) {
-        // Cambiamos el div por un textarea para que puedas editar el texto
-        preview.innerHTML = `<textarea id="edit-ai-content" style="width:100%; height:300px; border:1px solid #ccc; padding:10px; font-family:serif; font-size:14px; resize:none; background:white; color:black;">${content}</textarea>`;
-        modal.style.display = 'flex';
-    }
-}
-
-
-// Activar envío con la tecla Enter en el chat
-document.getElementById('chat-input').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-        e.preventDefault(); // Evita que se cree una nueva línea
-        enviarMensajeAI();
-    }
-});
-
-
-function mostrarMenuFlotante() {
-    // Puedes abrir directamente el menú de opciones
-    document.getElementById('modal-opciones').style.display = 'flex';
-}
-
-
-    
-function hacerElementoArrastrable(elmnt) {
-    let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-    elmnt.onmousedown = dragMouseDown;
-    elmnt.ontouchstart = dragMouseDown;
-
-    function dragMouseDown(e) {
-        e = e || window.event;
-        const clientX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
-        const clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
-        pos3 = clientX;
-        pos4 = clientY;
-        document.onmouseup = closeDragElement;
-        document.ontouchend = closeDragElement;
-        document.onmousemove = elementDrag;
-        document.ontouchmove = elementDrag;
-    }
-
-    function elementDrag(e) {
-        e = e || window.event;
-        const clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
-        const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
-        pos1 = pos3 - clientX;
-        pos2 = pos4 - clientY;
-        pos3 = clientX;
-        pos4 = clientY;
-        elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
-        elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
-    }
-
-    function closeDragElement() {
-        document.onmouseup = null;
-        document.onmousemove = null;
-        document.ontouchend = null;
-        document.ontouchmove = null;
-    }
-}
-
-
-
-    
-</script>
+    </div>
+</div>
+
+<!-- MODALES -->
+<div id="modal-texto" class="modal-overlay">
+    <div class="modal-content">
+        <h3>Añadir Texto</h3>
+        <div class="format-toolbar">
+            <button type="button" id="btn-bold" class="btn-format" onclick="toggleFormat('bold')"><b>B</b></button>
+            <button type="button" id="btn-italic" class="btn-format" onclick="toggleFormat('italic')"><i>I</i></button>
+            <input type="number" id="input-size-texto" value="14" min="4" max="100" style="width: 60px; padding: 5px; border-radius: 6px; border: 1px solid #444; background: #111; color: white; text-align: center; outline: none; font-size: 16px;">
+        </div>
+        <input type="text" id="input-texto-modal" placeholder="Escribe aquí..." style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #444; background: #111; color: white; font-size: 16px; outline: none;">
+        <div id="chips-historial" class="chips-container"></div>
+        <div class="modal-actions">
+            <button type="button" onclick="cerrarModalTexto()" style="background: #555; color: white; border: none; border-radius: 5px;">Cancelar</button>
+            <button type="button" onclick="guardarTextoModal()" style="background: #2ecc71; color: black; border: none; border-radius: 5px;">Aceptar</button>
+        </div>
+    </div>
+</div>
+
+<div id="modal-firma" class="modal-overlay">
+    <div class="modal-content">
+        <h3>Dibuja tu firma</h3>
+        <div style="text-align:center; margin-bottom:10px;">
+            <label style="color:#ccc; font-size:14px;">Color: </label>
+            <input type="color" id="firma-color" value="#1a1a1a" style="width:60px; height:30px; border:none; background:none; cursor:pointer;">
+        </div>
+        <canvas id="canvas-firma" width="380" height="200" style="background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); touch-action: none; width: 100%;"></canvas>
+        <div class="modal-actions">
+            <button type="button" onclick="limpiarFirma()" style="background: #e74c3c; color: white;">Limpiar</button>
+            <button type="button" onclick="cerrarModalFirma()" style="background: #555; color: white;">Cancelar</button>
+            <button type="button" onclick="guardarFirma()" style="background: #2ecc71; color: black;">Aceptar</button>
+        </div>
+    </div>
+</div>
+
+<div id="modal-simbolos" class="modal-overlay">
+    <div class="modal-content">
+        <h3>Añadir Símbolo</h3>
+        <div style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 10px;">
+            <label style="color: #ccc; font-size: 14px;">Tamaño:</label>
+            <input type="number" id="input-size-simbolo" value="24" min="4" max="100" style="width: 60px; padding: 5px; border-radius: 6px; border: 1px solid #444; background: #111; color: white; text-align: center; outline: none; font-size: 16px;">
+        </div>
+        <div class="symbol-grid">
+            <button type="button" class="btn-symbol" onclick="guardarSimbolo('✔')">✔</button>
+            <button type="button" class="btn-symbol" onclick="guardarSimbolo('✘')">✘</button>
+            <button type="button" class="btn-symbol" onclick="guardarSimbolo('•')">•</button>
+        </div>
+        <div class="modal-actions">
+            <button type="button" onclick="cerrarModalSimbolos()" style="background: #555; color: white; border: none; border-radius: 5px;">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<div id="modal-opciones" class="modal-overlay">
+    <div class="modal-content" style="gap: 10px;">
+        <h3>¿Qué deseas añadir?</h3>
+        <button type="button" class="btn-generar" style="margin-top:0; background:#3498db; color:white;" onclick="seleccionarOpcion('texto')">📝 Añadir Texto</button>
+        <button type="button" class="btn-generar" style="margin-top:0; background:#9b59b6; color:white;" onclick="seleccionarOpcion('firma')">✍️ Añadir Firma</button>
+        <button type="button" class="btn-generar" style="margin-top:0; background:#e67e22; color:white;" onclick="seleccionarOpcion('simbolo')">✅ Añadir Símbolo</button>
+        <button type="button" class="btn-volver" style="margin: 10px auto 0 auto;" onclick="cerrarModalOpciones()">❌ Cancelar</button>
+    </div>
+</div>
 
 <div id="screen-ai-chat" class="screen">
     <div class="chat-header">
@@ -1817,7 +258,6 @@ function hacerElementoArrastrable(elmnt) {
     </div>
 </div>
 
-
 <div id="modal-preview-ai" class="modal-overlay">
     <div class="modal-content">
         <h3>Previsualización</h3>
@@ -1827,8 +267,602 @@ function hacerElementoArrastrable(elmnt) {
     </div>
 </div>
 
+<script>
+    const supabaseUrl = 'https://wpzddhmllctdsiuxenss.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwemRkaG1sbGN0ZHNpdXhlbnNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5NjUyNzQsImV4cCI6MjA5OTU0MTI3NH0.hwSxJ3Sk_RlgbvFyr8S64XRuxW7j55BU4gaIneFTuhY';
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-    
-    
+    let usuarioActual = null;
+    let plantillaSeleccionada = null;
+    let plantillasGlobales = [];
+    let freePdfDoc = null;
+    let freeCanvasScales = {};
+    let elementosFlotantes = []; 
+    let freePdfPageCount = 0; 
+    let historialTextos = JSON.parse(localStorage.getItem('docufacil_historial')) || [];
+    let clickCoords = null; 
+    let menuMasAbierto = false;
+    let pendingAction = null;
+    let currentTarget = null;
+    let textFormat = { bold: false, italic: false };
+    let lastTextSize = 14;
+    let lastSymbolSize = 24;
+    let sigCanvas, sigCtx, isDrawing = false;
+    let lastX = 0, lastY = 0;
+    let currentColor = '#1a1a1a';
+    let chatHistory = [];
+    let isAITyping = false;
+    let currentDocumentDraft = null;
+    window.pdfGlobalScale = 1;
+    let initialPdfDist = 0;
+    let initialPdfScale = 1;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        cargarPlantillas();
+        const codigoGuardado = localStorage.getItem('docufacil_codigo');
+        if (codigoGuardado) {
+            document.getElementById('input-codigo').value = codigoGuardado;
+            await activarCodigo(codigoGuardado, true); 
+        }
+        
+        // Zoom con dos dedos en el contenedor del PDF
+        const container = document.getElementById('free-canvas-container');
+        container.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 2) {
+                initialPdfDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                initialPdfScale = window.pdfGlobalScale;
+            }
+        }, {passive: false});
+
+        container.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 2 && initialPdfDist > 0) {
+                e.preventDefault();
+                const currentDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                const scaleFactor = currentDist / initialPdfDist;
+                window.pdfGlobalScale = Math.max(0.5, Math.min(initialPdfScale * scaleFactor, 5));
+                document.querySelectorAll('.pdf-page-wrapper').forEach(wrapper => {
+                    wrapper.style.transform = `scale(${window.pdfGlobalScale})`;
+                    wrapper.style.transformOrigin = 'top left';
+                });
+                document.querySelectorAll('.floating-element').forEach(el => {
+                    el.style.transform = `scale(${window.pdfGlobalScale})`;
+                    el.style.transformOrigin = 'top left';
+                });
+            }
+        }, {passive: false});
+
+        container.addEventListener('touchend', () => { initialPdfDist = 0; });
+
+        document.getElementById('chat-input').addEventListener('input', actualizarBotonChat);
+        document.getElementById('chat-input').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); enviarMensajeAI(); }
+        });
+    });
+
+    function showScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => { s.style.display = 'none'; s.classList.remove('active'); });
+        const target = document.getElementById(screenId);
+        if (target) { target.style.display = 'flex'; target.classList.add('active'); }
+        window.scrollTo(0, 0);
+    }
+
+    function volverAHome() { plantillaSeleccionada = null; showScreen('screen-home'); }
+
+    async function activarCodigoBoton() {
+        const codigo = document.getElementById('input-codigo').value.trim();
+        if (!codigo) return alert("Ingresa un código válido.");
+        await activarCodigo(codigo, false);
+    }
+
+    async function activarCodigo(codigo, silencioso = false) {
+        const { data, error } = await supabase.from('usuarios_codigos').select('*').eq('codigo', codigo).single();
+        if (error || !data) {
+            localStorage.removeItem('docufacil_codigo');
+            if (!silencioso) alert("❌ Código incorrecto o no existe.");
+            return;
+        }
+        if (data.creditos <= 0) {
+            if (!silencioso) alert("⚠️ Este código ya no tiene créditos.");
+            return;
+        }
+        usuarioActual = data;
+        localStorage.setItem('docufacil_codigo', codigo);
+        document.getElementById('user-creditos').innerText = usuarioActual.creditos;
+        if (!silencioso) {
+            document.getElementById('input-codigo').value = '';
+            alert(`✅ ¡Código activado! Tienes ${usuarioActual.creditos} créditos disponibles.`);
+        }
+        renderizarPlantillas();
+    }
+
+    async function descontarCredito(cantidad = 1) {
+        if (!usuarioActual || usuarioActual.creditos < cantidad) return false;
+        const nuevoSaldo = usuarioActual.creditos - cantidad;
+        const { error } = await supabase.from('usuarios_codigos').update({ creditos: nuevoSaldo }).eq('id', usuarioActual.id);
+        if (error) { alert("Error al procesar el crédito."); return false; }
+        usuarioActual.creditos = nuevoSaldo;
+        document.getElementById('user-creditos').innerText = nuevoSaldo;
+        if (nuevoSaldo === 0) renderizarPlantillas(); 
+        return true;
+    }
+
+    async function cargarPlantillas() {
+        const { data, error } = await supabase.from('plantillas').select('*');
+        plantillasGlobales = data || [];
+        renderizarPlantillas();
+    }
+
+    function renderizarPlantillas() {
+        const contenedor = document.getElementById('lista-plantillas');
+        if (!contenedor) return;
+        contenedor.innerHTML = '';
+        const tieneCreditos = usuarioActual && usuarioActual.creditos > 0;
+        const claseBloqueado = tieneCreditos ? '' : 'locked';
+        const candadoHtml = tieneCreditos ? '' : '<div class="candado-icon">🔒</div>';
+
+        contenedor.innerHTML += `
+           <div class="card ${claseBloqueado}" onclick="abrirRellenadoLibre()" style="border-color: #e67e22;">
+                <div class="card-icon">✍️</div>
+                <div class="card-info">
+                    <h3 style="color: #e67e22;">Rellenar mi propio PDF</h3>
+                    <p>Sube cualquier documento, toca donde quieras escribir o firmar y descárgalo.</p>
+                </div>
+                ${candadoHtml}
+            </div>
+            <div class="card ${claseBloqueado}" onclick="mostrarScreen('screen-ai-chat')" style="border-color: #3498db;">
+                <div class="card-icon">✨</div>
+                <div class="card-info">
+                    <h3 style="color: #3498db;">Generación de documento</h3>
+                    <p>Crea documentos personalizados con ayuda de nuestro experto AI.</p>
+                </div>
+                ${candadoHtml}
+            </div>
+        `;
+    }
+
+    function abrirRellenadoLibre() {
+        if (!usuarioActual || usuarioActual.creditos <= 0) {
+            alert("🔒 Necesitas activar un código con créditos.");
+            document.getElementById('seccion-compra').scrollIntoView({ behavior: 'smooth' });
+            return;
+        }
+        document.getElementById('free-pdf-upload').value = '';
+        document.getElementById('free-canvas-container').innerHTML = ''; 
+        document.getElementById('upload-placeholder').style.display = 'flex'; 
+        document.getElementById('free-canvas-container').style.display = 'none'; 
+        document.getElementById('btn-generar-free').style.display = 'none'; 
+        document.getElementById('btn-float-add').style.display = 'none'; 
+        elementosFlotantes = [];
+        freeCanvasScales = {};
+        freePdfPageCount = 0;
+        window.pdfGlobalScale = 1;
+        showScreen('screen-rellenado-libre');
+    }
+
+    document.getElementById('free-pdf-upload').addEventListener('change', async function(e) {
+        if (!e.target.files.length) return;
+        const file = e.target.files[0];
+        const arrayBuffer = await file.arrayBuffer();
+        freePdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
+        const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+        const pdf = await loadingTask.promise;
+        freePdfPageCount = pdf.numPages; 
+        const container = document.getElementById('free-canvas-container');
+        container.innerHTML = ''; 
+        container.style.display = 'flex';
+        document.getElementById('upload-placeholder').style.display = 'none';
+        document.getElementById('btn-float-add').style.display = 'block';
+
+        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+            const page = await pdf.getPage(pageNum);
+            const viewportHD = page.getViewport({ scale: 2.0 });
+            const wrapper = document.createElement('div');
+            wrapper.className = 'pdf-page-wrapper';
+            wrapper.dataset.pageNum = pageNum;
+            wrapper.style.width = (viewportHD.width / 2) + 'px';
+            wrapper.style.height = (viewportHD.height / 2) + 'px';
+            
+            const canvas = document.createElement('canvas');
+            canvas.className = 'free-pdf-canvas';
+            const ctx = canvas.getContext('2d');
+            canvas.width = viewportHD.width;
+            canvas.height = viewportHD.height;
+            canvas.style.width = '100%';
+            canvas.style.height = '100%';
+            freeCanvasScales[pageNum] = 2.0;
+            wrapper.appendChild(canvas);
+            container.appendChild(wrapper);
+            await page.render({ canvasContext: ctx, viewport: viewportHD }).promise;
+
+            wrapper.addEventListener('click', function(ev) {
+                if (ev.target.closest('.floating-element')) return; 
+                const seleccionado = document.querySelector('.floating-element.selected');
+                if (seleccionado) {
+                    document.querySelectorAll('.floating-element').forEach(el => el.classList.remove('selected'));
+                    return;
+                }
+                const rect = canvas.getBoundingClientRect();
+                const x = (ev.clientX - rect.left) * (canvas.width / rect.width);
+                const y = (ev.clientY - rect.top) * (canvas.height / rect.height);
+                mostrarMenuOpciones(this, x, y, pageNum);
+            });
+        }
+        const btnGenerar = document.getElementById('btn-generar-free');
+        btnGenerar.innerText = `✨ Descargar PDF Lleno (${freePdfPageCount} Créditos)`;
+        btnGenerar.style.display = 'block';
+    });
+
+    function toggleMenuMas() {
+        menuMasAbierto = !menuMasAbierto;
+        const menu = document.getElementById('menu-flotante-opciones');
+        if (menu) menu.style.display = menuMasAbierto ? 'flex' : 'none';
+    }
+
+    function abrirModalTextoDesdeMas() {
+        toggleMenuMas();
+        const primeraPagina = document.querySelector('.pdf-page-wrapper');
+        if (!primeraPagina) return alert("Primero sube un PDF");
+        clickCoords = { x: 50, y: 50, pageNum: 1, wrapper: primeraPagina };
+        abrirModalTexto(primeraPagina, 50, 50, 1);
+    }
+
+    function abrirModalFirmaDesdeMas() {
+        toggleMenuMas();
+        const primeraPagina = document.querySelector('.pdf-page-wrapper');
+        if (!primeraPagina) return alert("Primero sube un PDF");
+        clickCoords = { x: 50, y: 150, pageNum: 1, wrapper: primeraPagina };
+        abrirModalFirma(primeraPagina, 50, 150, 1);
+    }
+
+    function mostrarMenuOpciones(parent, x, y, pageNum) {
+        pendingAction = { parent, x, y, pageNum };
+        document.getElementById('modal-opciones').style.display = 'flex';
+    }
+
+    function cerrarModalOpciones() { document.getElementById('modal-opciones').style.display = 'none'; }
+
+    function seleccionarOpcion(opcion) {
+        cerrarModalOpciones();
+        if (!pendingAction) return;
+        const { parent, x, y, pageNum } = pendingAction;
+        if (opcion === 'texto') abrirModalTexto(parent, x, y, pageNum);
+        if (opcion === 'firma') abrirModalFirma(parent, x, y, pageNum);
+        if (opcion === 'simbolo') abrirModalSimbolos(parent, x, y, pageNum);
+    }
+
+    function abrirModalTexto(parent, x, y, pageNum) {
+        currentTarget = { parent, x, y, pageNum };
+        textFormat = { bold: false, italic: false };
+        document.getElementById('btn-bold').classList.remove('active');
+        document.getElementById('btn-italic').classList.remove('active');
+        const input = document.getElementById('input-texto-modal');
+        input.value = '';
+        input.style.fontWeight = 'normal';
+        input.style.fontStyle = 'normal';
+        document.getElementById('input-size-texto').value = lastTextSize;
+        renderizarChipsHistorial();
+        document.getElementById('modal-texto').style.display = 'flex';
+        setTimeout(() => input.focus(), 100);
+    }
+
+    function cerrarModalTexto() { document.getElementById('modal-texto').style.display = 'none'; }
+
+    function toggleFormat(type) {
+        textFormat[type] = !textFormat[type];
+        const btn = document.getElementById(`btn-${type}`);
+        const input = document.getElementById('input-texto-modal');
+        if (textFormat[type]) btn.classList.add('active'); else btn.classList.remove('active');
+        if (type === 'bold') input.style.fontWeight = textFormat.bold ? 'bold' : 'normal';
+        if (type === 'italic') input.style.fontStyle = textFormat.italic ? 'italic' : 'normal';
+    }
+
+    function renderizarChipsHistorial() {
+        const container = document.getElementById('chips-historial');
+        container.innerHTML = '';
+        historialTextos.forEach(texto => {
+            const chip = document.createElement('button');
+            chip.type = 'button'; chip.className = 'chip'; chip.innerText = texto;
+            chip.onclick = () => { document.getElementById('input-texto-modal').value = texto; };
+            container.appendChild(chip);
+        });
+    }
+
+    function guardarTextoModal() {
+        const input = document.getElementById('input-texto-modal');
+        const texto = input.value.trim();
+        if (!texto) return;
+        lastTextSize = parseInt(document.getElementById('input-size-texto').value) || 14;
+        crearElementoFlotante(currentTarget.parent, currentTarget.x, currentTarget.y, currentTarget.pageNum, 'text', texto, null, lastTextSize);
+        guardarEnHistorial(texto);
+        cerrarModalTexto();
+    }
+
+    function abrirModalFirma(parent, x, y, pageNum) {
+        currentTarget = { parent, x, y, pageNum };
+        document.getElementById('modal-firma').style.display = 'flex';
+        sigCanvas = document.getElementById('canvas-firma');
+        sigCtx = sigCanvas.getContext('2d', { alpha: true });
+        sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+        currentColor = document.getElementById('firma-color').value;
+        actualizarEstiloFirma();
+        sigCanvas.onmousedown = startDrawing; sigCanvas.onmousemove = draw; sigCanvas.onmouseup = stopDrawing; sigCanvas.onmouseout = stopDrawing;
+        sigCanvas.ontouchstart = (e) => { e.preventDefault(); startDrawing(e); };
+        sigCanvas.ontouchmove = (e) => { e.preventDefault(); draw(e); };
+        sigCanvas.ontouchend = stopDrawing;
+        document.getElementById('firma-color').oninput = function() { currentColor = this.value; actualizarEstiloFirma(); };
+    }
+
+    function actualizarEstiloFirma() {
+        sigCtx.strokeStyle = currentColor; sigCtx.lineCap = 'round'; sigCtx.lineJoin = 'round';
+        sigCtx.shadowColor = currentColor === '#1a1a1a' ? 'rgba(0,0,0,0.4)' : 'transparent'; sigCtx.shadowBlur = 1;
+    }
+
+    function startDrawing(e) { isDrawing = true; const pos = getPos(e); lastX = pos.x; lastY = pos.y; }
+    function draw(e) {
+        if (!isDrawing) return;
+        const pos = getPos(e);
+        const lineWidth = calculateLineWidth(lastX, lastY, pos.x, pos.y);
+        sigCtx.lineWidth = lineWidth; sigCtx.beginPath(); sigCtx.moveTo(lastX, lastY); sigCtx.lineTo(pos.x, pos.y); sigCtx.stroke();
+        lastX = pos.x; lastY = pos.y;
+    }
+    function stopDrawing() { isDrawing = false; }
+    function getPos(e) {
+        const rect = sigCanvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return { x: (clientX - rect.left) * (sigCanvas.width / rect.width), y: (clientY - rect.top) * (sigCanvas.height / rect.height) };
+    }
+    function calculateLineWidth(x1, y1, x2, y2) { const dist = Math.hypot(x2 - x1, y2 - y1); return Math.max(2.5, Math.min(6.5, 5 - dist * 0.12)); }
+    function limpiarFirma() { sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height); }
+    function cerrarModalFirma() { document.getElementById('modal-firma').style.display = 'none'; }
+    function guardarFirma() {
+        const canvas = document.getElementById('canvas-firma');
+        const dataUrl = canvas.toDataURL('image/png');
+        crearElementoFlotante(currentTarget.parent, currentTarget.x, currentTarget.y, currentTarget.pageNum, 'image', dataUrl);
+        cerrarModalFirma();
+    }
+
+    function abrirModalSimbolos(parent, x, y, pageNum) {
+        currentTarget = { parent, x, y, pageNum };
+        document.getElementById('input-size-simbolo').value = lastSymbolSize;
+        document.getElementById('modal-simbolos').style.display = 'flex';
+    }
+    function cerrarModalSimbolos() { document.getElementById('modal-simbolos').style.display = 'none'; }
+    function guardarSimbolo(simbolo) {
+        lastSymbolSize = parseInt(document.getElementById('input-size-simbolo').value) || 24;
+        crearElementoFlotante(currentTarget.parent, currentTarget.x, currentTarget.y, currentTarget.pageNum, 'text', simbolo, null, lastSymbolSize);
+        cerrarModalSimbolos();
+        cerrarModalOpciones();
+    }
+
+    function crearElementoFlotante(parent, x, y, pageNum, tipo, contenido, formato = null, customSize = null) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'floating-element';
+        wrapper.style.left = `${x}px`;
+        wrapper.style.top = `${y}px`;
+        wrapper.style.position = 'absolute';
+        wrapper.style.transform = `scale(${window.pdfGlobalScale})`;
+        const resizeHandle = document.createElement('div');
+        resizeHandle.className = 'resize-handle';
+        let elData = { wrapper, type: tipo, pageNum };
+        let domElement;
+        if (tipo === 'text') {
+            domElement = document.createElement('span');
+            domElement.className = 'floating-text';
+            domElement.innerText = contenido;
+            let initialSize = customSize || 14;
+            domElement.style.fontSize = `${initialSize}px`;
+            domElement.style.color = 'black';
+            elData.texto = contenido;
+            elData.size = initialSize;
+        } else if (tipo === 'image') {
+            domElement = document.createElement('img');
+            domElement.src = contenido;
+            domElement.style.width = `120px`;
+            elData.dataUrl = contenido;
+            elData.size = 120;
+        }
+        const btnDelete = document.createElement('div');
+        btnDelete.innerHTML = '×'; btnDelete.className = 'btn-delete-float';
+        btnDelete.onclick = (e) => { e.stopPropagation(); wrapper.remove(); elementosFlotantes = elementosFlotantes.filter(i => i !== elData); };
+        wrapper.appendChild(domElement); wrapper.appendChild(btnDelete); wrapper.appendChild(resizeHandle);
+        parent.appendChild(wrapper);
+        const seleccionar = (e) => {
+            e.stopPropagation();
+            document.querySelectorAll('.floating-element').forEach(el => el.classList.remove('selected'));
+            wrapper.classList.add('selected');
+        };
+        wrapper.addEventListener('mousedown', seleccionar);
+        wrapper.addEventListener('touchstart', seleccionar);
+        hacerInteractivo(wrapper, elData, resizeHandle);
+        elementosFlotantes.push(elData);
+    }
+
+    function hacerInteractivo(wrapper, elData, resizeHandle) {
+        let isDragging = false, isResizing = false;
+        let startX, startY, initialLeft, initialTop;
+        let initialDistance = 0, initialSize = 0;
+        const start = (e) => {
+            if (e.target.classList.contains('btn-delete-float')) return;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            if (e.touches && e.touches.length === 2) {
+                isDragging = false;
+                initialDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                initialSize = elData.size;
+                return;
+            }
+            if (e.target === resizeHandle) { isResizing = true; initialSize = elData.size; startX = clientX; } 
+            else { isDragging = true; startX = clientX; startY = clientY; initialLeft = wrapper.offsetLeft; initialTop = wrapper.offsetTop; }
+            e.stopPropagation();
+        };
+        const move = (e) => {
+            if (!isDragging && !isResizing && (!e.touches || e.touches.length !== 2)) return;
+            if (e.touches && e.touches.length === 2 && initialDistance > 0) {
+                const currentDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                const scale = currentDistance / initialDistance;
+                actualizarTamano(initialSize * scale);
+                e.preventDefault(); return;
+            }
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            if (isDragging) {
+                wrapper.style.left = (initialLeft + (clientX - startX) / window.pdfGlobalScale) + 'px';
+                wrapper.style.top = (initialTop + (clientY - startY) / window.pdfGlobalScale) + 'px';
+            } else if (isResizing) {
+                const dx = (clientX - startX) / window.pdfGlobalScale;
+                actualizarTamano(initialSize + dx);
+            }
+            e.preventDefault();
+        };
+        function actualizarTamano(newSize) {
+            if (elData.type === 'text') {
+                newSize = Math.max(6, Math.min(newSize, 120));
+                elData.wrapper.querySelector('.floating-text').style.fontSize = newSize + 'px';
+            } else if (elData.type === 'image') {
+                newSize = Math.max(20, Math.min(newSize, 600));
+                elData.wrapper.querySelector('img').style.width = newSize + 'px';
+            }
+            elData.size = newSize;
+        }
+        const stop = () => { isDragging = false; isResizing = false; initialDistance = 0; };
+        wrapper.addEventListener('mousedown', start);
+        wrapper.addEventListener('touchstart', start, {passive: false});
+        document.addEventListener('mousemove', move);
+        document.addEventListener('touchmove', move, {passive: false});
+        document.addEventListener('mouseup', stop);
+        document.addEventListener('touchend', stop);
+    }
+
+    async function generarPdfLibre() {
+        if (!freePdfDoc) return;
+        if (usuarioActual.creditos < freePdfPageCount) {
+            alert(`⚠️ Necesitas ${freePdfPageCount} créditos para descargar este documento. Tienes ${usuarioActual.creditos}.`);
+            return;
+        }
+        const btn = document.getElementById('btn-generar-free');
+        btn.innerText = "⏳ Procesando..."; btn.disabled = true;
+        try {
+            const pages = freePdfDoc.getPages();
+            for (const el of elementosFlotantes) {
+                const page = pages[el.pageNum - 1];
+                const { width, height } = page.getSize();
+                const scale = freeCanvasScales[el.pageNum];
+                const x = el.wrapper.offsetLeft * scale;
+                const y = height - (el.wrapper.offsetTop * scale) - (el.wrapper.offsetHeight * scale);
+                if (el.type === 'text') {
+                    page.drawText(el.texto, { x, y, size: el.size * scale, color: PDFLib.rgb(0, 0, 0) });
+                } else if (el.type === 'image') {
+                    const img = await freePdfDoc.embedPng(el.dataUrl);
+                    page.drawImage(img, { x, y, width: el.size * scale, height: (el.wrapper.offsetHeight * scale) });
+                }
+            }
+            const pagado = await descontarCredito(freePdfPageCount);
+            if (!pagado) throw new Error("No se pudo procesar el pago.");
+            const pdfBytes = await freePdfDoc.save();
+            download(pdfBytes, "Documento_Lleno.pdf", "application/pdf");
+            alert("✅ ¡Documento descargado!");
+            volverAHome();
+        } catch (err) { alert("Error: " + err.message); }
+        finally { btn.innerText = `✨ Descargar PDF Lleno (${freePdfPageCount} Créditos)`; btn.disabled = false; }
+    }
+
+    function mostrarScreen(id) {
+        if(id === 'screen-ai-chat') { document.getElementById(id).classList.add('active'); }
+        else { showScreen(id); }
+    }
+    function cerrarChatAI() { document.getElementById('screen-ai-chat').classList.remove('active'); }
+    function accionChat() {
+        const input = document.getElementById('chat-input');
+        if (input.value.trim() === "") { iniciarVozChat(); } else { enviarMensajeAI(); }
+    }
+    function actualizarBotonChat() {
+        const input = document.getElementById('chat-input');
+        const btn = document.getElementById('btn-chat-action');
+        if (input.value.trim() !== "") { btn.innerHTML = "➤"; btn.style.background = "#2ecc71"; }
+        else { btn.innerHTML = "🎤"; btn.style.background = "#3498db"; }
+    }
+    function addMessage(sender, text) {
+        const container = document.getElementById('chat-messages');
+        if (!container) return;
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'chat-message ' + sender;
+        msgDiv.innerHTML = text.replace(/\n/g, '<br>');
+        container.appendChild(msgDiv);
+        container.scrollTop = container.scrollHeight;
+    }
+    function iniciarVozChat() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) return alert("Dictado no soportado.");
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'es-ES'; recognition.start();
+        recognition.onresult = (e) => {
+            const transcript = e.results[0][0].transcript;
+            document.getElementById('chat-input').value = transcript;
+            actualizarBotonChat();
+            setTimeout(() => { enviarMensajeAI(); }, 1000);
+        };
+    }
+    async function enviarMensajeAI() {
+        const input = document.getElementById('chat-input');
+        const texto = input.value.trim();
+        if (!texto || isAITyping) return;
+        addMessage('user', texto); input.value = ""; actualizarBotonChat();
+        isAITyping = true; chatHistory.push({ role: 'user', content: texto });
+        try {
+            const { data, error } = await supabase.functions.invoke('generar-documento', {
+                body: JSON.stringify({ history: chatHistory, user_input: texto, current_draft: currentDocumentDraft }),
+            });
+            if (error) { addMessage('ai', '❌ Error: ' + error.message); return; }
+            const aiResponse = data.response;
+            addMessage('ai', aiResponse.message);
+            chatHistory.push({ role: 'assistant', content: aiResponse.raw_response });
+            if ((aiResponse.action === 'document_draft' || aiResponse.action === 'final_document') && aiResponse.document_content) {
+                currentDocumentDraft = aiResponse.document_content;
+                mostrarModalPreviewAI(currentDocumentDraft);
+            }
+        } catch (error) { addMessage('ai', '❌ Error: ' + error.message); }
+        finally { isAITyping = false; }
+    }
+    async function generarPdfAI() {
+        const textarea = document.getElementById('edit-ai-content');
+        if (!textarea) return;
+        let text = textarea.value.trim();
+        if (!usuarioActual || usuarioActual.creditos < 1) return alert("Necesitas 1 crédito.");
+        try {
+            const pdfDoc = await PDFLib.PDFDocument.create();
+            let page = pdfDoc.addPage();
+            const { width, height } = page.getSize();
+            const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+            const margin = 50; let currentY = height - margin;
+            const paragraphs = text.split('\n');
+            for (let para of paragraphs) {
+                if (para.trim() === "") { currentY -= 15; continue; }
+                page.drawText(para, { x: margin, y: currentY, size: 11, font: font, maxWidth: width - (margin * 2), lineHeight: 14 });
+                const lines = Math.ceil(font.widthOfTextAtSize(para, 11) / (width - margin * 2));
+                currentY -= (lines * 14) + 12;
+                if (currentY < margin + 50) { page = pdfDoc.addPage(); currentY = height - margin; }
+            }
+            const pagado = await descontarCredito(1);
+            if (!pagado) return;
+            const pdfBytes = await pdfDoc.save();
+            download(pdfBytes, "Documento_AI.pdf", "application/pdf");
+            document.getElementById('modal-preview-ai').style.display = 'none';
+        } catch (e) { alert("Error: " + e.message); }
+    }
+    function mostrarModalPreviewAI(content) {
+        const modal = document.getElementById('modal-preview-ai');
+        const preview = document.getElementById('preview-content');
+        preview.innerHTML = `<textarea id="edit-ai-content" style="width:100%; height:300px; border:1px solid #ccc; padding:10px; font-family:serif; font-size:14px; resize:none; background:white; color:black;">${content}</textarea>`;
+        modal.style.display = 'flex';
+    }
+    function guardarEnHistorial(texto) {
+        if (texto && !historialTextos.includes(texto)) {
+            historialTextos.push(texto);
+            localStorage.setItem('docufacil_historial', JSON.stringify(historialTextos));
+        }
+    }
+</script>
 </body>
 </html>
