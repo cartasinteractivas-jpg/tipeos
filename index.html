@@ -306,7 +306,6 @@
             await activarCodigo(codigoGuardado, true); 
         }
         
-        // Zoom con dos dedos en el contenedor del PDF
         const container = document.getElementById('free-canvas-container');
         container.addEventListener('touchstart', (e) => {
             if (e.touches.length === 2) {
@@ -333,7 +332,6 @@
         }, {passive: false});
 
         container.addEventListener('touchend', () => { initialPdfDist = 0; });
-
         document.getElementById('chat-input').addEventListener('input', actualizarBotonChat);
         document.getElementById('chat-input').addEventListener('keydown', (e) => {
             if (e.key === 'Enter') { e.preventDefault(); enviarMensajeAI(); }
@@ -503,7 +501,6 @@
         toggleMenuMas();
         const primeraPagina = document.querySelector('.pdf-page-wrapper');
         if (!primeraPagina) return alert("Primero sube un PDF");
-        clickCoords = { x: 50, y: 50, pageNum: 1, wrapper: primeraPagina };
         abrirModalTexto(primeraPagina, 50, 50, 1);
     }
 
@@ -511,7 +508,6 @@
         toggleMenuMas();
         const primeraPagina = document.querySelector('.pdf-page-wrapper');
         if (!primeraPagina) return alert("Primero sube un PDF");
-        clickCoords = { x: 50, y: 150, pageNum: 1, wrapper: primeraPagina };
         abrirModalFirma(primeraPagina, 50, 150, 1);
     }
 
@@ -631,7 +627,14 @@
     function cerrarModalSimbolos() { document.getElementById('modal-simbolos').style.display = 'none'; }
     function guardarSimbolo(simbolo) {
         lastSymbolSize = parseInt(document.getElementById('input-size-simbolo').value) || 24;
-        crearElementoFlotante(currentTarget.parent, currentTarget.x, currentTarget.y, currentTarget.pageNum, 'text', simbolo, null, lastSymbolSize);
+        // Convertimos el símbolo en imagen para que PDF-Lib lo estampe sin problemas de fuentes
+        const canvas = document.createElement('canvas');
+        canvas.width = 100; canvas.height = 100;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = 'black'; ctx.font = '80px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(simbolo, 50, 50);
+        const dataUrl = canvas.toDataURL('image/png');
+        crearElementoFlotante(currentTarget.parent, currentTarget.x, currentTarget.y, currentTarget.pageNum, 'image', dataUrl, null, lastSymbolSize * 2);
         cerrarModalSimbolos();
         cerrarModalOpciones();
     }
@@ -659,9 +662,10 @@
         } else if (tipo === 'image') {
             domElement = document.createElement('img');
             domElement.src = contenido;
-            domElement.style.width = `120px`;
+            let initialSize = customSize || 120;
+            domElement.style.width = `${initialSize}px`;
             elData.dataUrl = contenido;
-            elData.size = 120;
+            elData.size = initialSize;
         }
         const btnDelete = document.createElement('div');
         btnDelete.innerHTML = '×'; btnDelete.className = 'btn-delete-float';
@@ -748,14 +752,17 @@
             for (const el of elementosFlotantes) {
                 const page = pages[el.pageNum - 1];
                 const { width, height } = page.getSize();
-                const scale = freeCanvasScales[el.pageNum];
-                const x = el.wrapper.offsetLeft * scale;
-                const y = height - (el.wrapper.offsetTop * scale) - (el.wrapper.offsetHeight * scale);
+                // Coordenadas PDF: (0,0) es abajo-izquierda. 
+                // Coordenadas HTML: (0,0) es arriba-izquierda.
+                // Usamos la escala 2.0 (HD) para ajustar las posiciones.
+                const pdfX = (el.wrapper.offsetLeft / 2);
+                const pdfY = height - (el.wrapper.offsetTop / 2) - (el.wrapper.offsetHeight / 2);
+                
                 if (el.type === 'text') {
-                    page.drawText(el.texto, { x, y, size: el.size * scale, color: PDFLib.rgb(0, 0, 0) });
+                    page.drawText(el.texto, { x: pdfX, y: pdfY, size: el.size / 2, color: PDFLib.rgb(0, 0, 0) });
                 } else if (el.type === 'image') {
                     const img = await freePdfDoc.embedPng(el.dataUrl);
-                    page.drawImage(img, { x, y, width: el.size * scale, height: (el.wrapper.offsetHeight * scale) });
+                    page.drawImage(img, { x: pdfX, y: pdfY, width: el.size / 2, height: (el.wrapper.offsetHeight / 2) });
                 }
             }
             const pagado = await descontarCredito(freePdfPageCount);
