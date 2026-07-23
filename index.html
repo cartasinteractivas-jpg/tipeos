@@ -7,11 +7,11 @@
     
     <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8"></script>
-    <!-- PDF-lib para editar y estampar el PDF -->
+    <!-- PDF-lib -->
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-    <!-- PDF.js para visualizar el PDF en pantalla -->
+    <!-- PDF.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-    <!-- Download.js para descargar el archivo -->
+    <!-- Download.js -->
     <script src="https://unpkg.com/downloadjs@1.4.7"></script>
 
     <style>
@@ -56,11 +56,11 @@
 
         /* --- RELLENADO LIBRE --- */
         .canvas-container { width: 100%; height: calc(100vh - 60px); overflow: auto; display: flex; flex-direction: column; align-items: center; background: #000; position: relative; padding: 10px; scroll-behavior: smooth; }
-        .pdf-page-wrapper { position: relative; background: white; box-shadow: 0 4px 15px rgba(0,0,0,0.5); margin-bottom: 20px; transform-origin: top left; width: 100% !important; max-width: 100%; }
+        .pdf-page-wrapper { position: relative; background: white; box-shadow: 0 4px 15px rgba(0,0,0,0.5); margin-bottom: 20px; width: 100% !important; max-width: 100%; }
         .free-pdf-canvas { display: block; width: 100%; height: auto; }
         
         /* Elementos Flotantes */
-        .floating-element { position: absolute; z-index: 40; cursor: grab; padding: 4px; border: 1px dashed transparent; border-radius: 4px; display: flex; align-items: center; justify-content: center; transform-origin: top left; will-change: transform; }
+        .floating-element { position: absolute; z-index: 40; cursor: grab; padding: 4px; border: 1px dashed transparent; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
         .floating-element.selected { border: 2px dashed #3498db !important; background: rgba(255,255,255,0.9); }
         .floating-text { color: #000; font-family: sans-serif; white-space: nowrap; pointer-events: none; user-select: none; }
         .btn-delete-float { position: absolute; top: -10px; right: -10px; background: #e74c3c; color: white; border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 10px; font-weight: bold; cursor: pointer; display: none; justify-content: center; align-items: center; z-index: 50; }
@@ -96,7 +96,6 @@
         .chat-input { flex: 1; background: #000; border: 1px solid #444; color: #fff; padding: 12px 15px; border-radius: 25px; outline: none; }
         .btn-chat-action { background: #3498db; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; font-size: 20px; display: flex; justify-content: center; align-items: center; }
 
-        /* --- MARGENES AI --- */
         .margin-selector { display: flex; gap: 10px; justify-content: center; margin: 10px 0; }
         .btn-margin { background: #333; color: white; border: 1px solid #555; padding: 8px 12px; border-radius: 6px; font-size: 13px; cursor: pointer; }
         .btn-margin.active { background: #f1c40f; color: #000; border-color: #f1c40f; }
@@ -155,7 +154,6 @@
 
         <div id="free-canvas-container" class="canvas-container" style="display: none;"></div>
 
-        <!-- BOTÓN FLOTANTE FIJO -->
         <button id="btn-float-add" onclick="toggleMenuMas()" style="position: fixed; bottom: 25px; right: 20px; background: #3498db; color: white; border: none; width: 56px; height: 56px; border-radius: 50%; font-size: 28px; z-index: 2001; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: none;">✚</button>
 
         <div id="menu-flotante-opciones" style="display: none; position: fixed; bottom: 90px; right: 20px; flex-direction: column; gap: 10px; z-index: 2000;">
@@ -165,7 +163,6 @@
         </div>
     </div>
 </div>
-
 <!-- MODALES -->
 <div id="modal-texto" class="modal-overlay">
     <div class="modal-content">
@@ -259,7 +256,6 @@
 
     let usuarioActual = null;
     let freePdfDoc = null;
-    let freeCanvasScales = {};
     let elementosFlotantes = []; 
     let freePdfPageCount = 0; 
     let historialTextos = JSON.parse(localStorage.getItem('docufacil_historial')) || [];
@@ -275,9 +271,7 @@
     let isAITyping = false;
     let currentDocumentDraft = null;
     let selectedMargin = 1.0;
-    window.pdfGlobalScale = 1;
-    let initialPdfDist = 0;
-    let initialPdfScale = 1;
+    window.pdfGlobalScale = 1;   // Fijo en 1
 
     document.addEventListener('DOMContentLoaded', async () => {
         cargarPlantillas();
@@ -287,39 +281,12 @@
             await activarCodigo(codigoGuardado, true); 
         }
         
-        const container = document.getElementById('free-canvas-container');
-        container.addEventListener('touchstart', (e) => {
-            if (e.touches.length === 2) {
-                initialPdfDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-                initialPdfScale = window.pdfGlobalScale;
-            }
-        }, {passive: false});
-
-        container.addEventListener('touchmove', (e) => {
-            if (e.touches.length === 2 && initialPdfDist > 0) {
-                e.preventDefault();
-                const currentDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-                const scaleFactor = currentDist / initialPdfDist;
-                window.pdfGlobalScale = Math.max(0.5, Math.min(initialPdfScale * scaleFactor, 5));
-                document.querySelectorAll('.pdf-page-wrapper').forEach(wrapper => {
-                    wrapper.style.transform = `scale(${window.pdfGlobalScale})`;
-                    wrapper.style.transformOrigin = 'top left';
-                });
-                document.querySelectorAll('.floating-element').forEach(el => {
-                    el.style.transform = `scale(${window.pdfGlobalScale})`;
-                    el.style.transformOrigin = 'top left';
-                });
-            }
-        }, {passive: false});
-
-        container.addEventListener('touchend', () => { initialPdfDist = 0; });
         document.getElementById('chat-input').addEventListener('input', actualizarBotonChat);
         document.getElementById('chat-input').addEventListener('keydown', (e) => {
             if (e.key === 'Enter') { e.preventDefault(); enviarMensajeAI(); }
         });
     });
-
-    function showScreen(screenId) {
+        function showScreen(screenId) {
         document.querySelectorAll('.screen').forEach(s => { s.style.display = 'none'; s.classList.remove('active'); });
         const target = document.getElementById(screenId);
         if (target) { target.style.display = 'flex'; target.classList.add('active'); }
@@ -412,7 +379,6 @@
         document.getElementById('btn-generar-free').style.display = 'none'; 
         document.getElementById('btn-float-add').style.display = 'none'; 
         elementosFlotantes = [];
-        freeCanvasScales = {};
         freePdfPageCount = 0;
         window.pdfGlobalScale = 1;
         showScreen('screen-rellenado-libre');
@@ -447,7 +413,6 @@
             const ctx = canvas.getContext('2d');
             canvas.width = viewportHD.width;
             canvas.height = viewportHD.height;
-            freeCanvasScales[pageNum] = 2.0;
             wrapper.appendChild(canvas);
             container.appendChild(wrapper);
             await page.render({ canvasContext: ctx, viewport: viewportHD }).promise;
@@ -490,9 +455,8 @@
             }
         });
 
-        // Ajustar coordenadas relativas a la hoja y al zoom
-        const relativeY = (centerY - targetWrapper.offsetTop) / window.pdfGlobalScale;
-        const relativeX = (centerX - targetWrapper.offsetLeft) / window.pdfGlobalScale;
+        const relativeY = (centerY - targetWrapper.offsetTop);
+        const relativeX = (centerX - targetWrapper.offsetLeft);
         
         return { 
             wrapper: targetWrapper, 
@@ -502,6 +466,7 @@
         };
     }
 
+    // === El resto de funciones (modales, firma, símbolos, etc.) se mantienen iguales ===
     function abrirModalTextoDesdeMas() {
         toggleMenuMas();
         const center = getViewportCenter();
@@ -637,7 +602,7 @@
         wrapper.style.left = `${x - (initialSize / 2)}px`;
         wrapper.style.top = `${y - (initialSize / 2)}px`;
         wrapper.style.position = 'absolute';
-        wrapper.style.transform = `scale(${window.pdfGlobalScale})`;
+        // Sin transform scale
         const resizeHandle = document.createElement('div');
         resizeHandle.className = 'resize-handle';
         let elData = { wrapper, type: tipo, pageNum };
@@ -662,6 +627,7 @@
         btnDelete.onclick = (e) => { e.stopPropagation(); wrapper.remove(); elementosFlotantes = elementosFlotantes.filter(i => i !== elData); };
         wrapper.appendChild(domElement); wrapper.appendChild(btnDelete); wrapper.appendChild(resizeHandle);
         parent.appendChild(wrapper);
+
         const seleccionar = (e) => {
             e.stopPropagation();
             document.querySelectorAll('.floating-element').forEach(el => el.classList.remove('selected'));
@@ -677,39 +643,34 @@
         let isDragging = false, isResizing = false;
         let startX, startY, initialLeft, initialTop;
         let initialDistance = 0, initialSize = 0;
+
         const start = (e) => {
             if (e.target.classList.contains('btn-delete-float')) return;
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            if (e.touches && e.touches.length === 2) {
-                isDragging = false;
-                initialDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-                initialSize = elData.size;
-                return;
+
+            if (e.target === resizeHandle) { 
+                isResizing = true; initialSize = elData.size; startX = clientX; 
+            } else { 
+                isDragging = true; startX = clientX; startY = clientY; initialLeft = wrapper.offsetLeft; initialTop = wrapper.offsetTop; 
             }
-            if (e.target === resizeHandle) { isResizing = true; initialSize = elData.size; startX = clientX; } 
-            else { isDragging = true; startX = clientX; startY = clientY; initialLeft = wrapper.offsetLeft; initialTop = wrapper.offsetTop; }
             e.stopPropagation();
         };
+
         const move = (e) => {
-            if (!isDragging && !isResizing && (!e.touches || e.touches.length !== 2)) return;
-            if (e.touches && e.touches.length === 2 && initialDistance > 0) {
-                const currentDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-                const scale = currentDistance / initialDistance;
-                actualizarTamano(initialSize * scale);
-                e.preventDefault(); return;
-            }
+            if (!isDragging && !isResizing) return;
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
             if (isDragging) {
-                wrapper.style.left = (initialLeft + (clientX - startX) / window.pdfGlobalScale) + 'px';
-                wrapper.style.top = (initialTop + (clientY - startY) / window.pdfGlobalScale) + 'px';
+                wrapper.style.left = (initialLeft + (clientX - startX)) + 'px';
+                wrapper.style.top = (initialTop + (clientY - startY)) + 'px';
             } else if (isResizing) {
-                const dx = (clientX - startX) / window.pdfGlobalScale;
+                const dx = (clientX - startX);
                 actualizarTamano(initialSize + dx);
             }
-            e.preventDefault();
         };
+
         function actualizarTamano(newSize) {
             if (elData.type === 'text') {
                 newSize = Math.max(6, Math.min(newSize, 120));
@@ -720,7 +681,9 @@
             }
             elData.size = newSize;
         }
-        const stop = () => { isDragging = false; isResizing = false; initialDistance = 0; };
+
+        const stop = () => { isDragging = false; isResizing = false; };
+
         wrapper.addEventListener('mousedown', start);
         wrapper.addEventListener('touchstart', start, {passive: false});
         document.addEventListener('mousemove', move);
@@ -762,6 +725,7 @@
         finally { btn.innerText = `✨ Descargar PDF Lleno (${freePdfPageCount} Créditos)`; btn.disabled = false; }
     }
 
+    // Funciones del chat AI (sin cambios)
     function mostrarScreen(id) {
         if(id === 'screen-ai-chat') { 
             document.getElementById(id).classList.add('active'); 
@@ -847,7 +811,6 @@
             const { width, height } = page.getSize();
             const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
             
-            // Convertir cm a puntos (1 cm = 28.35 puntos)
             const marginPoints = selectedMargin * 28.35;
             let currentY = height - marginPoints;
             const maxWidth = width - (marginPoints * 2);
