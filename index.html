@@ -61,12 +61,14 @@
         
         /* Elementos Flotantes */
         .floating-element { position: absolute; z-index: 40; cursor: grab; padding: 4px; border: 1px dashed transparent; border-radius: 4px; display: flex; align-items: center; justify-content: center; transform-origin: top left; will-change: transform; }
-        .floating-element.selected { border: 2px dashed #3498db !important; background: rgba(255,255,255,0.9); }
+        .floating-element.selected { border: 2px dashed #3498db !important; }
+        .floating-element.has-bg { background: white !important; }
         .floating-text { color: #000; font-family: sans-serif; white-space: nowrap; pointer-events: none; user-select: none; }
         .btn-delete-float { position: absolute; top: -10px; right: -10px; background: #e74c3c; color: white; border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 10px; font-weight: bold; cursor: pointer; display: none; justify-content: center; align-items: center; z-index: 50; }
+        .btn-bg-float { position: absolute; top: -10px; left: -10px; background: #fff; color: #000; border: 1px solid #ccc; border-radius: 50%; width: 22px; height: 22px; font-size: 10px; font-weight: bold; cursor: pointer; display: none; justify-content: center; align-items: center; z-index: 50; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
         .resize-handle { position: absolute; bottom: -8px; right: -8px; width: 16px; height: 16px; background: #3498db; border-radius: 50%; cursor: nwse-resize; display: none; z-index: 50; border: 2px solid white; }
-        .floating-element:hover .btn-delete-float, .floating-element:hover .resize-handle,
-        .floating-element.selected .btn-delete-float, .floating-element.selected .resize-handle { display: flex !important; }
+        .floating-element:hover .btn-delete-float, .floating-element:hover .resize-handle, .floating-element:hover .btn-bg-float,
+        .floating-element.selected .btn-delete-float, .floating-element.selected .resize-handle, .floating-element.selected .btn-bg-float { display: flex !important; }
 
         /* --- MODALES --- */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center; padding: 20px; }
@@ -169,6 +171,8 @@
             <button onclick="abrirModalTextoDesdeMas()" style="background: #3498db; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; width: 120px; display: flex; align-items: center; gap: 8px; justify-content: center;">📝 Texto</button>
             <button onclick="abrirModalFirmaDesdeMas()" style="background: #e67e22; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; width: 120px; display: flex; align-items: center; gap: 8px; justify-content: center;">✍️ Firma</button>
             <button onclick="abrirModalSimbolosDesdeMas()" style="background: #9b59b6; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; width: 120px; display: flex; align-items: center; gap: 8px; justify-content: center;">✅ Símbolo</button>
+            <button onclick="abrirSubirImagenDesdeMas()" style="background: #2ecc71; color: black; border: none; padding: 12px; border-radius: 8px; font-weight: bold; width: 120px; display: flex; align-items: center; gap: 8px; justify-content: center;">🖼️ Imagen</button>
+            <input type="file" id="input-subir-imagen" accept="image/*" style="display: none;" onchange="procesarImagenSubida(event)">
         </div>
     </div>
 </div>
@@ -220,7 +224,7 @@
             <button type="button" class="btn-symbol" onclick="guardarSimbolo('•')">•</button>
         </div>
         <div class="modal-actions">
-            <button type="button" onclick="cerrarModalSimbolos()" style="background: #555; color: white;">Cancelar</button>
+            <button type="button" onclick="cerrarModalSimbolos()" style="background: #555; color: white; border: none; border-radius: 5px;">Cancelar</button>
         </div>
     </div>
 </div>
@@ -252,13 +256,13 @@
         <p style="font-size: 11px; color: #666; text-align: center; margin-bottom: 5px;">Ajusta el texto y la alineación antes de pasar al editor final.</p>
         
         <div class="preview-toolbar">
-            <button class="btn-tool active" id="tool-left" onclick="setAlign('left')">⬅ Izq</button>
+            <button class="btn-tool" id="tool-left" onclick="setAlign('left')">⬅ Izq</button>
             <button class="btn-tool" id="tool-center" onclick="setAlign('center')">⏺ Cen</button>
             <button class="btn-tool" id="tool-right" onclick="setAlign('right')">➡ Der</button>
-            <button class="btn-tool" id="tool-justify" onclick="setAlign('justify')">≡ Jus</button>
+            <button class="btn-tool active" id="tool-justify" onclick="setAlign('justify')">≡ Jus</button>
             <button class="btn-tool" style="background: #f1c40f; border-color: #d4ac0d; font-weight: bold;" onclick="regenerarEstiloAI()">✨ Pulir Redacción</button>
         </div>
-        <div id="edit-ai-content" contenteditable="true"></div>
+        <div id="edit-ai-content" contenteditable="true" style="text-align: justify;"></div>
         
         <div class="modal-actions" style="flex-direction: column; gap: 8px;">
             <button class="btn-generar" onclick="enviarAlEditorFinal()" style="background:#2ecc71; color:black; width:100%; padding:12px; font-size: 14px;">🚀 Pasar al Editor Final (Firma/Sellos)</button>
@@ -291,7 +295,7 @@
     let isAITyping = false;
     let currentDocumentDraft = null;
     let selectedMargin = 1.0;
-    let currentAlignment = 'left';
+    let currentAlignment = 'justify';
     window.pdfGlobalScale = 1;
     let initialPdfDist = 0;
     let initialPdfScale = 1;
@@ -521,6 +525,23 @@
         abrirModalSimbolos();
     }
 
+    function abrirSubirImagenDesdeMas() {
+        toggleMenuMas();
+        const center = getViewportCenter();
+        currentTarget = { parent: center.wrapper, x: center.x, y: center.y, pageNum: center.pageNum };
+        document.getElementById('input-subir-imagen').click();
+    }
+
+    function procesarImagenSubida(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            crearElementoFlotante(currentTarget.parent, currentTarget.x, currentTarget.y, currentTarget.pageNum, 'image', e.target.result);
+        };
+        reader.readAsDataURL(file);
+    }
+
     function abrirModalTexto() {
         textFormat = { bold: false, italic: false };
         document.getElementById('btn-bold').classList.remove('active');
@@ -638,7 +659,7 @@
         wrapper.style.transform = `scale(${window.pdfGlobalScale})`;
         const resizeHandle = document.createElement('div');
         resizeHandle.className = 'resize-handle';
-        let elData = { wrapper, type: tipo, pageNum };
+        let elData = { wrapper, type: tipo, pageNum, hasBg: false };
         let domElement;
         if (tipo === 'text') {
             domElement = document.createElement('span');
@@ -658,7 +679,18 @@
         const btnDelete = document.createElement('div');
         btnDelete.innerHTML = '×'; btnDelete.className = 'btn-delete-float';
         btnDelete.onclick = (e) => { e.stopPropagation(); wrapper.remove(); elementosFlotantes = elementosFlotantes.filter(i => i !== elData); };
-        wrapper.appendChild(domElement); wrapper.appendChild(btnDelete); wrapper.appendChild(resizeHandle);
+        
+        const btnBg = document.createElement('div');
+        btnBg.innerHTML = '⬜'; btnBg.className = 'btn-bg-float';
+        btnBg.title = "Tapar fondo";
+        btnBg.onclick = (e) => { 
+            e.stopPropagation(); 
+            elData.hasBg = !elData.hasBg; 
+            wrapper.classList.toggle('has-bg', elData.hasBg);
+            btnBg.style.background = elData.hasBg ? '#3498db' : '#fff';
+        };
+
+        wrapper.appendChild(domElement); wrapper.appendChild(btnDelete); wrapper.appendChild(btnBg); wrapper.appendChild(resizeHandle);
         parent.appendChild(wrapper);
         const seleccionar = (e) => {
             e.stopPropagation();
@@ -676,7 +708,7 @@
         let startX, startY, initialLeft, initialTop;
         let initialDistance = 0, initialSize = 0;
         const start = (e) => {
-            if (e.target.classList.contains('btn-delete-float')) return;
+            if (e.target.classList.contains('btn-delete-float') || e.target.classList.contains('btn-bg-float')) return;
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
             if (e.touches && e.touches.length === 2) {
@@ -743,6 +775,11 @@
                 const ratio = width / el.wrapper.parentElement.offsetWidth;
                 const pdfX = el.wrapper.offsetLeft * ratio;
                 const pdfY = height - (el.wrapper.offsetTop * ratio) - (el.wrapper.offsetHeight * ratio);
+                
+                if (el.hasBg) {
+                    page.drawRectangle({ x: pdfX, y: pdfY, width: el.wrapper.offsetWidth * ratio, height: el.wrapper.offsetHeight * ratio, color: PDFLib.rgb(1, 1, 1) });
+                }
+
                 if (el.type === 'text') {
                     page.drawText(el.texto, { x: pdfX, y: pdfY, size: el.size * ratio, color: PDFLib.rgb(0, 0, 0) });
                 } else if (el.type === 'image') {
@@ -893,7 +930,7 @@
                 if (currentAlignment === 'center') xPos = marginPoints + (maxWidth - font.widthOfTextAtSize(line, 11)) / 2;
                 else if (currentAlignment === 'right') xPos = marginPoints + (maxWidth - font.widthOfTextAtSize(line, 11));
                 page.drawText(line.trim(), { x: xPos, y: currentY, size: 11, font: font });
-                currentY -= 20;
+                currentY -= 42.5; // 1.5 cm de parrafo (1.5 * 28.35)
                 if (currentY < marginPoints) { page = pdfDoc.addPage(PDFLib.PageSizes.A4); currentY = height - marginPoints; }
             }
             const pdfBytes = await pdfDoc.save();
