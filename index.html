@@ -100,6 +100,13 @@
         .margin-selector { display: flex; gap: 10px; justify-content: center; margin: 10px 0; }
         .btn-margin { background: #333; color: white; border: 1px solid #555; padding: 8px 12px; border-radius: 6px; font-size: 13px; cursor: pointer; }
         .btn-margin.active { background: #f1c40f; color: #000; border-color: #f1c40f; }
+
+        /* --- EDITOR PREVIEW AI --- */
+        .preview-toolbar { display: flex; flex-wrap: wrap; gap: 5px; background: #f0f0f0; padding: 8px; border-radius: 5px 5px 0 0; border: 1px solid #ccc; border-bottom: none; }
+        .btn-tool { background: white; border: 1px solid #ccc; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 14px; color: #333; }
+        .btn-tool:hover { background: #e0e0e0; }
+        .btn-tool.active { background: #3498db; color: white; border-color: #2980b9; }
+        #edit-ai-content { width: 100%; height: 300px; border: 1px solid #ccc; padding: 15px; font-family: 'Times New Roman', Times, serif; font-size: 14px; resize:none; background:white; color:black; outline: none; overflow-y: auto; }
     </style>
 </head>
 <body>
@@ -240,13 +247,22 @@
 </div>
 
 <div id="modal-preview-ai" class="modal-overlay">
-    <div class="modal-content" style="max-width: 450px;">
-        <h3>Previsualización y Edición</h3>
-        <p style="font-size: 12px; color: #aaa; text-align: center; margin-bottom: 10px;">Puedes editar el texto antes de pasarlo al editor final.</p>
-        <div id="preview-content" style="background:white; color:black; padding:10px; border-radius:5px; max-height:350px; overflow-y:auto;"></div>
-        <div class="modal-actions" style="flex-direction: column;">
-            <button class="btn-generar" onclick="enviarAlEditorFinal()" style="background:#2ecc71; color:black; width:100%; padding:15px;">🚀 Pasar al Editor Final (Firma/Sellos)</button>
-            <button class="btn-volver" onclick="document.getElementById('modal-preview-ai').style.display='none'" style="background:transparent; color:#aaa; border:1px solid #555; width:100%; margin-top:5px;">Seguir editando en Chat</button>
+    <div class="modal-content" style="max-width: 450px; background: #f9f9f9; color: #333;">
+        <h3 style="color: #2c3e50;">Editor Inteligente AI</h3>
+        <p style="font-size: 11px; color: #666; text-align: center; margin-bottom: 5px;">Ajusta el texto y la alineación antes de pasar al editor final.</p>
+        
+        <div class="preview-toolbar">
+            <button class="btn-tool active" id="tool-left" onclick="setAlign('left')">⬅ Izq</button>
+            <button class="btn-tool" id="tool-center" onclick="setAlign('center')">⏺ Cen</button>
+            <button class="btn-tool" id="tool-right" onclick="setAlign('right')">➡ Der</button>
+            <button class="btn-tool" id="tool-justify" onclick="setAlign('justify')">≡ Jus</button>
+            <button class="btn-tool" style="background: #f1c40f; border-color: #d4ac0d; font-weight: bold;" onclick="regenerarEstiloAI()">✨ Pulir Redacción</button>
+        </div>
+        <div id="edit-ai-content" contenteditable="true"></div>
+        
+        <div class="modal-actions" style="flex-direction: column; gap: 8px;">
+            <button class="btn-generar" onclick="enviarAlEditorFinal()" style="background:#2ecc71; color:black; width:100%; padding:12px; font-size: 14px;">🚀 Pasar al Editor Final (Firma/Sellos)</button>
+            <button class="btn-volver" onclick="document.getElementById('modal-preview-ai').style.display='none'" style="background:transparent; color:#666; border:1px solid #ccc; width:100%; padding:8px; font-size: 12px;">Seguir en Chat</button>
         </div>
     </div>
 </div>
@@ -275,6 +291,7 @@
     let isAITyping = false;
     let currentDocumentDraft = null;
     let selectedMargin = 1.0;
+    let currentAlignment = 'left';
     window.pdfGlobalScale = 1;
     let initialPdfDist = 0;
     let initialPdfScale = 1;
@@ -327,12 +344,6 @@
     }
 
     function volverAHome() { showScreen('screen-home'); }
-
-    async function activarCodigoBoton() {
-        const codigo = document.getElementById('input-codigo').value.trim();
-        if (!codigo) return alert("Ingresa un código válido.");
-        await activarCodigo(codigo, false);
-    }
 
     async function activarCodigo(codigo, silencioso = false) {
         const { data, error } = await supabase.from('usuarios_codigos').select('*').eq('codigo', codigo).single();
@@ -475,31 +486,18 @@
         const scrollLeft = container.scrollLeft;
         const containerHeight = container.clientHeight;
         const containerWidth = container.clientWidth;
-        
         const centerY = scrollTop + (containerHeight / 2);
         const centerX = scrollLeft + (containerWidth / 2);
-        
         const wrappers = document.querySelectorAll('.pdf-page-wrapper');
         let targetWrapper = wrappers[0];
-        
         wrappers.forEach(w => {
             const wrapperTop = w.offsetTop;
             const wrapperBottom = wrapperTop + w.offsetHeight;
-            if (centerY >= wrapperTop && centerY <= wrapperBottom) {
-                targetWrapper = w;
-            }
+            if (centerY >= wrapperTop && centerY <= wrapperBottom) targetWrapper = w;
         });
-
-        // Ajustar coordenadas relativas a la hoja y al zoom
         const relativeY = (centerY - targetWrapper.offsetTop) / window.pdfGlobalScale;
         const relativeX = (centerX - targetWrapper.offsetLeft) / window.pdfGlobalScale;
-        
-        return { 
-            wrapper: targetWrapper, 
-            x: relativeX, 
-            y: relativeY, 
-            pageNum: parseInt(targetWrapper.dataset.pageNum) 
-        };
+        return { wrapper: targetWrapper, x: relativeX, y: relativeY, pageNum: parseInt(targetWrapper.dataset.pageNum) };
     }
 
     function abrirModalTextoDesdeMas() {
@@ -778,6 +776,12 @@
         document.getElementById('margin-1').classList.toggle('active', val === 1);
         document.getElementById('margin-05').classList.toggle('active', val === 0.5);
     }
+    function setAlign(align) {
+        currentAlignment = align;
+        document.querySelectorAll('.btn-tool').forEach(b => b.classList.remove('active'));
+        document.getElementById(`tool-${align}`).classList.add('active');
+        document.getElementById('edit-ai-content').style.textAlign = align;
+    }
     function accionChat() {
         const input = document.getElementById('chat-input');
         if (input.value.trim() === "") { iniciarVozChat(); } else { enviarMensajeAI(); }
@@ -830,64 +834,75 @@
         } catch (error) { addMessage('ai', '❌ Error: ' + error.message); }
         finally { isAITyping = false; }
     }
+    async function regenerarEstiloAI() {
+        if (isAITyping) return;
+        const editor = document.getElementById('edit-ai-content');
+        const textoActual = editor.innerText;
+        addMessage('ai', '⏳ Pulido redacción (manteniendo tus datos)...');
+        isAITyping = true;
+        try {
+            const prompt = "Mejora la redacción y profesionalismo del siguiente texto, pero MANTÉN EXACTAMENTE IGUAL todos los nombres propios, DNI, fechas, montos y datos personales. Solo mejora el cuerpo del mensaje. Texto: " + textoActual;
+            const { data, error } = await supabase.functions.invoke('generar-documento', {
+                body: JSON.stringify({ history: chatHistory, user_input: prompt, current_draft: textoActual }),
+            });
+            if (error) throw error;
+            const aiResponse = data.response;
+            if (aiResponse.document_content) {
+                currentDocumentDraft = aiResponse.document_content;
+                editor.innerText = currentDocumentDraft;
+                addMessage('ai', '✅ Redacción pulida.');
+            }
+        } catch (e) { addMessage('ai', '❌ Error al pulir: ' + e.message); }
+        finally { isAITyping = false; }
+    }
     function mostrarModalPreviewAI(content) {
         const modal = document.getElementById('modal-preview-ai');
-        const preview = document.getElementById('preview-content');
-        preview.innerHTML = `<textarea id="edit-ai-content" style="width:100%; height:300px; border:1px solid #ccc; padding:10px; font-family:serif; font-size:14px; resize:none; background:white; color:black;">${content}</textarea>`;
+        const editor = document.getElementById('edit-ai-content');
+        editor.innerText = content;
+        editor.style.textAlign = currentAlignment;
         modal.style.display = 'flex';
     }
     async function enviarAlEditorFinal() {
-        const textarea = document.getElementById('edit-ai-content');
-        if (!textarea) return;
-        let text = textarea.value.trim();
-        
+        const editor = document.getElementById('edit-ai-content');
+        let text = editor.innerText.trim();
         try {
             const pdfDoc = await PDFLib.PDFDocument.create();
             let page = pdfDoc.addPage(PDFLib.PageSizes.A4);
             const { width, height } = page.getSize();
             const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
-            
-            // Convertir cm a puntos (1 cm = 28.35 puntos)
             const marginPoints = selectedMargin * 28.35;
             let currentY = height - marginPoints;
             const maxWidth = width - (marginPoints * 2);
-            
             const paragraphs = text.split('\n');
             for (let para of paragraphs) {
                 if (para.trim() === "") { currentY -= 15; continue; }
-                
                 const words = para.split(' ');
                 let line = '';
                 for (let word of words) {
                     const testLine = line + word + ' ';
                     if (font.widthOfTextAtSize(testLine, 11) > maxWidth) {
-                        page.drawText(line, { x: marginPoints, y: currentY, size: 11, font: font });
-                        currentY -= 14;
-                        line = word + ' ';
-                        if (currentY < marginPoints) {
-                            page = pdfDoc.addPage(PDFLib.PageSizes.A4);
-                            currentY = height - marginPoints;
-                        }
-                    } else {
-                        line = testLine;
-                    }
+                        let xPos = marginPoints;
+                        if (currentAlignment === 'center') xPos = marginPoints + (maxWidth - font.widthOfTextAtSize(line, 11)) / 2;
+                        else if (currentAlignment === 'right') xPos = marginPoints + (maxWidth - font.widthOfTextAtSize(line, 11));
+                        page.drawText(line.trim(), { x: xPos, y: currentY, size: 11, font: font });
+                        currentY -= 14; line = word + ' ';
+                        if (currentY < marginPoints) { page = pdfDoc.addPage(PDFLib.PageSizes.A4); currentY = height - marginPoints; }
+                    } else { line = testLine; }
                 }
-                page.drawText(line, { x: marginPoints, y: currentY, size: 11, font: font });
+                let xPos = marginPoints;
+                if (currentAlignment === 'center') xPos = marginPoints + (maxWidth - font.widthOfTextAtSize(line, 11)) / 2;
+                else if (currentAlignment === 'right') xPos = marginPoints + (maxWidth - font.widthOfTextAtSize(line, 11));
+                page.drawText(line.trim(), { x: xPos, y: currentY, size: 11, font: font });
                 currentY -= 20;
-                if (currentY < marginPoints) {
-                    page = pdfDoc.addPage(PDFLib.PageSizes.A4);
-                    currentY = height - marginPoints;
-                }
+                if (currentY < marginPoints) { page = pdfDoc.addPage(PDFLib.PageSizes.A4); currentY = height - marginPoints; }
             }
-            
             const pdfBytes = await pdfDoc.save();
             const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-            
             document.getElementById('modal-preview-ai').style.display = 'none';
             cerrarChatAI();
             cargarPdfEnEditor(blob);
-            alert("✅ Documento cargado en el editor. Ahora puedes añadir firmas o sellos.");
-        } catch (e) { alert("Error al procesar: " + e.message); }
+            alert("✅ Documento cargado. Ahora puedes añadir firmas o sellos.");
+        } catch (e) { alert("Error: " + e.message); }
     }
     function guardarEnHistorial(texto) {
         if (texto && !historialTextos.includes(texto)) {
