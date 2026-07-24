@@ -659,7 +659,10 @@
     function crearElementoFlotante(parent, x, y, pageNum, tipo, contenido, formato = null, customSize = null) {
         const wrapper = document.createElement('div');
         wrapper.className = 'floating-element';
-        const initialSize = customSize || (tipo === 'text' ? 14 : 120);
+        
+        // CORRECCIÓN DE ZOOM: El tamaño visual se ajusta según el zoom actual para que el tamaño real en el PDF sea constante
+        const initialSize = (customSize || (tipo === 'text' ? 14 : 120)) / window.pdfGlobalScale;
+        
         wrapper.style.left = `${x - (initialSize / 2)}px`;
         wrapper.style.top = `${y - (initialSize / 2)}px`;
         wrapper.style.position = 'absolute';
@@ -749,10 +752,10 @@
         };
         function actualizarTamano(newSize) {
             if (elData.type === 'text') {
-                newSize = Math.max(6, Math.min(newSize, 120));
+                newSize = Math.max(2, Math.min(newSize, 120));
                 elData.wrapper.querySelector('.floating-text').style.fontSize = newSize + 'px';
             } else if (elData.type === 'image') {
-                newSize = Math.max(20, Math.min(newSize, 600));
+                newSize = Math.max(5, Math.min(newSize, 600));
                 elData.wrapper.querySelector('img').style.width = newSize + 'px';
             }
             elData.size = newSize;
@@ -914,10 +917,16 @@
             let page = pdfDoc.addPage(PDFLib.PageSizes.A4);
             const { width, height } = page.getSize();
             const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
-            const marginPoints = selectedMargin * 28.35;
-            let currentY = height - marginPoints;
-            const maxWidth = width - (marginPoints * 2);
+            
+            // MÁRGENES PROFESIONALES (A4 ESTÁNDAR)
+            const marginTop = 85; // ~3 cm
+            const marginBottom = 71; // ~2.5 cm
+            const marginSides = 71; // ~2.5 cm
+            
+            let currentY = height - marginTop;
+            const maxWidth = width - (marginSides * 2);
             const paragraphs = text.split('\n');
+            
             for (let para of paragraphs) {
                 if (para.trim() === "") { currentY -= 15; continue; }
                 const words = para.split(' ');
@@ -925,20 +934,22 @@
                 for (let word of words) {
                     const testLine = line + word + ' ';
                     if (font.widthOfTextAtSize(testLine, 11) > maxWidth) {
-                        let xPos = marginPoints;
-                        if (currentAlignment === 'center') xPos = marginPoints + (maxWidth - font.widthOfTextAtSize(line, 11)) / 2;
-                        else if (currentAlignment === 'right') xPos = marginPoints + (maxWidth - font.widthOfTextAtSize(line, 11));
+                        let xPos = marginSides;
+                        if (currentAlignment === 'center') xPos = marginSides + (maxWidth - font.widthOfTextAtSize(line, 11)) / 2;
+                        else if (currentAlignment === 'right') xPos = marginSides + (maxWidth - font.widthOfTextAtSize(line, 11));
+                        
                         page.drawText(line.trim(), { x: xPos, y: currentY, size: 11, font: font });
                         currentY -= 14; line = word + ' ';
-                        if (currentY < marginPoints) { page = pdfDoc.addPage(PDFLib.PageSizes.A4); currentY = height - marginPoints; }
+                        if (currentY < marginBottom) { page = pdfDoc.addPage(PDFLib.PageSizes.A4); currentY = height - marginTop; }
                     } else { line = testLine; }
                 }
-                let xPos = marginPoints;
-                if (currentAlignment === 'center') xPos = marginPoints + (maxWidth - font.widthOfTextAtSize(line, 11)) / 2;
-                else if (currentAlignment === 'right') xPos = marginPoints + (maxWidth - font.widthOfTextAtSize(line, 11));
+                let xPos = marginSides;
+                if (currentAlignment === 'center') xPos = marginSides + (maxWidth - font.widthOfTextAtSize(line, 11)) / 2;
+                else if (currentAlignment === 'right') xPos = marginSides + (maxWidth - font.widthOfTextAtSize(line, 11));
+                
                 page.drawText(line.trim(), { x: xPos, y: currentY, size: 11, font: font });
-                currentY -= 42.5; // 1.5 cm de parrafo (1.5 * 28.35)
-                if (currentY < marginPoints) { page = pdfDoc.addPage(PDFLib.PageSizes.A4); currentY = height - marginPoints; }
+                currentY -= 28; // Espaciado entre párrafos elegante
+                if (currentY < marginBottom) { page = pdfDoc.addPage(PDFLib.PageSizes.A4); currentY = height - marginTop; }
             }
             const pdfBytes = await pdfDoc.save();
             const blob = new Blob([pdfBytes], { type: 'application/pdf' });
