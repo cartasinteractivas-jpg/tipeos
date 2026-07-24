@@ -349,6 +349,13 @@
 
     function volverAHome() { showScreen('screen-home'); }
 
+    async function activarCodigoBoton() {
+        const input = document.getElementById('input-codigo');
+        const codigo = input.value.trim();
+        if (!codigo) { alert("⚠️ Por favor ingresa un código."); return; }
+        await activarCodigo(codigo, false);
+    }
+
     async function activarCodigo(codigo, silencioso = false) {
         const { data, error } = await supabase.from('usuarios_codigos').select('*').eq('codigo', codigo).single();
         if (error || !data) {
