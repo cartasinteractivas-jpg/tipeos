@@ -64,9 +64,12 @@
         .floating-element.selected { border: 2px dashed #3498db !important; }
         .floating-element.has-bg { background: white !important; }
         .floating-text { color: #000; font-family: sans-serif; white-space: nowrap; pointer-events: none; user-select: none; }
-        .btn-delete-float { position: absolute; top: -10px; right: -10px; background: #e74c3c; color: white; border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 10px; font-weight: bold; cursor: pointer; display: none; justify-content: center; align-items: center; z-index: 50; }
-        .btn-bg-float { position: absolute; top: -10px; left: -10px; background: #fff; color: #000; border: 1px solid #ccc; border-radius: 50%; width: 22px; height: 22px; font-size: 10px; font-weight: bold; cursor: pointer; display: none; justify-content: center; align-items: center; z-index: 50; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        .resize-handle { position: absolute; bottom: -8px; right: -8px; width: 16px; height: 16px; background: #3498db; border-radius: 50%; cursor: nwse-resize; display: none; z-index: 50; border: 2px solid white; }
+        
+        /* BOTONES DE EDICIÓN CON ESCALA INVERSA */
+        .btn-delete-float { position: absolute; top: -12px; right: -12px; background: #e74c3c; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; font-size: 12px; font-weight: bold; cursor: pointer; display: none; justify-content: center; align-items: center; z-index: 50; box-shadow: 0 2px 5px rgba(0,0,0,0.3); transform-origin: center; }
+        .btn-bg-float { position: absolute; top: -12px; left: -12px; background: #fff; color: #000; border: 1px solid #ccc; border-radius: 50%; width: 24px; height: 24px; font-size: 12px; font-weight: bold; cursor: pointer; display: none; justify-content: center; align-items: center; z-index: 50; box-shadow: 0 2px 5px rgba(0,0,0,0.3); transform-origin: center; }
+        .resize-handle { position: absolute; bottom: -12px; right: -12px; width: 20px; height: 20px; background: #3498db; border-radius: 50%; cursor: nwse-resize; display: none; z-index: 50; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3); transform-origin: center; }
+        
         .floating-element:hover .btn-delete-float, .floating-element:hover .resize-handle, .floating-element:hover .btn-bg-float,
         .floating-element.selected .btn-delete-float, .floating-element.selected .resize-handle, .floating-element.selected .btn-bg-float { display: flex !important; }
 
@@ -144,10 +147,10 @@
         <div id="lista-plantillas" class="lista-plantillas"></div>
     </div>
 
-        <!-- PANTALLA: RELLENADO LIBRE -->
+    <!-- PANTALLA: RELLENADO LIBRE -->
     <div id="screen-rellenado-libre" class="screen" style="padding:0; background:#121212; flex-direction:column; height:100vh; position:relative;">
         <div style="background: #1a1a1a; padding: 12px 15px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #333; width: 100%; z-index: 100;">
-            <button onclick="volverAHome()" style="background:#333; border:none; color:white; width:35px; height:35px; border-radius:8px; font-size:18px; cursor:pointer;">←</button>
+            <button onclick="location.reload()" style="background:#333; border:none; color:white; width:35px; height:35px; border-radius:8px; font-size:18px; cursor:pointer;">←</button>
             <div style="flex:1; color:#f1c40f; font-weight:bold; font-size:14px;">Editor de PDF</div>
             <button onclick="abrirRellenadoLibre()" style="background:#34495e; border:none; color:white; padding:8px 10px; border-radius:6px; font-size:11px; font-weight:bold;">🔄 Cargar PDF</button>
             <button id="btn-generar-free" onclick="generarPdfLibre()" style="background:#2ecc71; border:none; color:black; padding:8px 12px; border-radius:6px; font-size:11px; font-weight:bold; display:none;">✅ Descargar</button>
@@ -231,7 +234,7 @@
 
 <div id="screen-ai-chat" class="screen">
     <div class="chat-header">
-        <button class="btn-volver" style="margin:0; background:#333; border:none; color:white; width:35px; height:35px; border-radius:8px;" onclick="cerrarChatAI()">←</button>
+        <button class="btn-volver" style="margin:0; background:#333; border:none; color:white; width:35px; height:35px; border-radius:8px;" onclick="location.reload()">←</button>
         <span style="font-weight:bold; color:white; margin-left:10px;">✨ DocuFácil AI Expert</span>
     </div>
     <div class="chat-messages" id="chat-messages"></div>
@@ -272,7 +275,7 @@
 </div>
 
 <script>
-        const supabaseUrl = 'https://wpzddhmllctdsiuxenss.supabase.co';
+    const supabaseUrl = 'https://wpzddhmllctdsiuxenss.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwemRkaG1sbGN0ZHNpdXhlbnNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5NjUyNzQsImV4cCI6MjA5OTU0MTI3NH0.hwSxJ3Sk_RlgbvFyr8S64XRuxW7j55BU4gaIneFTuhY';
     const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
@@ -300,22 +303,6 @@
     let initialPdfDist = 0;
     let initialPdfScale = 1;
 
-    // === CORRECCIÓN DE NAVEGACIÓN (bug al volver del editor) ===
-    function resetEditorState() {
-        elementosFlotantes = [];
-        freePdfDoc = null;
-        freePdfPageCount = 0;
-        freeCanvasScales = {};
-        window.pdfGlobalScale = 1;
-        document.getElementById('free-canvas-container').innerHTML = '';
-        document.getElementById('upload-placeholder').style.display = 'flex';
-        document.getElementById('free-canvas-container').style.display = 'none';
-        document.getElementById('btn-generar-free').style.display = 'none';
-        document.getElementById('btn-float-add').style.display = 'none';
-        document.getElementById('menu-flotante-opciones').style.display = 'none';
-        menuMasAbierto = false;
-    }
-
     document.addEventListener('DOMContentLoaded', async () => {
         cargarPlantillas();
         const codigoGuardado = localStorage.getItem('docufacil_codigo');
@@ -338,14 +325,14 @@
                 const currentDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
                 const scaleFactor = currentDist / initialPdfDist;
                 window.pdfGlobalScale = Math.max(0.5, Math.min(initialPdfScale * scaleFactor, 5));
+                
+                // ACTUALIZAR ESCALA DE HOJAS Y ELEMENTOS
                 document.querySelectorAll('.pdf-page-wrapper').forEach(wrapper => {
                     wrapper.style.transform = `scale(${window.pdfGlobalScale})`;
-                    wrapper.style.transformOrigin = 'top left';
                 });
-                document.querySelectorAll('.floating-element').forEach(el => {
-                    el.style.transform = `scale(${window.pdfGlobalScale})`;
-                    el.style.transformOrigin = 'top left';
-                });
+                
+                // ACTUALIZAR ESCALA INVERSA DE BOTONES DE EDICIÓN
+                actualizarEscalaControles();
             }
         }, {passive: false});
 
@@ -356,19 +343,18 @@
         });
     });
 
+    function actualizarEscalaControles() {
+        const invScale = 1 / window.pdfGlobalScale;
+        document.querySelectorAll('.btn-delete-float, .btn-bg-float, .resize-handle').forEach(btn => {
+            btn.style.transform = `scale(${invScale})`;
+        });
+    }
+
     function showScreen(screenId) {
-        if (screenId !== 'screen-rellenado-libre') {
-            resetEditorState();
-        }
         document.querySelectorAll('.screen').forEach(s => { s.style.display = 'none'; s.classList.remove('active'); });
         const target = document.getElementById(screenId);
         if (target) { target.style.display = 'flex'; target.classList.add('active'); }
         window.scrollTo(0, 0);
-    }
-
-    function volverAHome() { 
-        resetEditorState();
-        showScreen('screen-home'); 
     }
 
     async function activarCodigoBoton() {
@@ -570,7 +556,8 @@
         };
         reader.readAsDataURL(file);
     }
-        function abrirModalTexto() {
+
+    function abrirModalTexto() {
         textFormat = { bold: false, italic: false };
         document.getElementById('btn-bold').classList.remove('active');
         document.getElementById('btn-italic').classList.remove('active');
@@ -677,39 +664,39 @@
         cerrarModalSimbolos();
     }
 
-    // === CORRECCIÓN DE ZOOM + FONDO DE TEXTO ===
     function crearElementoFlotante(parent, x, y, pageNum, tipo, contenido, formato = null, customSize = null) {
         const wrapper = document.createElement('div');
         wrapper.className = 'floating-element';
         
-        // Tamaño lógico (independiente del zoom)
-        const logicalSize = customSize || (tipo === 'text' ? 14 : 120);
+        // CORRECCIÓN DE ZOOM: El tamaño visual se ajusta según el zoom actual para que el tamaño real en el PDF sea constante
+        const initialSize = (customSize || (tipo === 'text' ? 14 : 120)) / window.pdfGlobalScale;
         
-        wrapper.style.left = `${x - (logicalSize / 2)}px`;
-        wrapper.style.top = `${y - (logicalSize / 2)}px`;
+        wrapper.style.left = `${x - (initialSize / 2)}px`;
+        wrapper.style.top = `${y - (initialSize / 2)}px`;
         wrapper.style.position = 'absolute';
         wrapper.style.transform = `scale(${window.pdfGlobalScale})`;
-        wrapper.style.transformOrigin = 'top left';
-
+        
         const resizeHandle = document.createElement('div');
         resizeHandle.className = 'resize-handle';
-        let elData = { wrapper, type: tipo, pageNum, hasBg: false, size: logicalSize };
+        
+        let elData = { wrapper, type: tipo, pageNum, hasBg: false };
         let domElement;
-
         if (tipo === 'text') {
             domElement = document.createElement('span');
             domElement.className = 'floating-text';
             domElement.innerText = contenido;
-            domElement.style.fontSize = `${logicalSize}px`;
+            domElement.style.fontSize = `${initialSize}px`;
             domElement.style.color = 'black';
             elData.texto = contenido;
+            elData.size = initialSize;
         } else if (tipo === 'image') {
             domElement = document.createElement('img');
             domElement.src = contenido;
-            domElement.style.width = `${logicalSize}px`;
+            domElement.style.width = `${initialSize}px`;
             elData.dataUrl = contenido;
+            elData.size = initialSize;
         }
-
+        
         const btnDelete = document.createElement('div');
         btnDelete.innerHTML = '×'; btnDelete.className = 'btn-delete-float';
         btnDelete.onclick = (e) => { e.stopPropagation(); wrapper.remove(); elementosFlotantes = elementosFlotantes.filter(i => i !== elData); };
@@ -720,23 +707,19 @@
         btnBg.onclick = (e) => { 
             e.stopPropagation(); 
             elData.hasBg = !elData.hasBg; 
-            if (tipo === 'text') {
-                // Solo fondo alrededor del texto
-                domElement.style.background = elData.hasBg ? 'white' : 'transparent';
-                domElement.style.padding = elData.hasBg ? '2px 4px' : '0';
-            } else {
-                // Para imagen se mantiene el comportamiento original
-                wrapper.classList.toggle('has-bg', elData.hasBg);
-            }
+            wrapper.classList.toggle('has-bg', elData.hasBg);
             btnBg.style.background = elData.hasBg ? '#3498db' : '#fff';
         };
 
-        wrapper.appendChild(domElement); 
-        wrapper.appendChild(btnDelete); 
-        wrapper.appendChild(btnBg); 
-        wrapper.appendChild(resizeHandle);
-        parent.appendChild(wrapper);
+        // APLICAR ESCALA INVERSA INICIAL A LOS BOTONES
+        const invScale = 1 / window.pdfGlobalScale;
+        btnDelete.style.transform = `scale(${invScale})`;
+        btnBg.style.transform = `scale(${invScale})`;
+        resizeHandle.style.transform = `scale(${invScale})`;
 
+        wrapper.appendChild(domElement); wrapper.appendChild(btnDelete); wrapper.appendChild(btnBg); wrapper.appendChild(resizeHandle);
+        parent.appendChild(wrapper);
+        
         const seleccionar = (e) => {
             e.stopPropagation();
             document.querySelectorAll('.floating-element').forEach(el => el.classList.remove('selected'));
@@ -837,7 +820,7 @@
             const pdfBytes = await freePdfDoc.save();
             download(pdfBytes, "Documento_Final.pdf", "application/pdf");
             alert("✅ ¡Documento descargado!");
-            volverAHome();
+            location.reload(); // REINICIAR APP DESPUÉS DE DESCARGAR
         } catch (err) { alert("Error: " + err.message); }
         finally { btn.innerText = `✨ Descargar PDF Lleno (${freePdfPageCount} Créditos)`; btn.disabled = false; }
     }
@@ -852,7 +835,6 @@
         }
         else { showScreen(id); }
     }
-    function cerrarChatAI() { document.getElementById('screen-ai-chat').classList.remove('active'); }
     function setMargin(val) {
         selectedMargin = val;
         document.getElementById('margin-1').classList.toggle('active', val === 1);
