@@ -63,9 +63,14 @@
         .floating-element { position: absolute; z-index: 40; cursor: grab; padding: 4px; border: 1px dashed transparent; border-radius: 4px; display: flex; align-items: center; justify-content: center; transform-origin: top left; will-change: transform; }
         .floating-element.selected { border: 2px dashed #3498db !important; }
         
-        /* EFECTO HALO (BORDE BLANCO) */
-        .floating-element.has-halo .floating-text { text-shadow: -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff, 2px 2px 0 #fff, -3px 0 0 #fff, 3px 0 0 #fff, 0 -3px 0 #fff, 0 3px 0 #fff; }
-        .floating-element.has-halo img { filter: drop-shadow(0 0 3px white) drop-shadow(0 0 3px white); }
+        /* EFECTO HALO GRUESO (BORDE BLANCO) */
+        .floating-element.has-halo .floating-text { 
+            text-shadow: 
+                -3px -3px 0 #fff, 3px -3px 0 #fff, -3px 3px 0 #fff, 3px 3px 0 #fff,
+                -4px 0 0 #fff, 4px 0 0 #fff, 0 -4px 0 #fff, 0 4px 0 #fff,
+                -2px -2px 5px #fff, 2px -2px 5px #fff, -2px 2px 5px #fff, 2px 2px 5px #fff;
+        }
+        .floating-element.has-halo img { filter: drop-shadow(0 0 5px white) drop-shadow(0 0 5px white) drop-shadow(0 0 2px white); }
 
         .floating-text { color: #000; font-family: sans-serif; white-space: nowrap; pointer-events: none; user-select: none; }
         
@@ -305,7 +310,6 @@
             await activarCodigo(codigoGuardado, true); 
         }
         
-        // CONFIGURAR ZOOM PARA AMBOS EDITORES
         const containers = [document.getElementById('free-canvas-container'), document.getElementById('ai-editor-container')];
         containers.forEach(container => {
             container.addEventListener('touchstart', (e) => {
@@ -322,12 +326,9 @@
                     const scaleFactor = currentDist / initialPdfDist;
                     window.pdfGlobalScale = Math.max(0.5, Math.min(initialPdfScale * scaleFactor, 5));
                     
-                    // ACTUALIZAR ESCALA DE HOJAS
                     document.querySelectorAll('.pdf-page-wrapper, .a4-page').forEach(wrapper => {
                         wrapper.style.transform = `scale(${window.pdfGlobalScale})`;
                     });
-                    
-                    // ACTUALIZAR ESCALA INVERSA DE BOTONES
                     actualizarEscalaControles();
                 }
             }, {passive: false});
@@ -392,11 +393,6 @@
         document.getElementById('user-creditos').innerText = nuevoSaldo;
         if (nuevoSaldo === 0) renderizarPlantillas(); 
         return true;
-    }
-
-    async function cargarPlantillas() {
-        const { data, error } = await supabase.from('plantillas').select('*');
-        renderizarPlantillas();
     }
 
     function renderizarPlantillas() {
@@ -677,15 +673,21 @@
         
         const initialSize = (customSize || (tipo === 'text' ? 14 : 120)) / window.pdfGlobalScale;
         
-        wrapper.style.left = `${x - (initialSize / 2)}px`;
-        wrapper.style.top = `${y - (initialSize / 2)}px`;
+        // GUARDAR POSICIÓN PORCENTUAL PARA EVITAR DESPLAZAMIENTO POR ZOOM
+        const parentWidth = parent.offsetWidth;
+        const parentHeight = parent.offsetHeight;
+        const pctX = (x - (initialSize / 2)) / parentWidth;
+        const pctY = (y - (initialSize / 2)) / parentHeight;
+        
+        wrapper.style.left = `${pctX * 100}%`;
+        wrapper.style.top = `${pctY * 100}%`;
         wrapper.style.position = 'absolute';
         wrapper.style.transform = `scale(${window.pdfGlobalScale})`;
         
         const resizeHandle = document.createElement('div');
         resizeHandle.className = 'resize-handle';
         
-        let elData = { wrapper, type: tipo, pageNum, hasHalo: false };
+        let elData = { wrapper, type: tipo, pageNum, hasHalo: false, pctX, pctY };
         let domElement;
         if (tipo === 'text') {
             domElement = document.createElement('span');
@@ -765,8 +767,13 @@
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
             if (isDragging) {
-                wrapper.style.left = (initialLeft + (clientX - startX) / window.pdfGlobalScale) + 'px';
-                wrapper.style.top = (initialTop + (clientY - startY) / window.pdfGlobalScale) + 'px';
+                const parent = wrapper.parentElement;
+                const newLeft = initialLeft + (clientX - startX) / window.pdfGlobalScale;
+                const newTop = initialTop + (clientY - startY) / window.pdfGlobalScale;
+                elData.pctX = newLeft / parent.offsetWidth;
+                elData.pctY = newTop / parent.offsetHeight;
+                wrapper.style.left = `${elData.pctX * 100}%`;
+                wrapper.style.top = `${elData.pctY * 100}%`;
             } else if (isResizing) {
                 const dx = (clientX - startX) / window.pdfGlobalScale;
                 actualizarTamano(initialSize + dx);
@@ -805,24 +812,39 @@
             for (const el of elementosFlotantes) {
                 const page = pages[el.pageNum - 1];
                 const { width, height } = page.getSize();
-                const ratio = width / el.wrapper.parentElement.offsetWidth;
-                const pdfX = el.wrapper.offsetLeft * ratio;
-                const pdfY = height - (el.wrapper.offsetTop * ratio) - (el.wrapper.offsetHeight * ratio);
+                
+                // USAR COORDENADAS PORCENTUALES PARA PRECISIÓN TOTAL
+                const pdfX = el.pctX * width;
+                const pdfY = height - (el.pctY * height) - (el.wrapper.offsetHeight * (width / el.wrapper.parentElement.offsetWidth));
+                const elWidthPdf = el.size * (width / el.wrapper.parentElement.offsetWidth);
                 
                 if (el.hasHalo) {
-                    // DIBUJAR HALO BLANCO EN EL PDF (SIMULADO CON RECTÁNGULO PEQUEÑO O TEXTO BLANCO DETRÁS)
+                    // SÚPER HALO: ESTAMPADO MÚLTIPLE PARA GROSOR REAL
                     if (el.type === 'text') {
-                        const haloSize = (el.size * ratio) + 2;
-                        page.drawText(el.texto, { x: pdfX-1, y: pdfY-1, size: haloSize, color: PDFLib.rgb(1, 1, 1) });
-                        page.drawText(el.texto, { x: pdfX+1, y: pdfY+1, size: haloSize, color: PDFLib.rgb(1, 1, 1) });
+                        const offsets = [-1.5, 0, 1.5];
+                        for (let ox of offsets) {
+                            for (let oy of offsets) {
+                                if (ox === 0 && oy === 0) continue;
+                                page.drawText(el.texto, { x: pdfX + ox, y: pdfY + oy, size: elWidthPdf, color: PDFLib.rgb(1, 1, 1) });
+                            }
+                        }
+                    } else if (el.type === 'image') {
+                        const img = await freePdfDoc.embedPng(el.dataUrl);
+                        const imgH = (el.wrapper.offsetHeight * (width / el.wrapper.parentElement.offsetWidth));
+                        const offsets = [-2, 0, 2];
+                        for (let ox of offsets) {
+                            for (let oy of offsets) {
+                                page.drawImage(img, { x: pdfX + ox, y: pdfY + oy, width: elWidthPdf, height: imgH, opacity: 1 });
+                            }
+                        }
                     }
                 }
 
                 if (el.type === 'text') {
-                    page.drawText(el.texto, { x: pdfX, y: pdfY, size: el.size * ratio, color: PDFLib.rgb(0, 0, 0) });
+                    page.drawText(el.texto, { x: pdfX, y: pdfY, size: elWidthPdf, color: PDFLib.rgb(0, 0, 0) });
                 } else if (el.type === 'image') {
                     const img = await freePdfDoc.embedPng(el.dataUrl);
-                    page.drawImage(img, { x: pdfX, y: pdfY, width: el.size * ratio, height: (el.wrapper.offsetHeight * ratio) });
+                    page.drawImage(img, { x: pdfX, y: pdfY, width: elWidthPdf, height: (el.wrapper.offsetHeight * (width / el.wrapper.parentElement.offsetWidth)) });
                 }
             }
             const pagado = await descontarCredito(freePdfPageCount);
@@ -967,16 +989,16 @@
                 if (currentY < marginBottom) { pdfPage = pdfDoc.addPage(PDFLib.PageSizes.A4); currentY = height - marginTop; }
             }
 
-            // ESTAMPAR ELEMENTOS FLOTANTES (FIRMAS, SELLOS)
             for (const el of elementosFlotantes) {
-                const ratio = width / page.offsetWidth;
-                const pdfX = el.wrapper.offsetLeft * ratio;
-                const pdfY = height - (el.wrapper.offsetTop * ratio) - (el.wrapper.offsetHeight * ratio);
+                const pdfX = el.pctX * width;
+                const pdfY = height - (el.pctY * height) - (el.wrapper.offsetHeight * (width / page.offsetWidth));
+                const elWidthPdf = el.size * (width / page.offsetWidth);
+                
                 if (el.type === 'text') {
-                    pdfPage.drawText(el.texto, { x: pdfX, y: pdfY, size: el.size * ratio, color: PDFLib.rgb(0, 0, 0) });
+                    pdfPage.drawText(el.texto, { x: pdfX, y: pdfY, size: elWidthPdf, color: PDFLib.rgb(0, 0, 0) });
                 } else if (el.type === 'image') {
                     const img = await pdfDoc.embedPng(el.dataUrl);
-                    pdfPage.drawImage(img, { x: pdfX, y: pdfY, width: el.size * ratio, height: (el.wrapper.offsetHeight * ratio) });
+                    pdfPage.drawImage(img, { x: pdfX, y: pdfY, width: elWidthPdf, height: (el.wrapper.offsetHeight * (width / page.offsetWidth)) });
                 }
             }
 
