@@ -303,7 +303,8 @@
     let initialPdfScale = 1;
 
     document.addEventListener('DOMContentLoaded', async () => {
-        cargarPlantillas();
+        renderizarPlantillas(); // RENDERIZAR INMEDIATAMENTE
+        
         const codigoGuardado = localStorage.getItem('docufacil_codigo');
         if (codigoGuardado) {
             document.getElementById('input-codigo').value = codigoGuardado;
@@ -364,24 +365,28 @@
     }
 
     async function activarCodigo(codigo, silencioso = false) {
-        const { data, error } = await supabase.from('usuarios_codigos').select('*').eq('codigo', codigo).single();
-        if (error || !data) {
-            localStorage.removeItem('docufacil_codigo');
-            if (!silencioso) alert("❌ Código incorrecto o no existe.");
-            return;
+        try {
+            const { data, error } = await supabase.from('usuarios_codigos').select('*').eq('codigo', codigo).single();
+            if (error || !data) {
+                localStorage.removeItem('docufacil_codigo');
+                if (!silencioso) alert("❌ Código incorrecto o no existe.");
+                return;
+            }
+            if (data.creditos <= 0) {
+                if (!silencioso) alert("⚠️ Este código ya no tiene créditos.");
+                return;
+            }
+            usuarioActual = data;
+            localStorage.setItem('docufacil_codigo', codigo);
+            document.getElementById('user-creditos').innerText = usuarioActual.creditos;
+            if (!silencioso) {
+                document.getElementById('input-codigo').value = '';
+                alert(`✅ ¡Código activado! Tienes ${usuarioActual.creditos} créditos disponibles.`);
+            }
+            renderizarPlantillas();
+        } catch (e) {
+            if (!silencioso) alert("Error de conexión con el servidor.");
         }
-        if (data.creditos <= 0) {
-            if (!silencioso) alert("⚠️ Este código ya no tiene créditos.");
-            return;
-        }
-        usuarioActual = data;
-        localStorage.setItem('docufacil_codigo', codigo);
-        document.getElementById('user-creditos').innerText = usuarioActual.creditos;
-        if (!silencioso) {
-            document.getElementById('input-codigo').value = '';
-            alert(`✅ ¡Código activado! Tienes ${usuarioActual.creditos} créditos disponibles.`);
-        }
-        renderizarPlantillas();
     }
 
     async function descontarCredito(cantidad = 1) {
@@ -403,7 +408,7 @@
         const claseBloqueado = tieneCreditos ? '' : 'locked';
         const candadoHtml = tieneCreditos ? '' : '<div class="candado-icon">🔒</div>';
 
-        contenedor.innerHTML += `
+        contenedor.innerHTML = `
            <div class="card ${claseBloqueado}" onclick="abrirRellenadoLibre()" style="border-color: #e67e22;">
                 <div class="card-icon">✍️</div>
                 <div class="card-info">
@@ -673,7 +678,6 @@
         
         const initialSize = (customSize || (tipo === 'text' ? 14 : 120)) / window.pdfGlobalScale;
         
-        // GUARDAR POSICIÓN PORCENTUAL PARA EVITAR DESPLAZAMIENTO POR ZOOM
         const parentWidth = parent.offsetWidth;
         const parentHeight = parent.offsetHeight;
         const pctX = (x - (initialSize / 2)) / parentWidth;
@@ -813,13 +817,11 @@
                 const page = pages[el.pageNum - 1];
                 const { width, height } = page.getSize();
                 
-                // USAR COORDENADAS PORCENTUALES PARA PRECISIÓN TOTAL
                 const pdfX = el.pctX * width;
                 const pdfY = height - (el.pctY * height) - (el.wrapper.offsetHeight * (width / el.wrapper.parentElement.offsetWidth));
                 const elWidthPdf = el.size * (width / el.wrapper.parentElement.offsetWidth);
                 
                 if (el.hasHalo) {
-                    // SÚPER HALO: ESTAMPADO MÚLTIPLE PARA GROSOR REAL
                     if (el.type === 'text') {
                         const offsets = [-1.5, 0, 1.5];
                         for (let ox of offsets) {
