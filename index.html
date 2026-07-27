@@ -63,14 +63,15 @@
         .floating-element { position: absolute; z-index: 40; cursor: grab; padding: 4px; border: 1px dashed transparent; border-radius: 4px; display: flex; align-items: center; justify-content: center; transform-origin: top left; will-change: transform; }
         .floating-element.selected { border: 2px dashed #3498db !important; }
         
-        /* EFECTO HALO GRUESO (BORDE BLANCO) */
+        /* EFECTO HALO BLINDADO (BORDE BLANCO GRUESO) */
         .floating-element.has-halo .floating-text { 
             text-shadow: 
-                -3px -3px 0 #fff, 3px -3px 0 #fff, -3px 3px 0 #fff, 3px 3px 0 #fff,
-                -4px 0 0 #fff, 4px 0 0 #fff, 0 -4px 0 #fff, 0 4px 0 #fff,
-                -2px -2px 5px #fff, 2px -2px 5px #fff, -2px 2px 5px #fff, 2px 2px 5px #fff;
+                -4px -4px 0 #fff, 4px -4px 0 #fff, -4px 4px 0 #fff, 4px 4px 0 #fff,
+                -5px 0 0 #fff, 5px 0 0 #fff, 0 -5px 0 #fff, 0 5px 0 #fff,
+                -3px -3px 8px #fff, 3px -3px 8px #fff, -3px 3px 8px #fff, 3px 3px 8px #fff,
+                0 0 10px #fff, 0 0 15px #fff;
         }
-        .floating-element.has-halo img { filter: drop-shadow(0 0 5px white) drop-shadow(0 0 5px white) drop-shadow(0 0 2px white); }
+        .floating-element.has-halo img { filter: drop-shadow(0 0 8px white) drop-shadow(0 0 8px white) drop-shadow(0 0 4px white); }
 
         .floating-text { color: #000; font-family: sans-serif; white-space: nowrap; pointer-events: none; user-select: none; }
         
@@ -118,6 +119,11 @@
         .btn-editor-tool.active { background: #3498db; }
         .editor-canvas-container { flex: 1; overflow: auto; background: #000; padding: 20px; display: flex; flex-direction: column; align-items: center; position: relative; }
         .a4-page { background: white; width: 100%; max-width: 800px; min-height: 1123px; padding: 1cm; box-shadow: 0 0 20px rgba(0,0,0,0.5); color: black; font-family: 'Times New Roman', Times, serif; font-size: 14px; line-height: 1.5; outline: none; text-align: justify; position: relative; transform-origin: top center; }
+
+        /* BOTÓN FLOTANTE GLOBAL */
+        #btn-float-add-global { position: fixed; bottom: 25px; right: 20px; background: #3498db; color: white; border: none; width: 56px; height: 56px; border-radius: 50%; font-size: 28px; z-index: 4001; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: none; }
+        #menu-flotante-opciones-global { display: none; position: fixed; bottom: 90px; right: 20px; flex-direction: column; gap: 10px; z-index: 4000; }
+        #menu-flotante-opciones-global button { background: #3498db; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; width: 120px; display: flex; align-items: center; gap: 8px; justify-content: center; }
 
         /* LOADING INDICATOR */
         .loading-spinner { width: 20px; height: 20px; border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s ease-in-out infinite; display: none; }
@@ -176,17 +182,6 @@
         </div>
 
         <div id="free-canvas-container" class="canvas-container" style="display: none;"></div>
-
-        <!-- BOTÓN FLOTANTE FIJO -->
-        <button id="btn-float-add" onclick="toggleMenuMas()" style="position: fixed; bottom: 25px; right: 20px; background: #3498db; color: white; border: none; width: 56px; height: 56px; border-radius: 50%; font-size: 28px; z-index: 2001; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: none;">✚</button>
-
-        <div id="menu-flotante-opciones" style="display: none; position: fixed; bottom: 90px; right: 20px; flex-direction: column; gap: 10px; z-index: 2000;">
-            <button onclick="abrirModalTextoDesdeMas()" style="background: #3498db; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; width: 120px; display: flex; align-items: center; gap: 8px; justify-content: center;">📝 Texto</button>
-            <button onclick="abrirModalFirmaDesdeMas()" style="background: #e67e22; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; width: 120px; display: flex; align-items: center; gap: 8px; justify-content: center;">✍️ Firma</button>
-            <button onclick="abrirModalSimbolosDesdeMas()" style="background: #9b59b6; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; width: 120px; display: flex; align-items: center; gap: 8px; justify-content: center;">✅ Símbolo</button>
-            <button onclick="abrirSubirImagenDesdeMas()" style="background: #2ecc71; color: black; border: none; padding: 12px; border-radius: 8px; font-weight: bold; width: 120px; display: flex; align-items: center; gap: 8px; justify-content: center;">🖼️ Imagen</button>
-            <input type="file" id="input-subir-imagen" accept="image/*" style="display: none;" onchange="procesarImagenSubida(event)">
-        </div>
     </div>
 </div>
 
@@ -204,8 +199,16 @@
     <div class="editor-canvas-container" id="ai-editor-container">
         <div id="a4-page-content" class="a4-page" contenteditable="true"></div>
     </div>
-    <!-- BOTÓN FLOTANTE PARA EL EDITOR AI -->
-    <button id="btn-float-add-ai" onclick="toggleMenuMas()" style="position: fixed; bottom: 25px; right: 20px; background: #3498db; color: white; border: none; width: 56px; height: 56px; border-radius: 50%; font-size: 28px; z-index: 3001; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">✚</button>
+</div>
+
+<!-- BOTÓN FLOTANTE GLOBAL (PARA AMBOS EDITORES) -->
+<button id="btn-float-add-global" onclick="toggleMenuMas()" style="display: none;">✚</button>
+<div id="menu-flotante-opciones-global">
+    <button onclick="abrirModalTextoDesdeMas()">📝 Texto</button>
+    <button onclick="abrirModalFirmaDesdeMas()" style="background: #e67e22;">✍️ Firma</button>
+    <button onclick="abrirModalSimbolosDesdeMas()" style="background: #9b59b6;">✅ Símbolo</button>
+    <button onclick="abrirSubirImagenDesdeMas()" style="background: #2ecc71; color: black;">🖼️ Imagen</button>
+    <input type="file" id="input-subir-imagen-global" accept="image/*" style="display: none;" onchange="procesarImagenSubida(event)">
 </div>
 
 <!-- MODALES -->
@@ -303,7 +306,7 @@
     let initialPdfScale = 1;
 
     document.addEventListener('DOMContentLoaded', async () => {
-        renderizarPlantillas(); // RENDERIZAR INMEDIATAMENTE
+        renderizarPlantillas(); 
         
         const codigoGuardado = localStorage.getItem('docufacil_codigo');
         if (codigoGuardado) {
@@ -354,6 +357,15 @@
         document.querySelectorAll('.screen').forEach(s => { s.style.display = 'none'; s.classList.remove('active'); });
         const target = document.getElementById(screenId);
         if (target) { target.style.display = 'flex'; target.classList.add('active'); }
+        
+        const btnGlobal = document.getElementById('btn-float-add-global');
+        if (screenId === 'screen-rellenado-libre' || screenId === 'screen-ai-editor') {
+            btnGlobal.style.display = 'block';
+        } else {
+            btnGlobal.style.display = 'none';
+            document.getElementById('menu-flotante-opciones-global').style.display = 'none';
+            menuMasAbierto = false;
+        }
         window.scrollTo(0, 0);
     }
 
@@ -439,7 +451,6 @@
         document.getElementById('upload-placeholder').style.display = 'flex'; 
         document.getElementById('free-canvas-container').style.display = 'none'; 
         document.getElementById('btn-generar-free').style.display = 'none'; 
-        document.getElementById('btn-float-add').style.display = 'none'; 
         elementosFlotantes = [];
         freeCanvasScales = {};
         freePdfPageCount = 0;
@@ -462,7 +473,6 @@
         container.innerHTML = ''; 
         container.style.display = 'flex';
         document.getElementById('upload-placeholder').style.display = 'none';
-        document.getElementById('btn-float-add').style.display = 'block';
 
         for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
             const page = await pdf.getPage(pageNum);
@@ -494,35 +504,34 @@
 
     function toggleMenuMas() {
         menuMasAbierto = !menuMasAbierto;
-        const menu = document.getElementById('menu-flotante-opciones');
+        const menu = document.getElementById('menu-flotante-opciones-global');
         if (menu) menu.style.display = menuMasAbierto ? 'flex' : 'none';
     }
 
     function getViewportCenter() {
         const isAIEditor = document.getElementById('screen-ai-editor').classList.contains('active');
         const container = isAIEditor ? document.getElementById('ai-editor-container') : document.getElementById('free-canvas-container');
-        const scrollTop = container.scrollTop;
-        const scrollLeft = container.scrollLeft;
-        const containerHeight = container.clientHeight;
-        const containerWidth = container.clientWidth;
-        const centerY = scrollTop + (containerHeight / 2);
-        const centerX = scrollLeft + (containerWidth / 2);
+        const rect = container.getBoundingClientRect();
+        
+        const centerX = rect.left + (rect.width / 2);
+        const centerY = rect.top + (rect.height / 2);
         
         if (isAIEditor) {
             const page = document.getElementById('a4-page-content');
-            const relativeY = (centerY - page.offsetTop) / window.pdfGlobalScale;
-            const relativeX = (centerX - page.offsetLeft) / window.pdfGlobalScale;
+            const pageRect = page.getBoundingClientRect();
+            const relativeX = (centerX - pageRect.left) / window.pdfGlobalScale;
+            const relativeY = (centerY - pageRect.top) / window.pdfGlobalScale;
             return { wrapper: page, x: relativeX, y: relativeY, pageNum: 1 };
         } else {
             const wrappers = document.querySelectorAll('.pdf-page-wrapper');
             let targetWrapper = wrappers[0];
             wrappers.forEach(w => {
-                const wrapperTop = w.offsetTop;
-                const wrapperBottom = wrapperTop + w.offsetHeight;
-                if (centerY >= wrapperTop && centerY <= wrapperBottom) targetWrapper = w;
+                const wRect = w.getBoundingClientRect();
+                if (centerY >= wRect.top && centerY <= wRect.bottom) targetWrapper = w;
             });
-            const relativeY = (centerY - targetWrapper.offsetTop) / window.pdfGlobalScale;
-            const relativeX = (centerX - targetWrapper.offsetLeft) / window.pdfGlobalScale;
+            const wRect = targetWrapper.getBoundingClientRect();
+            const relativeX = (centerX - wRect.left) / window.pdfGlobalScale;
+            const relativeY = (centerY - wRect.top) / window.pdfGlobalScale;
             return { wrapper: targetWrapper, x: relativeX, y: relativeY, pageNum: parseInt(targetWrapper.dataset.pageNum) };
         }
     }
@@ -552,7 +561,7 @@
         toggleMenuMas();
         const center = getViewportCenter();
         currentTarget = { parent: center.wrapper, x: center.x, y: center.y, pageNum: center.pageNum };
-        document.getElementById('input-subir-imagen').click();
+        document.getElementById('input-subir-imagen-global').click();
     }
 
     function procesarImagenSubida(event) {
@@ -676,7 +685,7 @@
         const wrapper = document.createElement('div');
         wrapper.className = 'floating-element';
         
-        const initialSize = (customSize || (tipo === 'text' ? 14 : 120)) / window.pdfGlobalScale;
+        const initialSize = (customSize || (tipo === 'text' ? 14 : 120));
         
         const parentWidth = parent.offsetWidth;
         const parentHeight = parent.offsetHeight;
@@ -823,17 +832,18 @@
                 
                 if (el.hasHalo) {
                     if (el.type === 'text') {
-                        const offsets = [-1.5, 0, 1.5];
+                        const offsets = [-2, -1, 0, 1, 2];
                         for (let ox of offsets) {
                             for (let oy of offsets) {
                                 if (ox === 0 && oy === 0) continue;
                                 page.drawText(el.texto, { x: pdfX + ox, y: pdfY + oy, size: elWidthPdf, color: PDFLib.rgb(1, 1, 1) });
+                                page.drawText(el.texto, { x: pdfX + ox*0.5, y: pdfY + oy*0.5, size: elWidthPdf, color: PDFLib.rgb(1, 1, 1) });
                             }
                         }
                     } else if (el.type === 'image') {
                         const img = await freePdfDoc.embedPng(el.dataUrl);
                         const imgH = (el.wrapper.offsetHeight * (width / el.wrapper.parentElement.offsetWidth));
-                        const offsets = [-2, 0, 2];
+                        const offsets = [-3, -1.5, 0, 1.5, 3];
                         for (let ox of offsets) {
                             for (let oy of offsets) {
                                 page.drawImage(img, { x: pdfX + ox, y: pdfY + oy, width: elWidthPdf, height: imgH, opacity: 1 });
@@ -929,6 +939,8 @@
         screen.classList.add('active');
         window.pdfGlobalScale = 1;
         page.style.transform = 'scale(1)';
+        
+        document.getElementById('btn-float-add-global').style.display = 'block';
     }
 
     async function regenerarEstiloAI() {
