@@ -36,19 +36,27 @@
 
         /* --- SECCIÓN ACTIVAR CÓDIGO --- */
         .activar-section { background: #222; border-radius: 12px; padding: 15px; border: 1px solid #333; }
-        .activar-section h3 { color: #ccc; font-size: 15px; margin-bottom: 10px; }
         .input-codigo-wrapper { display: flex; gap: 10px; }
         .input-codigo { flex: 1; padding: 12px; background: #000; color: #f1c40f; border: 2px solid #444; border-radius: 8px; outline: none; font-size: 16px; text-align: center; font-weight: bold; text-transform: uppercase; }
         .btn-activar { background: #f1c40f; color: #000; border: none; padding: 0 20px; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; }
 
-        /* --- MENÚ DE CATEGORÍAS AI --- */
+        /* --- TARJETAS DE DOCUMENTOS --- */
+        .section-title { color: #fff; font-size: 18px; margin-top: 10px; border-bottom: 2px solid #333; padding-bottom: 8px; }
+        .lista-plantillas { display: flex; flex-direction: column; gap: 12px; }
+        
+        .card { background: #2a2a2a; border: 1px solid #444; border-radius: 10px; padding: 15px; cursor: pointer; display: flex; align-items: center; gap: 15px; position: relative; overflow: hidden; transition: 0.2s; }
+        .card-icon { font-size: 30px; }
+        .card-info { flex: 1; }
+        .card-info h3 { color: #fff; font-size: 16px; margin-bottom: 4px; }
+        .card-info p { color: #aaa; font-size: 12px; line-height: 1.3; }
+
+        /* --- SUB-MENÚ GENERACIÓN AI --- */
         .category-menu { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px; }
         .category-card { background: #2a2a2a; border: 1px solid #444; border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; transition: 0.2s; }
         .category-card:hover { border-color: #3498db; background: #333; }
         .category-icon { font-size: 32px; margin-bottom: 10px; display: block; }
         .category-name { font-weight: bold; font-size: 14px; color: #fff; }
 
-        /* --- INPUT DE REDACCIÓN AI --- */
         .ai-input-container { background: #222; border-radius: 15px; padding: 15px; border: 1px solid #333; display: none; flex-direction: column; gap: 10px; }
         .ai-textarea { width: 100%; background: #000; border: 1px solid #444; color: #fff; padding: 12px; border-radius: 10px; min-height: 100px; outline: none; resize: none; font-size: 15px; }
         .ai-actions { display: flex; justify-content: space-between; align-items: center; }
@@ -56,15 +64,6 @@
         .btn-voice.recording { background: #e74c3c; animation: pulse 1.5s infinite; }
         .btn-send-ai { background: #2ecc71; color: black; border: none; padding: 10px 20px; border-radius: 25px; font-weight: bold; cursor: pointer; display: none; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
-
-        /* --- EDITOR FULL AI --- */
-        #screen-ai-editor { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #121212; z-index: 3000; display: none; flex-direction: column; }
-        #screen-ai-editor.active { display: flex; }
-        .editor-toolbar { background: #2c3e50; padding: 10px; display: flex; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid #34495e; z-index: 100; }
-        .btn-editor-tool { background: #34495e; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-size: 13px; cursor: pointer; }
-        .btn-editor-tool.active { background: #3498db; }
-        .editor-canvas-container { flex: 1; overflow: auto; background: #000; padding: 20px; display: flex; flex-direction: column; align-items: center; position: relative; }
-        .a4-page { background: white; width: 100%; max-width: 800px; min-height: 1123px; padding: 2.5cm; box-shadow: 0 0 20px rgba(0,0,0,0.5); color: black; font-family: 'Times New Roman', Times, serif; font-size: 12pt; line-height: 1.15; outline: none; text-align: justify; position: relative; transform-origin: top center; }
 
         /* --- RELLENADO LIBRE --- */
         .canvas-container { width: 100%; height: calc(100vh - 60px); overflow: auto; display: flex; flex-direction: column; align-items: center; background: #000; position: relative; padding: 10px; }
@@ -90,6 +89,15 @@
         #btn-float-add-global { position: fixed; bottom: 25px; right: 20px; background: #3498db; color: white; border: none; width: 56px; height: 56px; border-radius: 50%; font-size: 28px; z-index: 4001; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: none; }
         #menu-flotante-opciones-global { display: none; position: fixed; bottom: 90px; right: 20px; flex-direction: column; gap: 10px; z-index: 4000; }
         #menu-flotante-opciones-global button { background: #3498db; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; width: 120px; display: flex; align-items: center; gap: 8px; justify-content: center; }
+
+        /* EDITOR FULL AI */
+        #screen-ai-editor { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #121212; z-index: 3000; display: none; flex-direction: column; }
+        #screen-ai-editor.active { display: flex; }
+        .editor-toolbar { background: #2c3e50; padding: 10px; display: flex; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid #34495e; z-index: 100; }
+        .btn-editor-tool { background: #34495e; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-size: 13px; cursor: pointer; }
+        .btn-editor-tool.active { background: #3498db; }
+        .editor-canvas-container { flex: 1; overflow: auto; background: #000; padding: 20px; display: flex; flex-direction: column; align-items: center; position: relative; }
+        .a4-page { background: white; width: 100%; max-width: 800px; min-height: 1123px; padding: 2.5cm; box-shadow: 0 0 20px rgba(0,0,0,0.5); color: black; font-family: 'Times New Roman', Times, serif; font-size: 12pt; line-height: 1.15; outline: none; text-align: justify; position: relative; transform-origin: top center; }
 
         /* MODALES */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center; padding: 20px; }
@@ -130,8 +138,34 @@
             </div>
         </div>
 
-        <h2 class="section-title">✨ Generar con IA</h2>
-        <div id="category-menu" class="category-menu">
+        <h2 class="section-title">🚀 Acciones Rápidas</h2>
+        <div class="lista-plantillas">
+            <!-- BOTÓN GENERACIÓN AI (SUB-MENÚ) -->
+            <div class="card" onclick="abrirSubMenuAI()">
+                <span class="card-icon">✨</span>
+                <div class="card-info">
+                    <h3>Generación con IA</h3>
+                    <p>Crea cartas, contratos o solicitudes desde cero.</p>
+                </div>
+            </div>
+            <!-- BOTÓN RELLENADO LIBRE -->
+            <div class="card" onclick="abrirRellenadoLibre()">
+                <span class="card-icon">📄</span>
+                <div class="card-info">
+                    <h3>Rellenado Libre</h3>
+                    <p>Sube cualquier PDF y añade texto, firmas o sellos.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PANTALLA: SUB-MENÚ AI -->
+    <div id="screen-ai-submenu" class="screen">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <button onclick="irAHome()" style="background:#333; border:none; color:white; width:35px; height:35px; border-radius:8px; font-size:18px;">←</button>
+            <h2 class="section-title" style="margin:0; border:none;">Generar con IA</h2>
+        </div>
+        <div class="category-menu">
             <div class="category-card" onclick="selectCategory('Carta', '✉️')">
                 <span class="category-icon">✉️</span>
                 <span class="category-name">Cartas</span>
@@ -158,17 +192,6 @@
                 <button id="btn-send-ai" class="btn-send-ai" onclick="enviarRedaccionAI()">Redactar Documento</button>
             </div>
         </div>
-
-        <h2 class="section-title">📂 Rellenar PDF</h2>
-        <div class="lista-plantillas">
-            <div class="card" onclick="abrirRellenadoLibre()">
-                <span class="card-icon">📄</span>
-                <div class="card-info">
-                    <h3>Rellenado Libre</h3>
-                    <p>Sube cualquier PDF y añade texto, firmas o sellos.</p>
-                </div>
-            </div>
-        </div>
     </div>
 
     <!-- PANTALLA: RELLENADO LIBRE -->
@@ -176,7 +199,7 @@
         <div style="background: #1a1a1a; padding: 12px 15px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #333; width: 100%; z-index: 100;">
             <button onclick="location.reload()" style="background:#333; border:none; color:white; width:35px; height:35px; border-radius:8px; font-size:18px;">←</button>
             <div style="flex:1; color:#f1c40f; font-weight:bold; font-size:14px;">Editor de PDF</div>
-            <button onclick="abrirRellenadoLibre()" style="background:#34495e; border:none; color:white; padding:8px 10px; border-radius:6px; font-size:11px;">🔄 Cargar</button>
+            <button onclick="document.getElementById('free-pdf-upload').click()" style="background:#34495e; border:none; color:white; padding:8px 10px; border-radius:6px; font-size:11px;">🔄 Cargar</button>
             <button id="btn-generar-free" onclick="generarPdfLibre()" style="background:#2ecc71; border:none; color:black; padding:8px 12px; border-radius:6px; font-size:11px; font-weight:bold; display:none;">✅ Descargar</button>
         </div>
 
@@ -197,11 +220,10 @@
         <div class="editor-toolbar">
             <button onclick="location.reload()" class="btn-editor-tool">← Volver</button>
             <button onclick="setAlign('left')" class="btn-editor-tool">⬅️</button>
-            <button onclick="setAlign('center')" class="btn-editor-tool">⬆️</button>
+            <button onclick="setAlign('center')" class="btn-editor-tool">⏺️</button>
             <button onclick="setAlign('right')" class="btn-editor-tool">➡️</button>
-            <button id="btn-justify" onclick="setAlign('justify')" class="btn-editor-tool active">↔️</button>
-            <button onclick="regenerarEstiloAI()" class="btn-editor-tool" style="background:#f39c12">✨ Pulir</button>
-            <button onclick="generarPdfDesdeEditorAI()" class="btn-editor-tool" style="background:#2ecc71; color:black; font-weight:bold">✅ Descargar PDF</button>
+            <button onclick="setAlign('justify')" class="btn-editor-tool">↔️</button>
+            <button onclick="descargarPdfAI()" style="background:#2ecc71; color:black; font-weight:bold;" class="btn-editor-tool">✅ Descargar</button>
         </div>
         <div id="ai-editor-container" class="editor-canvas-container">
             <div id="a4-page-content" class="a4-page" contenteditable="true"></div>
@@ -217,16 +239,15 @@
     <button onclick="abrirModalSimbolosDesdeMas()">✅ Símbolo</button>
     <button onclick="abrirSubirImagenDesdeMas()">🖼️ Imagen</button>
 </div>
-<input type="file" id="input-subir-imagen-global" accept="image/*" style="display:none" onchange="procesarImagenSubida(event)">
 
 <!-- MODALES -->
 <div id="modal-texto" class="modal-overlay">
     <div class="modal-content">
         <h3>Añadir Texto</h3>
         <input type="text" id="input-texto-modal" style="width:100%; padding:12px; background:#000; color:#fff; border:1px solid #444; border-radius:8px;">
-        <div style="display:flex; align-items:center; gap:10px; color:#fff;">
-            <span>Tamaño:</span>
-            <input type="number" id="input-size-texto" value="14" style="width:60px; padding:5px; background:#333; color:#fff; border:none; border-radius:4px;">
+        <div style="display:flex; gap:10px; align-items:center; justify-content:center;">
+            <span style="color:#aaa; font-size:12px;">Tamaño:</span>
+            <input type="number" id="input-size-texto" value="14" style="width:60px; padding:5px; background:#333; color:#fff; border:none; border-radius:5px;">
         </div>
         <div class="modal-actions">
             <button onclick="cerrarModalTexto()" style="background:#444; color:#fff;">Cancelar</button>
@@ -238,14 +259,16 @@
 <div id="modal-firma" class="modal-overlay">
     <div class="modal-content">
         <h3>Dibujar Firma</h3>
-        <canvas id="canvas-firma" width="350" height="200" style="background:#fff; border-radius:8px; touch-action:none;"></canvas>
+        <div style="background:white; border-radius:8px; overflow:hidden;">
+            <canvas id="canvas-firma" width="350" height="200" style="width:100%; cursor:crosshair;"></canvas>
+        </div>
         <div style="display:flex; justify-content:space-between; align-items:center;">
-            <input type="color" id="firma-color" value="#000000">
-            <button onclick="limpiarFirma()" style="background:#444; color:#fff; padding:5px 10px; border-radius:5px;">Limpiar</button>
+            <input type="color" id="firma-color" value="#000000" style="width:40px; height:40px; border:none; background:none; cursor:pointer;">
+            <button onclick="limpiarFirma()" style="background:#444; color:#fff; padding:8px 15px; border-radius:5px; border:none;">Limpiar</button>
         </div>
         <div class="modal-actions">
             <button onclick="cerrarModalFirma()" style="background:#444; color:#fff;">Cancelar</button>
-            <button onclick="guardarFirma()" style="background:#f1c40f; color:#000;">Guardar</button>
+            <button onclick="guardarFirma()" style="background:#f1c40f; color:#000;">Añadir</button>
         </div>
     </div>
 </div>
@@ -264,37 +287,76 @@
     </div>
 </div>
 
+<input type="file" id="input-subir-imagen-global" accept="image/*" style="display:none" onchange="procesarImagenSubida(event)">
+
 <div id="loading-overlay" class="loading-overlay">
     <div class="spinner"></div>
-    <p id="loading-text" style="color:#f1c40f; font-weight:bold;">Redactando documento...</p>
+    <p id="loading-text" style="color:white; font-weight:bold;">Redactando documento...</p>
 </div>
 
 <script>
-    const supabase = supabase.createClient('https://tu-url.supabase.co', 'tu-anon-key');
-    let usuarioActual = { creditos: 0, codigo: '' };
-    let freePdfDoc = null, freePdfPageCount = 0;
+    // CONFIGURACIÓN SUPABASE
+    const supabaseUrl = 'https://pghvlyzrvmscvshvlyzp.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'; // (Truncado por seguridad)
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+    let userCreditos = 0;
+    let currentCodigo = '';
+    let pdfDoc = null;
+    let pdfPages = [];
+    let window.pdfGlobalScale = 1.0;
     let elementosFlotantes = [];
     let currentTarget = null;
-    let windowScale = 1;
-    let currentAlignment = 'justify';
+    let lastTextSize = 14;
+    let lastSymbolSize = 24;
+    let isDrawing = false;
+    let sigCanvas, sigCtx, lastX, lastY, currentColor;
     let selectedCategory = '';
 
-    // --- INICIO Y NAVEGACIÓN ---
-    async function init() {
-        const saved = localStorage.getItem('docufacil_user');
-        if (saved) {
-            usuarioActual = JSON.parse(saved);
-            actualizarCreditosUI();
-            verificarCreditosReal();
+    // INICIALIZACIÓN
+    window.onload = async () => {
+        const savedCodigo = localStorage.getItem('docufacil_codigo');
+        if (savedCodigo) {
+            currentCodigo = savedCodigo;
+            await actualizarCreditos();
+        }
+    };
+
+    async function actualizarCreditos() {
+        if (!currentCodigo) return;
+        const { data, error } = await supabase.from('usuarios_codigos').select('creditos').eq('codigo', currentCodigo).single();
+        if (data) {
+            userCreditos = data.creditos;
+            document.getElementById('user-creditos').innerText = userCreditos;
         }
     }
-    init();
+
+    async function activarCodigoBoton() {
+        const codigo = document.getElementById('input-codigo').value.trim();
+        if (!codigo) return alert('Ingresa un código');
+        const { data, error } = await supabase.from('usuarios_codigos').select('creditos').eq('codigo', codigo).single();
+        if (error || !data) return alert('Código inválido');
+        currentCodigo = codigo;
+        localStorage.setItem('docufacil_codigo', codigo);
+        await actualizarCreditos();
+        alert('¡Código activado con éxito!');
+    }
+
+    // NAVEGACIÓN
+    function abrirSubMenuAI() {
+        document.getElementById('screen-home').classList.remove('active');
+        document.getElementById('screen-ai-submenu').classList.add('active');
+    }
+
+    function irAHome() {
+        document.getElementById('screen-ai-submenu').classList.remove('active');
+        document.getElementById('screen-home').classList.add('active');
+    }
 
     function selectCategory(cat, icon) {
         selectedCategory = cat;
-        document.getElementById('category-menu').style.display = 'none';
+        document.getElementById('selected-category-title').innerText = `Redactar ${cat}`;
         document.getElementById('ai-input-container').style.display = 'flex';
-        document.getElementById('selected-category-title').innerText = `${icon} Redactar ${cat}`;
         document.getElementById('ai-textarea').focus();
     }
 
@@ -303,328 +365,249 @@
         document.getElementById('btn-send-ai').style.display = text.length > 5 ? 'block' : 'none';
     }
 
-    function toggleVoice() {
-        const btn = document.getElementById('btn-voice');
-        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-        recognition.lang = 'es-ES';
-        
-        recognition.onstart = () => btn.classList.add('recording');
-        recognition.onend = () => btn.classList.remove('recording');
-        recognition.onresult = (event) => {
-            const text = event.results[0][0].transcript;
-            document.getElementById('ai-textarea').value += text + " ";
-            toggleSendBtn();
-        };
-        recognition.start();
-    }
-
-    async function enviarRedaccionAI() {
-        const prompt = document.getElementById('ai-textarea').value.trim();
-        if (!prompt) return;
-        
-        document.getElementById('loading-overlay').style.display = 'flex';
-        try {
-            const { data, error } = await supabase.functions.invoke('generar-documento', {
-                body: JSON.stringify({ category: selectedCategory, user_input: prompt }),
-            });
-            if (error) throw error;
-            abrirEditorFullAI(data.response.document_content);
-        } catch (e) { alert("Error: " + e.message); }
-        finally { document.getElementById('loading-overlay').style.display = 'none'; }
-    }
-
-    function abrirEditorFullAI(content) {
-        document.getElementById('screen-home').classList.remove('active');
-        const screen = document.getElementById('screen-ai-editor');
-        const page = document.getElementById('a4-page-content');
-        page.innerText = content;
-        screen.style.display = 'flex';
-        screen.classList.add('active');
-        document.getElementById('btn-float-add-global').style.display = 'block';
-        windowScale = 1;
-    }
-
-    // --- RELLENADO LIBRE ---
-    async function abrirRellenadoLibre() {
+    // RELLENADO LIBRE
+    function abrirRellenadoLibre() {
         document.getElementById('screen-home').classList.remove('active');
         document.getElementById('screen-rellenado-libre').classList.add('active');
-        document.getElementById('upload-placeholder').style.display = 'flex';
-        document.getElementById('free-canvas-container').style.display = 'none';
-        document.getElementById('btn-generar-free').style.display = 'none';
-        document.getElementById('btn-float-add-global').style.display = 'none';
+        document.getElementById('btn-float-add-global').style.display = 'block';
     }
 
     document.getElementById('free-pdf-upload').addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
-        const reader = new FileReader();
-        reader.onload = async function() {
-            const typedarray = new Uint8Array(this.result);
-            freePdfDoc = await PDFLib.PDFDocument.load(typedarray);
-            freePdfPageCount = freePdfDoc.getPageCount();
-            renderizarPdfParaEdicion(typedarray);
-        };
-        reader.readAsArrayBuffer(file);
-    });
-
-    async function renderizarPdfParaEdicion(data) {
-        const container = document.getElementById('free-canvas-container');
-        container.innerHTML = '';
-        container.style.display = 'flex';
+        
         document.getElementById('upload-placeholder').style.display = 'none';
+        document.getElementById('free-canvas-container').style.display = 'flex';
         document.getElementById('btn-generar-free').style.display = 'block';
-        document.getElementById('btn-generar-free').innerText = `✨ Descargar (${freePdfPageCount} Créditos)`;
-        document.getElementById('btn-float-add-global').style.display = 'block';
-
-        const loadingTask = pdfjsLib.getDocument({data});
+        
+        const arrayBuffer = await file.arrayBuffer();
+        const pdfData = new Uint8Array(arrayBuffer);
+        const loadingTask = pdfjsLib.getDocument({ data: pdfData });
         const pdf = await loadingTask.promise;
         
+        const container = document.getElementById('free-canvas-container');
+        container.innerHTML = '';
+        elementosFlotantes = [];
+
         for (let i = 1; i <= pdf.numPages; i++) {
             const page = await pdf.getPage(i);
-            const viewport = page.getViewport({scale: 2.0}); // Renderizado HD
+            const viewport = page.getViewport({ scale: 2.0 });
+            
             const wrapper = document.createElement('div');
             wrapper.className = 'pdf-page-wrapper';
             wrapper.dataset.pageNum = i;
             
             const canvas = document.createElement('canvas');
             canvas.className = 'free-pdf-canvas';
-            const context = canvas.getContext('2d');
-            canvas.height = viewport.height;
             canvas.width = viewport.width;
+            canvas.height = viewport.height;
             
-            await page.render({canvasContext: context, viewport: viewport}).promise;
+            const ctx = canvas.getContext('2d');
+            await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+            
             wrapper.appendChild(canvas);
             container.appendChild(wrapper);
         }
-    }
-
-    // --- ELEMENTOS FLOTANTES Y ESCALA NATIVA ---
-    function crearElementoFlotante(parent, x, y, pageNum, tipo, contenido, size = 14) {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'floating-element';
         
-        // Coordenadas porcentuales para anclaje real
-        const pctX = x / parent.offsetWidth;
-        const pctY = y / parent.offsetHeight;
-        wrapper.style.left = `${pctX * 100}%`;
-        wrapper.style.top = `${pctY * 100}%`;
+        // Ajustar escala global basada en el ancho del contenedor
+        const firstWrapper = container.querySelector('.pdf-page-wrapper');
+        window.pdfGlobalScale = firstWrapper.offsetWidth / (firstWrapper.querySelector('canvas').width / 2);
+    });
 
-        const elData = { wrapper, type: tipo, pageNum, pctX, pctY, size, hasHalo: false, isAnchored: false };
+    // EDITOR AI
+    async function enviarRedaccionAI() {
+        const prompt = document.getElementById('ai-textarea').value.trim();
+        if (!prompt) return;
+
+        document.getElementById('loading-overlay').style.display = 'flex';
         
-        let domElement;
-        if (tipo === 'text') {
-            domElement = document.createElement('span');
-            domElement.className = 'floating-text';
-            domElement.innerText = contenido;
-            domElement.style.fontSize = `${size}px`;
-            elData.content = contenido;
-        } else {
-            domElement = document.createElement('img');
-            domElement.src = contenido;
-            domElement.style.width = `${size * 5}px`;
-            elData.content = contenido;
+        try {
+            // Llamada a la IA (Simulada para el ejemplo, aquí iría tu Edge Function)
+            const response = await fetch('https://pghvlyzrvmscvshvlyzp.supabase.co/functions/v1/generar-documento', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
+                body: JSON.stringify({ prompt, categoria: selectedCategory, codigo: currentCodigo })
+            });
+            
+            const result = await response.json();
+            if (result.error) throw new Error(result.error);
+
+            document.getElementById('a4-page-content').innerHTML = result.texto.replace(/\n/g, '<br>');
+            document.getElementById('screen-ai-submenu').classList.remove('active');
+            document.getElementById('screen-ai-editor').classList.add('active');
+            document.getElementById('btn-float-add-global').style.display = 'block';
+        } catch (err) {
+            alert('Error: ' + err.message);
+        } finally {
+            document.getElementById('loading-overlay').style.display = 'none';
         }
-
-        // Botones de herramientas
-        const btnDel = crearBtnTool('×', 'btn-delete-float', () => {
-            wrapper.remove();
-            elementosFlotantes = elementosFlotantes.filter(e => e !== elData);
-        });
-        const btnBg = crearBtnTool('⬜', 'btn-bg-float', () => {
-            elData.hasHalo = !elData.hasHalo;
-            wrapper.classList.toggle('has-halo', elData.hasHalo);
-        });
-        const btnAnchor = crearBtnTool('📌', 'btn-anchor-float', () => {
-            elData.isAnchored = !elData.isAnchored;
-            btnAnchor.style.background = elData.isAnchored ? '#2ecc71' : '#f1c40f';
-            wrapper.style.cursor = elData.isAnchored ? 'default' : 'grab';
-        });
-        const handle = document.createElement('div');
-        handle.className = 'btn-float-tool resize-handle';
-
-        wrapper.appendChild(domElement);
-        wrapper.appendChild(btnDel);
-        wrapper.appendChild(btnBg);
-        wrapper.appendChild(btnAnchor);
-        wrapper.appendChild(handle);
-        parent.appendChild(wrapper);
-
-        hacerInteractivo(wrapper, elData, handle);
-        elementosFlotantes.push(elData);
     }
 
-    function crearBtnTool(txt, cls, fn) {
-        const btn = document.createElement('button');
-        btn.className = `btn-float-tool ${cls}`;
-        btn.innerHTML = txt;
-        btn.onclick = (e) => { e.stopPropagation(); fn(); };
-        return btn;
+    function setAlign(align) {
+        document.getElementById('a4-page-content').style.textAlign = align;
     }
 
-    function hacerInteractivo(wrapper, elData, handle) {
-        let isDragging = false, isResizing = false;
-        let startX, startY, startLeft, startTop, startSize;
-
-        const onStart = (e) => {
-            if (elData.isAnchored) return;
-            const touch = e.touches ? e.touches[0] : e;
-            startX = touch.clientX; startY = touch.clientY;
-            startLeft = wrapper.offsetLeft; startTop = wrapper.offsetTop;
-            startSize = elData.size;
-            if (e.target === handle) isResizing = true; else isDragging = true;
-            document.querySelectorAll('.floating-element').forEach(el => el.classList.remove('selected'));
-            wrapper.classList.add('selected');
-            e.stopPropagation();
-        };
-
-        const onMove = (e) => {
-            if (!isDragging && !isResizing) return;
-            const touch = e.touches ? e.touches[0] : e;
-            const dx = touch.clientX - startX;
-            const dy = touch.clientY - startY;
-
-            if (isDragging) {
-                const newX = startLeft + dx;
-                const newY = startTop + dy;
-                elData.pctX = newX / wrapper.parentElement.offsetWidth;
-                elData.pctY = newY / wrapper.parentElement.offsetHeight;
-                wrapper.style.left = `${elData.pctX * 100}%`;
-                wrapper.style.top = `${elData.pctY * 100}%`;
-            } else if (isResizing) {
-                elData.size = Math.max(8, startSize + dx / 2);
-                if (elData.type === 'text') {
-                    wrapper.querySelector('span').style.fontSize = `${elData.size}px`;
-                } else {
-                    wrapper.querySelector('img').style.width = `${elData.size * 5}px`;
-                }
-            }
-            e.preventDefault();
-        };
-
-        const onEnd = () => { isDragging = false; isResizing = false; };
-
-        wrapper.addEventListener('mousedown', onStart);
-        wrapper.addEventListener('touchstart', onStart, {passive:false});
-        document.addEventListener('mousemove', onMove);
-        document.addEventListener('touchmove', onMove, {passive:false});
-        document.addEventListener('mouseup', onEnd);
-        document.addEventListener('touchend', onEnd);
-    }
-
-    // --- UTILIDADES ---
+    // ELEMENTOS FLOTANTES (MEJORADOS)
     function toggleMenuMas() {
         const menu = document.getElementById('menu-flotante-opciones-global');
         menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
     }
 
     function getViewportCenter() {
-        const isAI = document.getElementById('screen-ai-editor').classList.contains('active');
-        const container = isAI ? document.getElementById('ai-editor-container') : document.getElementById('free-canvas-container');
+        const isAIEditor = document.getElementById('screen-ai-editor').classList.contains('active');
+        const container = isAIEditor ? document.getElementById('ai-editor-container') : document.getElementById('free-canvas-container');
         const rect = container.getBoundingClientRect();
-        const centerX = rect.width / 2 + container.scrollLeft;
-        const centerY = rect.height / 2 + container.scrollTop;
         
-        let parent = isAI ? document.getElementById('a4-page-content') : document.querySelectorAll('.pdf-page-wrapper')[0];
-        if (!isAI) {
+        const centerX = rect.left + (rect.width / 2);
+        const centerY = rect.top + (rect.height / 2);
+        
+        if (isAIEditor) {
+            const page = document.getElementById('a4-page-content');
+            const pageRect = page.getBoundingClientRect();
+            return { wrapper: page, x: (centerX - pageRect.left), y: (centerY - pageRect.top), pageNum: 1 };
+        } else {
             const wrappers = document.querySelectorAll('.pdf-page-wrapper');
-            for (let w of wrappers) {
+            let targetWrapper = wrappers[0];
+            wrappers.forEach(w => {
                 const wRect = w.getBoundingClientRect();
-                if (rect.top + rect.height/2 > wRect.top && rect.top + rect.height/2 < wRect.bottom) {
-                    parent = w; break;
-                }
-            }
+                if (centerY >= wRect.top && centerY <= wRect.bottom) targetWrapper = w;
+            });
+            const wRect = targetWrapper.getBoundingClientRect();
+            return { wrapper: targetWrapper, x: (centerX - wRect.left), y: (centerY - wRect.top), pageNum: parseInt(targetWrapper.dataset.pageNum) };
         }
-        return { parent, x: centerX - parent.offsetLeft, y: centerY - parent.offsetTop, pageNum: parseInt(parent.dataset.pageNum || 1) };
     }
 
-    function abrirModalTextoDesdeMas() { toggleMenuMas(); currentTarget = getViewportCenter(); document.getElementById('modal-texto').style.display = 'flex'; }
+    function abrirModalTextoDesdeMas() { toggleMenuMas(); currentTarget = getViewportCenter(); abrirModalTexto(); }
+    function abrirModalFirmaDesdeMas() { toggleMenuMas(); currentTarget = getViewportCenter(); abrirModalFirma(); }
+    function abrirModalSimbolosDesdeMas() { toggleMenuMas(); currentTarget = getViewportCenter(); abrirModalSimbolos(); }
+    function abrirSubirImagenDesdeMas() { toggleMenuMas(); currentTarget = getViewportCenter(); document.getElementById('input-subir-imagen-global').click(); }
+
+    function abrirModalTexto() { document.getElementById('modal-texto').style.display = 'flex'; }
     function cerrarModalTexto() { document.getElementById('modal-texto').style.display = 'none'; }
     function guardarTextoModal() {
-        const txt = document.getElementById('input-texto-modal').value;
-        const size = document.getElementById('input-size-texto').value;
-        if (txt) crearElementoFlotante(currentTarget.parent, currentTarget.x, currentTarget.y, currentTarget.pageNum, 'text', txt, parseInt(size));
+        const texto = document.getElementById('input-texto-modal').value.trim();
+        if (!texto) return;
+        const size = parseInt(document.getElementById('input-size-texto').value) || 14;
+        crearElementoFlotante(currentTarget.wrapper, currentTarget.x, currentTarget.y, currentTarget.pageNum, 'text', texto, size);
         cerrarModalTexto();
     }
 
-    function abrirModalFirmaDesdeMas() { toggleMenuMas(); currentTarget = getViewportCenter(); abrirModalFirma(); }
-    function abrirModalFirma() { 
-        document.getElementById('modal-firma').style.display = 'flex';
-        const canvas = document.getElementById('canvas-firma');
-        const ctx = canvas.getContext('2d');
-        ctx.clearRect(0,0,canvas.width,canvas.height);
-        let drawing = false;
-        canvas.onmousedown = (e) => { drawing = true; ctx.beginPath(); ctx.moveTo(e.offsetX, e.offsetY); };
-        canvas.onmousemove = (e) => { if(drawing) { ctx.lineTo(e.offsetX, e.offsetY); ctx.stroke(); } };
-        canvas.onmouseup = () => drawing = false;
+    function crearElementoFlotante(parent, x, y, pageNum, tipo, contenido, size = 14) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'floating-element';
+        
+        // COORDENADAS PORCENTUALES (PRECISIÓN)
+        const pctX = (x / parent.offsetWidth) * 100;
+        const pctY = (y / parent.offsetHeight) * 100;
+        wrapper.style.left = `${pctX}%`;
+        wrapper.style.top = `${pctY}%`;
+
+        let elData = { wrapper, type: tipo, pageNum, pctX, pctY, size, hasHalo: false, isAnchored: false };
+
+        const domEl = tipo === 'text' ? document.createElement('span') : document.createElement('img');
+        if (tipo === 'text') {
+            domEl.className = 'floating-text';
+            domEl.innerText = contenido;
+            domEl.style.fontSize = `${size}px`;
+            elData.content = contenido;
+        } else {
+            domEl.src = contenido;
+            domEl.style.width = `${size * 4}px`;
+            elData.content = contenido;
+        }
+
+        // BOTONES DE HERRAMIENTAS
+        const btnDel = document.createElement('button'); btnDel.className = 'btn-float-tool btn-delete-float'; btnDel.innerHTML = '×';
+        btnDel.onclick = () => { wrapper.remove(); elementosFlotantes = elementosFlotantes.filter(e => e !== elData); };
+
+        const btnBg = document.createElement('button'); btnBg.className = 'btn-float-tool btn-bg-float'; btnBg.innerHTML = '⬜';
+        btnBg.onclick = () => { elData.hasHalo = !elData.hasHalo; wrapper.classList.toggle('has-halo', elData.hasHalo); };
+
+        const btnAnchor = document.createElement('button'); btnAnchor.className = 'btn-float-tool btn-anchor-float'; btnAnchor.innerHTML = '📌';
+        btnAnchor.onclick = () => { elData.isAnchored = !elData.isAnchored; wrapper.style.cursor = elData.isAnchored ? 'default' : 'grab'; btnAnchor.style.background = elData.isAnchored ? '#2ecc71' : '#f1c40f'; };
+
+        wrapper.appendChild(domEl); wrapper.appendChild(btnDel); wrapper.appendChild(btnBg); wrapper.appendChild(btnAnchor);
+        parent.appendChild(wrapper);
+        elementosFlotantes.push(elData);
+        hacerDraggable(wrapper, elData);
+    }
+
+    function hacerDraggable(el, data) {
+        let isDragging = false;
+        el.onmousedown = (e) => { if (data.isAnchored) return; isDragging = true; };
+        window.onmousemove = (e) => {
+            if (!isDragging) return;
+            const parent = el.parentElement;
+            const rect = parent.getBoundingClientRect();
+            data.pctX = ((e.clientX - rect.left) / rect.width) * 100;
+            data.pctY = ((e.clientY - rect.top) / rect.height) * 100;
+            el.style.left = `${data.pctX}%`;
+            el.style.top = `${data.pctY}%`;
+        };
+        window.onmouseup = () => isDragging = false;
+        
         // Touch support
-        canvas.ontouchstart = (e) => { e.preventDefault(); drawing = true; const r = canvas.getBoundingClientRect(); ctx.beginPath(); ctx.moveTo(e.touches[0].clientX - r.left, e.touches[0].clientY - r.top); };
-        canvas.ontouchmove = (e) => { e.preventDefault(); if(drawing) { const r = canvas.getBoundingClientRect(); ctx.lineTo(e.touches[0].clientX - r.left, e.touches[0].clientY - r.top); ctx.stroke(); } };
-        canvas.ontouchend = () => drawing = false;
-    }
-    function limpiarFirma() { const c = document.getElementById('canvas-firma'); c.getContext('2d').clearRect(0,0,c.width,c.height); }
-    function cerrarModalFirma() { document.getElementById('modal-firma').style.display = 'none'; }
-    function guardarFirma() {
-        const data = document.getElementById('canvas-firma').toDataURL();
-        crearElementoFlotante(currentTarget.parent, currentTarget.x, currentTarget.y, currentTarget.pageNum, 'image', data, 40);
-        cerrarModalFirma();
-    }
-
-    function abrirModalSimbolosDesdeMas() { toggleMenuMas(); currentTarget = getViewportCenter(); document.getElementById('modal-simbolos').style.display = 'flex'; }
-    function cerrarModalSimbolos() { document.getElementById('modal-simbolos').style.display = 'none'; }
-    function guardarSimbolo(s) {
-        const canvas = document.createElement('canvas'); canvas.width = 100; canvas.height = 100;
-        const ctx = canvas.getContext('2d'); ctx.font = "80px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        ctx.fillText(s, 50, 50);
-        crearElementoFlotante(currentTarget.parent, currentTarget.x, currentTarget.y, currentTarget.pageNum, 'image', canvas.toDataURL(), 20);
-        cerrarModalSimbolos();
+        el.ontouchstart = (e) => { if (data.isAnchored) return; isDragging = true; };
+        el.ontouchmove = (e) => {
+            if (!isDragging) return;
+            const parent = el.parentElement;
+            const rect = parent.getBoundingClientRect();
+            const touch = e.touches[0];
+            data.pctX = ((touch.clientX - rect.left) / rect.width) * 100;
+            data.pctY = ((touch.clientY - rect.top) / rect.height) * 100;
+            el.style.left = `${data.pctX}%`;
+            el.style.top = `${data.pctY}%`;
+        };
+        el.ontouchend = () => isDragging = false;
     }
 
-    function abrirSubirImagenDesdeMas() { toggleMenuMas(); currentTarget = getViewportCenter(); document.getElementById('input-subir-imagen-global').click(); }
-    function procesarImagenSubida(e) {
-        const file = e.target.files[0];
-        const reader = new FileReader();
-        reader.onload = (ev) => crearElementoFlotante(currentTarget.parent, currentTarget.x, currentTarget.y, currentTarget.pageNum, 'image', ev.target.result, 50);
-        reader.readAsDataURL(file);
-    }
-
+    // EXPORTACIÓN PDF
     async function generarPdfLibre() {
-        if (!freePdfDoc) return;
-        const pages = freePdfDoc.getPages();
-        for (let el of elementosFlotantes) {
+        const { PDFDocument, rgb } = PDFLib;
+        const file = document.getElementById('free-pdf-upload').files[0];
+        const arrayBuffer = await file.arrayBuffer();
+        const pdfDoc = await PDFDocument.load(arrayBuffer);
+        const pages = pdfDoc.getPages();
+
+        for (const el of elementosFlotantes) {
             const page = pages[el.pageNum - 1];
             const { width, height } = page.getSize();
-            const pdfX = el.pctX * width;
-            const pdfY = height - (el.pctY * height) - (el.size * (width / el.wrapper.parentElement.offsetWidth));
-            
-            if (el.hasHalo) {
-                const boxW = el.type === 'text' ? el.size * el.content.length * 0.6 : el.size * 5;
-                const boxH = el.size * 1.2;
-                page.drawRectangle({ x: pdfX - 2, y: pdfY - 2, width: boxW, height: boxH, color: PDFLib.rgb(1,1,1) });
-            }
+            const x = (el.pctX / 100) * width;
+            const y = height - ((el.pctY / 100) * height);
+
             if (el.type === 'text') {
-                page.drawText(el.content, { x: pdfX, y: pdfY, size: el.size, color: PDFLib.rgb(0,0,0) });
+                if (el.hasHalo) {
+                    // Súper Halo (24 pasadas)
+                    for (let a = 0; a < 2 * Math.PI; a += Math.PI / 12) {
+                        page.drawText(el.content, { x: x + Math.cos(a) * 2, y: y + Math.sin(a) * 2, size: el.size, color: rgb(1, 1, 1) });
+                    }
+                }
+                page.drawText(el.content, { x, y, size: el.size, color: rgb(0, 0, 0) });
             } else {
-                const img = await freePdfDoc.embedPng(el.content);
-                page.drawImage(img, { x: pdfX, y: pdfY, width: el.size * 5, height: el.size * 5 });
+                const imgBytes = await fetch(el.content).then(res => res.arrayBuffer());
+                const img = await pdfDoc.embedPng(imgBytes);
+                const imgW = el.size * 4;
+                const imgH = (img.height / img.width) * imgW;
+                if (el.hasHalo) {
+                    page.drawRectangle({ x: x - 2, y: y - imgH - 2, width: imgW + 4, height: imgH + 4, color: rgb(1, 1, 1) });
+                }
+                page.drawImage(img, { x, y: y - imgH, width: imgW, height: imgH });
             }
         }
-        const pdfBytes = await freePdfDoc.save();
+
+        const pdfBytes = await pdfDoc.save();
         download(pdfBytes, "Documento_Editado.pdf", "application/pdf");
-        location.reload();
     }
 
-    async function activarCodigoBoton() {
-        const cod = document.getElementById('input-codigo').value;
-        if(!cod) return;
-        const { data, error } = await supabase.from('usuarios_codigos').select('*').eq('codigo', cod).single();
-        if (data && !error) {
-            usuarioActual.creditos += data.creditos;
-            actualizarCreditosUI();
-            alert(`✅ ¡Código activado! +${data.creditos} créditos.`);
-        } else { alert("❌ Código inválido."); }
-    }
-
-    function actualizarCreditosUI() { document.getElementById('user-creditos').innerText = usuarioActual.creditos; }
+    // FIRMA Y OTROS
+    function abrirModalFirma() { document.getElementById('modal-firma').style.display = 'flex'; sigCanvas = document.getElementById('canvas-firma'); sigCtx = sigCanvas.getContext('2d'); sigCtx.clearRect(0,0,350,200); }
+    function cerrarModalFirma() { document.getElementById('modal-firma').style.display = 'none'; }
+    function limpiarFirma() { sigCtx.clearRect(0,0,350,200); }
+    function guardarFirma() { const data = sigCanvas.toDataURL(); crearElementoFlotante(currentTarget.wrapper, currentTarget.x, currentTarget.y, currentTarget.pageNum, 'image', data, 40); cerrarModalFirma(); }
+    function abrirModalSimbolos() { document.getElementById('modal-simbolos').style.display = 'flex'; }
+    function cerrarModalSimbolos() { document.getElementById('modal-simbolos').style.display = 'none'; }
+    function guardarSimbolo(s) { crearElementoFlotante(currentTarget.wrapper, currentTarget.x, currentTarget.y, currentTarget.pageNum, 'text', s, 30); cerrarModalSimbolos(); }
+    function procesarImagenSubida(e) { const file = e.target.files[0]; const reader = new FileReader(); reader.onload = (ev) => crearElementoFlotante(currentTarget.wrapper, currentTarget.x, currentTarget.y, currentTarget.pageNum, 'image', ev.target.result, 50); reader.readAsDataURL(file); }
 </script>
 </body>
 </html>
