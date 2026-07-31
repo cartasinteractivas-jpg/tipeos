@@ -297,7 +297,7 @@
     let lastX = 0, lastY = 0;
     let currentColor = '#1a1a1a';
     
-    // Variables para AI AI Menu
+    // Variables para AI Menu
     let currentAIType = '';
     let currentDocumentDraft = null;
     let currentAlignment = 'justify';
@@ -543,19 +543,15 @@
     function prepararEditorPorTipo(tipo) {
         const page = document.getElementById('a4-page-content');
         if (tipo === 'Carta' || tipo === 'Solicitud') {
-            // Márgenes modelo Formal Lester / A4 (ST6cn.jpg / kT4FT.jpg): Arriba/Abajo 2.5cm, Izquierda 3cm, Derecha 2.5cm
             page.style.padding = '2.5cm 2.5cm 2.5cm 3cm';
         } else if (tipo === 'Contrato') {
-            // Modelo Contrato (2KJ6h.jpg): Arriba 3cm, Izquierda 2.5cm, Derecha 3cm, Abajo 2.5cm
             page.style.padding = '3cm 3cm 2.5cm 2.5cm';
         } else if (tipo === 'Currículum') {
-            // Modelo CV (Mjc5S.jpg): Todos los márgenes aprox 1.5cm - 2cm
             page.style.padding = '1.5cm';
         } else {
             page.style.padding = '2.5cm';
         }
     }
-
 
     // --- LÓGICA DE RELLENADO DE PDF LIBRE --- //
 
@@ -738,7 +734,6 @@
         cerrarModalTexto();
     }
 
-    /* Modal Firma (Omitida su lógica repetitiva para enfocarnos en la corrección) */
     function abrirModalFirma() {
         document.getElementById('modal-firma').style.display = 'flex';
         sigCanvas = document.getElementById('canvas-firma');
@@ -792,15 +787,12 @@
         const wrapper = document.createElement('div');
         wrapper.className = 'floating-element';
         
-        // Initial size (points in PDF)
         const initialSize = (customSize || (tipo === 'text' ? 14 : 120));
         
-        // Convert points to scaled DOM pixels para previsualización Perfect WYSIWYG
-        const pdfDim = window.pdfPageDimensions[pageNum] || { width: 595.28 }; // A4 fallback
+        const pdfDim = window.pdfPageDimensions[pageNum] || { width: 595.28 };
         const scaleFactor = parent.offsetWidth / pdfDim.width;
         const domSize = initialSize * scaleFactor;
         
-        // Posiciones
         const parentWidth = parent.offsetWidth;
         const parentHeight = parent.offsetHeight;
         const pctX = (x - (domSize / 2)) / parentWidth;
@@ -812,14 +804,14 @@
         const resizeHandle = document.createElement('div');
         resizeHandle.className = 'resize-handle';
         
-        let elData = { wrapper, type: tipo, pageNum, hasHalo: false, locked: false, pctX, pctY, size: initialSize }; // el.size guarda los PTS reales
+        let elData = { wrapper, type: tipo, pageNum, hasHalo: false, locked: false, pctX, pctY, size: initialSize };
         let domElement;
         
         if (tipo === 'text') {
             domElement = document.createElement('span');
             domElement.className = 'floating-text';
             domElement.innerText = contenido;
-            domElement.style.fontSize = `${domSize}px`; // Escala DOM precisa
+            domElement.style.fontSize = `${domSize}px`;
             domElement.style.color = 'black';
             elData.texto = contenido;
         } else if (tipo === 'image') {
@@ -879,7 +871,7 @@
         
         const start = (e) => {
             if (e.target.classList.contains('btn-delete-float') || e.target.classList.contains('btn-bg-float') || e.target.classList.contains('btn-lock-float')) return;
-            if (elData.locked) return; // Si está anclado no arrastrar ni redimensionar
+            if (elData.locked) return;
             
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -918,7 +910,7 @@
                 wrapper.style.top = `${elData.pctY * 100}%`;
             } else if (isResizing) {
                 const dx = (clientX - startX) / window.pdfGlobalScale;
-                const pdfDx = dx / scaleFactor; // Convertir el movimiento de pantalla a Puntos PDF
+                const pdfDx = dx / scaleFactor;
                 actualizarTamano(initialSize + pdfDx, scaleFactor);
             }
             e.preventDefault();
@@ -928,8 +920,8 @@
             if (elData.type === 'text') newPdfSize = Math.max(2, Math.min(newPdfSize, 150));
             else if (elData.type === 'image') newPdfSize = Math.max(5, Math.min(newPdfSize, 800));
             
-            elData.size = newPdfSize; // Guardamos en Puntos de impresión
-            const domSize = newPdfSize * scaleFactor; // Mostramos escalado en pantalla
+            elData.size = newPdfSize;
+            const domSize = newPdfSize * scaleFactor;
             
             if (elData.type === 'text') {
                 elData.wrapper.querySelector('.floating-text').style.fontSize = domSize + 'px';
@@ -964,7 +956,6 @@
                 const pdfX = el.pctX * width;
                 const domScaleFactor = width / el.wrapper.parentElement.offsetWidth;
                 
-                // Exportación en Puntos Exactos
                 const rectWidthPdf = el.wrapper.offsetWidth * domScaleFactor;
                 const elHeightPdf = el.wrapper.offsetHeight * domScaleFactor;
                 const pdfY = height - (el.pctY * height) - elHeightPdf;
@@ -972,15 +963,14 @@
                 if (el.hasHalo) {
                     page.drawRectangle({
                         x: pdfX,
-                        y: pdfY, // Inicia desde abajo
+                        y: pdfY,
                         width: rectWidthPdf,
-                        height: elHeightPdf / 2, // Mitad inferior partiendo del centro
+                        height: elHeightPdf / 2,
                         color: PDFLib.rgb(1, 1, 1)
                     });
                 }
 
                 if (el.type === 'text') {
-                    // Posición Y de drawText es la base, ajustamos ligeramente la caja
                     page.drawText(el.texto, { x: pdfX, y: pdfY + (elHeightPdf * 0.2), size: el.size, color: PDFLib.rgb(0, 0, 0) });
                 } else if (el.type === 'image') {
                     const img = await freePdfDoc.embedPng(el.dataUrl);
@@ -1013,9 +1003,8 @@
             const { width, height } = pdfPage.getSize();
             const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
             
-            // Calculador de márgenes dinámicos del estilo inyectado
             const style = window.getComputedStyle(pageDOM);
-            const pxToPt = (px) => parseFloat(px) * 0.75; // Aproximado para 96dpi estándar
+            const pxToPt = (px) => parseFloat(px) * 0.75;
             
             const marginTop = pxToPt(style.paddingTop) || 71;
             const marginBottom = pxToPt(style.paddingBottom) || 71;
@@ -1051,7 +1040,6 @@
                 if (currentY < marginBottom) { pdfPage = pdfDoc.addPage(PDFLib.PageSizes.A4); currentY = height - marginTop; }
             }
 
-            // Flotantes sobre el AI
             for (const el of elementosFlotantes) {
                 const pdfX = el.pctX * width;
                 const domScaleFactor = width / pageDOM.offsetWidth;
