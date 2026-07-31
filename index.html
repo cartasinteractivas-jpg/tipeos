@@ -57,15 +57,22 @@
         .grid-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .grid-cards .card { flex-direction: column; text-align: center; padding: 12px; gap: 5px; }
 
-        /* --- RELLENADO LIBRE --- */
+        /* --- RELLENADO LIBRE Y ZOOM --- */
+        .zoom-toolbar { display: flex; align-items: center; gap: 8px; background: #222; padding: 4px 8px; border-radius: 6px; border: 1px solid #444; }
+        .zoom-btn { background: #333; color: white; border: 1px solid #555; width: 28px; height: 28px; border-radius: 4px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; }
+        .zoom-label { font-size: 12px; color: #f1c40f; font-weight: bold; min-width: 40px; text-align: center; }
+
         .canvas-container { width: 100%; height: calc(100vh - 60px); overflow: auto; display: flex; flex-direction: column; align-items: center; background: #000; position: relative; padding: 10px; scroll-behavior: smooth; }
-        .pdf-page-wrapper { position: relative; background: white; box-shadow: 0 4px 15px rgba(0,0,0,0.5); margin-bottom: 20px; transform-origin: top center; }
+        .pdf-page-wrapper { position: relative; background: white; box-shadow: 0 4px 15px rgba(0,0,0,0.5); margin-bottom: 20px; transform-origin: top center; transition: transform 0.1s ease; }
         .free-pdf-canvas { display: block; width: 100%; height: auto; }
+        
+        /* CAPA DE OVERLAY SUPERIOR PARA ELEMENTOS FLOTANTES */
+        .overlay-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1000; }
         
         /* Elementos Flotantes Corregidos para PC y Móvil */
         .floating-element { 
             position: absolute; 
-            z-index: 40; 
+            z-index: 1001; 
             cursor: move; 
             border: 1px dashed transparent; 
             border-radius: 4px; 
@@ -77,6 +84,7 @@
             padding: 2px;
             user-select: none;
             touch-action: none;
+            pointer-events: auto !important;
         }
         .floating-element.selected { border: 2px dashed #3498db !important; }
         .floating-element.locked { border-color: transparent !important; cursor: default; }
@@ -99,8 +107,9 @@
             display: none; 
             justify-content: center; 
             align-items: center; 
-            z-index: 50; 
+            z-index: 1005; 
             box-shadow: 0 2px 5px rgba(0,0,0,0.3); 
+            pointer-events: auto !important;
         }
         .btn-delete-float { top: -12px; right: -12px; background: #e74c3c; color: white; border: none; }
         .btn-bg-float { top: -12px; left: -12px; }
@@ -152,8 +161,9 @@
 
         .a4-wrapper-scalable {
             width: 210mm;
+            position: relative;
             transform-origin: top center;
-            transition: transform 0.2s ease;
+            transition: transform 0.1s ease;
         }
         
         /* HOJAS A4 SEPARADAS E INDEPENDIENTES DE 210mm x 297mm */
@@ -174,6 +184,7 @@
             word-wrap: break-word;
             overflow-wrap: break-word;
             white-space: pre-wrap;
+            z-index: 1;
         }
 
         /* ESTILOS ESPECÍFICOS CURRÍCULUM CON FOTO DE PERFIL */
@@ -191,9 +202,9 @@
         .cv-section-title { font-size: 11pt; font-weight: bold; color: #2c3e50; text-transform: uppercase; border-bottom: 1px solid #ccc; margin-top: 12px; margin-bottom: 8px; padding-bottom: 3px; }
 
         /* BOTÓN FLOTANTE GLOBAL */
-        #btn-float-add-global { position: fixed; bottom: 25px; right: 20px; background: #3498db; color: white; border: none; width: 56px; height: 56px; border-radius: 50%; font-size: 28px; z-index: 4001; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: none; }
-        #menu-flotante-opciones-global { display: none; position: fixed; bottom: 90px; right: 20px; flex-direction: column; gap: 10px; z-index: 4000; }
-        #menu-flotante-opciones-global button { background: #3498db; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; width: 120px; display: flex; align-items: center; gap: 8px; justify-content: center; }
+        #btn-float-add-global { position: fixed; bottom: 25px; right: 20px; background: #3498db; color: white; border: none; width: 56px; height: 56px; border-radius: 50%; font-size: 28px; z-index: 5000; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: none; }
+        #menu-flotante-opciones-global { display: none; position: fixed; bottom: 90px; right: 20px; flex-direction: column; gap: 10px; z-index: 5000; }
+        #menu-flotante-opciones-global button { background: #3498db; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; width: 120px; display: flex; align-items: center; gap: 8px; justify-content: center; cursor: pointer; }
 
         /* LOADING INDICATOR */
         .loading-spinner { width: 25px; height: 25px; border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: #f1c40f; animation: spin 1s ease-in-out infinite; display: none; }
@@ -260,8 +271,16 @@
         <div style="background: #1a1a1a; padding: 12px 15px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #333; width: 100%; z-index: 100;">
             <button onclick="location.reload()" style="background:#333; border:none; color:white; width:35px; height:35px; border-radius:8px; font-size:18px; cursor:pointer;">←</button>
             <div style="flex:1; color:#f1c40f; font-weight:bold; font-size:14px;">Editor de PDF</div>
-            <button onclick="abrirRellenadoLibre()" style="background:#34495e; border:none; color:white; padding:8px 10px; border-radius:6px; font-size:11px; font-weight:bold;">🔄 Cargar PDF</button>
-            <button id="btn-generar-free" onclick="generarPdfLibre()" style="background:#2ecc71; border:none; color:black; padding:8px 12px; border-radius:6px; font-size:11px; font-weight:bold; display:none;">✅ Descargar</button>
+            
+            <!-- CONTROL DE ZOOM EN PDF LIBRE -->
+            <div class="zoom-toolbar">
+                <button class="zoom-btn" onclick="cambiarZoomPdfLibre(-0.15)">-</button>
+                <span id="zoom-label-free" class="zoom-label">100%</span>
+                <button class="zoom-btn" onclick="cambiarZoomPdfLibre(0.15)">+</button>
+            </div>
+
+            <button onclick="abrirRellenadoLibre()" style="background:#34495e; border:none; color:white; padding:8px 10px; border-radius:6px; font-size:11px; font-weight:bold; cursor:pointer;">🔄 Cargar PDF</button>
+            <button id="btn-generar-free" onclick="generarPdfLibre()" style="background:#2ecc71; border:none; color:black; padding:8px 12px; border-radius:6px; font-size:11px; font-weight:bold; display:none; cursor:pointer;">✅ Descargar</button>
         </div>
 
         <div id="upload-placeholder" style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex:1; padding: 20px;">
@@ -294,6 +313,13 @@
         <button class="btn-editor-tool" onclick="aplicarAlineacionSeleccion('justifyRight')">➡ Der</button>
         <button class="btn-editor-tool" onclick="aplicarAlineacionSeleccion('justifyFull')">≡ Jus</button>
         
+        <!-- ZOOM EN GENERACIÓN DE DOCUMENTOS AI -->
+        <div class="zoom-toolbar" style="margin-left:5px;">
+            <button class="zoom-btn" onclick="cambiarZoomAI(-0.15)">-</button>
+            <span id="zoom-label-ai" class="zoom-label">100%</span>
+            <button class="zoom-btn" onclick="cambiarZoomAI(0.15)">+</button>
+        </div>
+
         <button class="btn-editor-tool" style="background:#2ecc71; color:black; font-weight:bold; margin-left:auto;" onclick="generarPdfDesdeEditorAI()">✅ Descargar PDF</button>
     </div>
     <div class="editor-canvas-container" id="ai-editor-container">
@@ -398,6 +424,7 @@
     let currentAIType = '';
     
     window.pdfGlobalScale = 1;
+    window.aiGlobalScale = 1;
     window.pdfPageDimensions = {}; 
 
     function limpiarTextoParaPdf(texto) {
@@ -418,6 +445,22 @@
         window.addEventListener('resize', ajustarEscalaEditorA4);
     });
 
+    function cambiarZoomAI(delta) {
+        window.aiGlobalScale = Math.max(0.4, Math.min(2.5, window.aiGlobalScale + delta));
+        document.getElementById('zoom-label-ai').innerText = `${Math.round(window.aiGlobalScale * 100)}%`;
+        ajustarEscalaEditorA4();
+    }
+
+    function cambiarZoomPdfLibre(delta) {
+        window.pdfGlobalScale = Math.max(0.4, Math.min(2.5, window.pdfGlobalScale + delta));
+        document.getElementById('zoom-label-free').innerText = `${Math.round(window.pdfGlobalScale * 100)}%`;
+        const wrappers = document.querySelectorAll('.pdf-page-wrapper');
+        wrappers.forEach(w => {
+            w.style.transform = `scale(${window.pdfGlobalScale})`;
+            w.style.marginBottom = `${-(w.offsetHeight) * (1 - window.pdfGlobalScale) + 20}px`;
+        });
+    }
+
     function ajustarEscalaEditorA4() {
         const wrappers = document.querySelectorAll('.a4-wrapper-scalable');
         if (!wrappers.length) return;
@@ -425,15 +468,16 @@
         const containerWidth = document.getElementById('ai-editor-container').offsetWidth - 20;
         const pageA4WidthPx = 794; // ~210mm en px
         
-        let targetScale = 1;
+        let autoScale = 1;
         if (containerWidth < pageA4WidthPx) {
-            targetScale = containerWidth / pageA4WidthPx;
+            autoScale = containerWidth / pageA4WidthPx;
         }
         
-        window.pdfGlobalScale = targetScale;
+        const scaleFinal = autoScale * window.aiGlobalScale;
+
         wrappers.forEach(w => {
-            w.style.transform = `scale(${targetScale})`;
-            w.style.marginBottom = `${-(297 * 3.779) * (1 - targetScale)}px`;
+            w.style.transform = `scale(${scaleFinal})`;
+            w.style.marginBottom = `${-(297 * 3.779) * (1 - scaleFinal)}px`;
         });
     }
 
@@ -675,7 +719,6 @@ Atentamente
         if (min.includes("manuel andres da fonseca irribarri") || min.includes("manuel andrés da fonseca irribarri")) {
             return "MANUEL ANDRÉS DA FONSECA IRRIBARRI";
         }
-        // Búsqueda genérica de nombre en el texto
         const match = prompt.match(/(?:de|nombre|para|usuario)\s+([A-Za-zÁÉÍÓÚáéíóúñÑ\s]{8,40})/i);
         return match ? match[1].toUpperCase().trim() : "NOMBRES Y APELLIDOS";
     }
@@ -689,17 +732,25 @@ Atentamente
         page.className = 'a4-page';
         page.contentEditable = 'true';
         page.dataset.pageNum = num;
+
+        // Capa superior transparente para alojar firmas e imágenes aisladas
+        const overlay = document.createElement('div');
+        overlay.className = 'overlay-layer';
+        overlay.dataset.overlayNum = num;
         
         wrapper.appendChild(page);
+        wrapper.appendChild(overlay);
 
-        // Control de Salto de Hoja Estilo Word
+        // Control de Salto de Hoja
         page.addEventListener('input', () => verificarDesbordamientoPagina(page));
-        return { wrapper, page };
+        return { wrapper, page, overlay };
     }
 
     function prepararEditorPorTipo(tipo, contenido, promptOriginal = "") {
         const container = document.getElementById('ai-editor-container');
         container.innerHTML = '';
+        window.aiGlobalScale = 1;
+        document.getElementById('zoom-label-ai').innerText = "100%";
         
         const { wrapper, page } = crearPaginaA4(1);
 
@@ -710,7 +761,6 @@ Atentamente
             page.innerHTML = `
                 <div class="cv-container">
                     <div class="cv-header-grid">
-                        <!-- RECUADRO FOTO DE PERFIL -->
                         <div class="cv-photo-box" onclick="document.getElementById('input-cv-foto').click()">
                             <span id="cv-photo-placeholder">📷<br>Subir Foto</span>
                             <img id="cv-photo-img" style="display:none;">
@@ -776,7 +826,6 @@ Atentamente
     }
 
     function verificarDesbordamientoPagina(page) {
-        // 297mm en px aprox = 1122px
         const maxAlturaPx = 1120;
         if (page.scrollHeight > maxAlturaPx) {
             const container = document.getElementById('ai-editor-container');
@@ -806,6 +855,7 @@ Atentamente
         elementosFlotantes = [];
         freePdfPageCount = 0;
         window.pdfGlobalScale = 1;
+        document.getElementById('zoom-label-free').innerText = "100%";
         window.pdfPageDimensions = {};
         showScreen('screen-rellenado-libre');
     }
@@ -842,8 +892,13 @@ Atentamente
             canvas.width = viewportHD.width;
             canvas.height = viewportHD.height;
             
+            const overlay = document.createElement('div');
+            overlay.className = 'overlay-layer';
+
             wrapper.appendChild(canvas);
+            wrapper.appendChild(overlay);
             container.appendChild(wrapper);
+
             await page.render({ canvasContext: ctx, viewport: viewportHD }).promise;
 
             wrapper.addEventListener('click', function(ev) {
@@ -872,16 +927,17 @@ Atentamente
         const centerY = rect.top + (rect.height / 2);
         
         if (isAIEditor) {
-            const pages = document.querySelectorAll('.a4-page');
-            let targetPage = pages[0];
-            pages.forEach(p => {
-                const pRect = p.getBoundingClientRect();
-                if (centerY >= pRect.top && centerY <= pRect.bottom) targetPage = p;
+            const wrappers = document.querySelectorAll('.a4-wrapper-scalable');
+            let targetWrapper = wrappers[0];
+            wrappers.forEach(w => {
+                const wRect = w.getBoundingClientRect();
+                if (centerY >= wRect.top && centerY <= wRect.bottom) targetWrapper = w;
             });
-            const pageRect = targetPage.getBoundingClientRect();
-            const relativeX = (centerX - pageRect.left) / window.pdfGlobalScale;
-            const relativeY = (centerY - pageRect.top) / window.pdfGlobalScale;
-            return { wrapper: targetPage, x: relativeX, y: relativeY, pageNum: parseInt(targetPage.dataset.pageNum || 1) };
+            const overlay = targetWrapper.querySelector('.overlay-layer');
+            const pageRect = overlay.getBoundingClientRect();
+            const relativeX = (centerX - pageRect.left) / window.aiGlobalScale;
+            const relativeY = (centerY - pageRect.top) / window.aiGlobalScale;
+            return { wrapper: overlay, x: relativeX, y: relativeY, pageNum: parseInt(targetWrapper.querySelector('.a4-page').dataset.pageNum || 1) };
         } else {
             const wrappers = document.querySelectorAll('.pdf-page-wrapper');
             let targetWrapper = wrappers[0];
@@ -889,10 +945,11 @@ Atentamente
                 const wRect = w.getBoundingClientRect();
                 if (centerY >= wRect.top && centerY <= wRect.bottom) targetWrapper = w;
             });
-            const wRect = targetWrapper.getBoundingClientRect();
-            const relativeX = (centerX - wRect.left);
-            const relativeY = (centerY - wRect.top);
-            return { wrapper: targetWrapper, x: relativeX, y: relativeY, pageNum: parseInt(targetWrapper.dataset.pageNum) };
+            const overlay = targetWrapper.querySelector('.overlay-layer');
+            const wRect = overlay.getBoundingClientRect();
+            const relativeX = (centerX - wRect.left) / window.pdfGlobalScale;
+            const relativeY = (centerY - wRect.top) / window.pdfGlobalScale;
+            return { wrapper: overlay, x: relativeX, y: relativeY, pageNum: parseInt(targetWrapper.dataset.pageNum) };
         }
     }
 
@@ -1028,7 +1085,7 @@ Atentamente
         cerrarModalSimbolos();
     }
 
-    /* ---- ELEMENTOS FLOTANTES CON SOPORTE CORREGIDO PARA PC ---- */
+    /* ---- ELEMENTOS FLOTANTES SOBRE CAPA INDEPENDIENTE ---- */
     function crearElementoFlotante(parent, x, y, pageNum, tipo, contenido, formato = null, customSize = null) {
         const wrapper = document.createElement('div');
         wrapper.className = 'floating-element';
@@ -1139,11 +1196,12 @@ Atentamente
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
             
             const parent = wrapper.parentElement;
-            const scale = window.pdfGlobalScale || 1;
+            const isAI = document.getElementById('screen-ai-editor').classList.contains('active');
+            const currentZoom = isAI ? window.aiGlobalScale : window.pdfGlobalScale;
 
             if (isDragging) {
-                const dx = (clientX - startX) / scale;
-                const dy = (clientY - startY) / scale;
+                const dx = (clientX - startX) / currentZoom;
+                const dy = (clientY - startY) / currentZoom;
                 const newLeft = initialLeft + dx;
                 const newTop = initialTop + dy;
                 
@@ -1153,7 +1211,7 @@ Atentamente
                 wrapper.style.left = `${elData.pctX * 100}%`;
                 wrapper.style.top = `${elData.pctY * 100}%`;
             } else if (isResizing) {
-                const dx = (clientX - startX) / scale;
+                const dx = (clientX - startX) / currentZoom;
                 const pdfDim = window.pdfPageDimensions[elData.pageNum] || { width: 595.28 };
                 const scaleFactor = parent.offsetWidth / pdfDim.width;
                 actualizarTamano(initialSize + (dx / scaleFactor), scaleFactor);
@@ -1230,7 +1288,9 @@ Atentamente
                     const textoLimpio = limpiarTextoParaPdf(el.texto);
                     page.drawText(textoLimpio, { x: pdfX, y: pdfY + (elHeightPdf * 0.2), size: el.size, color: PDFLib.rgb(0, 0, 0) });
                 } else if (el.type === 'image') {
-                    const img = await freePdfDoc.embedPng(el.dataUrl);
+                    const img = el.dataUrl.startsWith('data:image/jpeg') || el.dataUrl.startsWith('data:image/jpg') 
+                        ? await freePdfDoc.embedJpg(el.dataUrl) 
+                        : await freePdfDoc.embedPng(el.dataUrl);
                     page.drawImage(img, { x: pdfX, y: pdfY, width: rectWidthPdf, height: elHeightPdf });
                 }
             }
@@ -1291,7 +1351,7 @@ Atentamente
                     currentY -= 16;
                 }
 
-                // Estampar elementos flotantes
+                // Estampar elementos flotantes de la capa independiente
                 const flotantesHoja = elementosFlotantes.filter(el => el.pageNum === (i + 1));
                 for (const el of flotantesHoja) {
                     const pdfX = el.pctX * width;
@@ -1307,7 +1367,9 @@ Atentamente
                         const tLimpio = limpiarTextoParaPdf(el.texto);
                         pdfPage.drawText(tLimpio, { x: pdfX, y: pdfY + (elHeightPdf * 0.2), size: el.size, color: PDFLib.rgb(0, 0, 0) });
                     } else if (el.type === 'image') {
-                        const img = await pdfDoc.embedPng(el.dataUrl);
+                        const img = el.dataUrl.startsWith('data:image/jpeg') || el.dataUrl.startsWith('data:image/jpg')
+                            ? await pdfDoc.embedJpg(el.dataUrl)
+                            : await pdfDoc.embedPng(el.dataUrl);
                         pdfPage.drawImage(img, { x: pdfX, y: pdfY, width: rectWidthPdf, height: elHeightPdf });
                     }
                 }
@@ -1324,7 +1386,7 @@ Atentamente
             
             mostrarModalContinuar();
         } catch (e) { 
-            alert("Error al generar PDF: " + e.message); 
+            alert("Error al generar PDF: " + (e.message || e)); 
         }
     }
 
