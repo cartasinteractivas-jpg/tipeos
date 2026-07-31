@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <!-- Permitir zoom táctil nativo en móviles -->
+    <!-- Permitir zoom táctil nativo en móviles libremente -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>DocuFácil - Generador de Documentos</title>
     
@@ -10,14 +10,16 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8"></script>
     <!-- PDF-lib para editar y estampar el PDF -->
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-    <!-- PDF.js para visualizar el PDF en pantalla -->
+    <!-- PDF.js para visualizar y extraer texto de PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <!-- Mammoth.js para extraer texto de Word (.docx) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
     <!-- Download.js para descargar el archivo -->
     <script src="https://unpkg.com/downloadjs@1.4.7"></script>
 
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #121212; color: #ffffff; display: flex; justify-content: center; min-height: 100vh; overflow-x: hidden; }
+        body { background-color: #121212; color: #ffffff; display: flex; justify-content: center; min-height: 100vh; overflow-x: hidden; touch-action: manipulation; }
         
         .app-container { background: #1e1e1e; width: 100%; max-width: 480px; height: 100vh; display: flex; flex-direction: column; position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.5); overflow: hidden; }
         
@@ -58,12 +60,12 @@
         .grid-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .grid-cards .card { flex-direction: column; text-align: center; padding: 12px; gap: 5px; }
 
-        /* --- RELLENADO LIBRE Y ZOOM --- */
+        /* --- CONTROLES DE ZOOM Y MOVIMIENTO TÁCTIL --- */
         .zoom-toolbar { display: flex; align-items: center; gap: 8px; background: #222; padding: 4px 8px; border-radius: 6px; border: 1px solid #444; }
         .zoom-btn { background: #333; color: white; border: 1px solid #555; width: 28px; height: 28px; border-radius: 4px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; }
         .zoom-label { font-size: 12px; color: #f1c40f; font-weight: bold; min-width: 40px; text-align: center; }
 
-        /* Ajuste táctil para permitir desplazamiento libre y pinch zoom sin bloqueo */
+        /* Ajuste táctil optimizado para desplazamiento y pinch-zoom nativo */
         .canvas-container { 
             width: 100%; 
             height: calc(100vh - 60px); 
@@ -75,7 +77,7 @@
             position: relative; 
             padding: 10px; 
             scroll-behavior: smooth;
-            touch-action: pan-x pan-y;
+            touch-action: pan-x pan-y pinch-zoom !important;
             -webkit-overflow-scrolling: touch;
         }
         .pdf-page-wrapper { position: relative; background: white; box-shadow: 0 4px 15px rgba(0,0,0,0.5); margin-bottom: 20px; transform-origin: top center; transition: transform 0.1s ease; }
@@ -160,7 +162,7 @@
         .btn-style-tool { background: #1a252f; color: #f1c40f; border: 1px solid #34495e; padding: 6px 10px; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: bold; }
         .btn-style-tool:hover { background: #f1c40f; color: #000; }
         
-        /* ÁREA DE SCROLL Y ESCALADO MÓVIL A4 CON RESPUESTA TÁCTIL Y DESPLAZAMIENTO FLUIDO */
+        /* ÁREA DE SCROLL Y ESCALADO MÓVIL A4 CON RESPUESTA TÁCTIL Y DESPLAZAMIENTO LIBRE */
         .editor-canvas-container { 
             flex: 1; 
             overflow-y: auto; 
@@ -172,7 +174,7 @@
             align-items: center; 
             gap: 20px; 
             position: relative; 
-            touch-action: pan-x pan-y;
+            touch-action: pan-x pan-y pinch-zoom !important;
             -webkit-overflow-scrolling: touch;
         }
 
@@ -463,6 +465,7 @@
     let lastX = 0, lastY = 0;
     let currentColor = '#1a1a1a';
     let modeloAdjuntoFile = null;
+    let textoExtraidoAdjunto = "";
     
     let currentAIType = '';
     
@@ -630,7 +633,7 @@
         `;
     }
 
-    // --- MENÚ INTELIGENCIA ARTIFICIAL Y ADJUNCIÓN DE MODELOS --- //
+    // --- MENÚ INTELIGENCIA ARTIFICIAL Y LECTURA DE ARCHIVOS ADJUNTOS --- //
     
     function manejarClickMenuAI(tipo) {
         if (!usuarioActual || usuarioActual.creditos <= 0) {
@@ -640,6 +643,7 @@
         }
         currentAIType = tipo;
         modeloAdjuntoFile = null;
+        textoExtraidoAdjunto = "";
         document.getElementById('label-modelo-adjunto').style.display = 'none';
         document.getElementById('label-modelo-adjunto').innerText = '';
         document.getElementById('ai-prompt-title').innerText = 'Redactar ' + tipo;
@@ -649,13 +653,40 @@
         showScreen('screen-ai-prompt');
     }
 
-    function procesarModeloAdjunto(e) {
+    async function procesarModeloAdjunto(e) {
         const file = e.target.files[0];
         if (!file) return;
         modeloAdjuntoFile = file;
+        textoExtraidoAdjunto = "";
+        
         const lbl = document.getElementById('label-modelo-adjunto');
-        lbl.innerText = `📎 Modelo adjuntado: ${file.name}`;
+        lbl.innerText = `⏳ Leyendo archivo: ${file.name}...`;
         lbl.style.display = 'block';
+
+        try {
+            if (file.type === 'application/pdf') {
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                let fullText = "";
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+                    fullText += textContent.items.map(item => item.str).join(" ") + "\n";
+                }
+                textoExtraidoAdjunto = fullText;
+            } else if (file.name.endsWith('.docx') || file.type.includes('wordprocessingml')) {
+                const arrayBuffer = await file.arrayBuffer();
+                const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
+                textoExtraidoAdjunto = result.value;
+            } else if (file.type.startsWith('text/')) {
+                textoExtraidoAdjunto = await file.text();
+            }
+            lbl.innerText = `✅ Adjunto leídos e integrado: ${file.name}`;
+        } catch (err) {
+            console.error("Error leyendo documento:", err);
+            lbl.innerText = `📎 Modelo adjuntado: ${file.name}`;
+        }
+
         actualizarBotonesPrompt();
     }
     
@@ -694,19 +725,11 @@
         document.getElementById('ai-prompt-loading').style.display = 'block';
         document.getElementById('btn-send-prompt').disabled = true;
         document.getElementById('btn-send-prompt').innerText = 'Generando...';
-
-        // Si se adjuntó un PDF directamente para transcripción/previsualización
-        if (modeloAdjuntoFile && modeloAdjuntoFile.type === 'application/pdf') {
-            await cargarPdfEnEditor(modeloAdjuntoFile);
-            document.getElementById('ai-prompt-loading').style.display = 'none';
-            document.getElementById('btn-send-prompt').disabled = false;
-            document.getElementById('btn-send-prompt').innerText = 'Generando ✨';
-            return;
-        }
         
         try {
             let prompt = "";
             const reglaFirma = `\n\n----------------------------------------\nFIRMA`;
+            const contextoAdjunto = textoExtraidoAdjunto ? `\n\nINFORMACIÓN EXTRAÍDA DEL ADJUNTO:\n"""${textoExtraidoAdjunto}"""\n` : "";
 
             if (currentAIType === "Solicitud") {
                 prompt = `Redacta una Solicitud oficial formal con esta estructura:
@@ -716,11 +739,11 @@
 4. Cuerpo estructurado formalmente.
 5. Cierre y Atentamente.
 6. Línea para FIRMA abajo al centro.
-Datos: "${input}".`;
+Datos del usuario: "${input}". ${contextoAdjunto}`;
             } else if (currentAIType === "Currículum") {
-                prompt = `Extrae o crea un Currículum Vitae. Extrae el nombre del usuario especificado en: "${input}".`;
+                prompt = `Extrae o crea un Currículum Vitae formal adaptando la información. Datos: "${input}". ${contextoAdjunto}`;
             } else {
-                prompt = `Redacta un(a) ${currentAIType} formal. Indicaciones: "${input}". ${reglaFirma}`;
+                prompt = `Redacta un(a) ${currentAIType} formal respetando el formato requerido. Indicaciones del usuario: "${input}". ${contextoAdjunto} ${reglaFirma}`;
             }
 
             const { data, error } = await supabase.functions.invoke('generar-documento', {
@@ -729,12 +752,12 @@ Datos: "${input}".`;
             
             let contenidoAI = "";
             if (error || !data || !data.response) {
-                contenidoAI = obtenerPlantillaFallback(currentAIType, input);
+                contenidoAI = obtenerPlantillaFallback(currentAIType, input + " " + textoExtraidoAdjunto);
             } else {
                 contenidoAI = data.response.document_content || data.response;
             }
 
-            prepararEditorPorTipo(currentAIType, contenidoAI, input);
+            prepararEditorPorTipo(currentAIType, contenidoAI, input + " " + textoExtraidoAdjunto);
 
             // Si se adjuntó una imagen modelo, se incrusta en la previsualización editable
             if (modeloAdjuntoFile && modeloAdjuntoFile.type.startsWith('image/')) {
@@ -751,8 +774,8 @@ Datos: "${input}".`;
             showScreen('screen-ai-editor');
 
         } catch (error) {
-            const fallback = obtenerPlantillaFallback(currentAIType, input);
-            prepararEditorPorTipo(currentAIType, fallback, input);
+            const fallback = obtenerPlantillaFallback(currentAIType, input + " " + textoExtraidoAdjunto);
+            prepararEditorPorTipo(currentAIType, fallback, input + " " + textoExtraidoAdjunto);
             showScreen('screen-ai-editor');
         } finally {
             document.getElementById('ai-prompt-loading').style.display = 'none';
@@ -785,7 +808,7 @@ Atentamente
                                       -----------------------------------
                                                     FIRMA`;
         }
-        return `DOCUMENTO GENERADO - ${tipo.toUpperCase()}\n\nDetalles registrados:\n${promptUsuario}\n\n----------------------------------------\nFIRMA`;
+        return `DOCUMENTO GENERADO - ${tipo.toUpperCase()}\n\nDetalles e Información extraída:\n${promptUsuario}\n\n----------------------------------------\nFIRMA`;
     }
     
     // --- EDICIÓN Y CREACIÓN DINÁMICA DE PÁGINAS A4 --- //
