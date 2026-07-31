@@ -53,6 +53,9 @@
         .card.locked { opacity: 0.7; border-color: #333; }
         .card.locked::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 1; }
         .candado-icon { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); font-size: 24px; z-index: 2; }
+        
+        .grid-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .grid-cards .card { flex-direction: column; text-align: center; padding: 12px; gap: 5px; }
 
         /* --- RELLENADO LIBRE --- */
         .canvas-container { width: 100%; height: calc(100vh - 60px); overflow: auto; display: flex; flex-direction: column; align-items: center; background: #000; position: relative; padding: 10px; scroll-behavior: smooth; }
@@ -60,20 +63,30 @@
         .free-pdf-canvas { display: block; width: 100%; height: auto; }
         
         /* Elementos Flotantes */
-        .floating-element { position: absolute; z-index: 40; cursor: grab; padding: 4px; border: 1px dashed transparent; border-radius: 4px; display: flex; align-items: center; justify-content: center; transform-origin: top left; will-change: transform; }
+        .floating-element { position: absolute; z-index: 40; cursor: grab; padding: 4px; border: 1px dashed transparent; border-radius: 4px; display: flex; align-items: center; justify-content: center; transform-origin: top left; }
         .floating-element.selected { border: 2px dashed #3498db !important; }
+        .floating-element.locked { border-color: transparent !important; cursor: default; }
         
-        /* FONDO BLANCO RECTANGULAR (CORRECTOR) */
-        .floating-element.has-halo { background: white !important; border-radius: 2px; }
+        /* FONDO BLANCO (CORRECTOR A LA MITAD) */
+        .floating-element.has-halo { background: transparent !important; }
+        .floating-element.has-halo::before {
+            content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 50%;
+            background: white; z-index: -1; border-radius: 2px;
+        }
 
         .floating-text { color: #000; font-family: sans-serif; white-space: nowrap; pointer-events: none; user-select: none; }
         
-        .btn-delete-float { position: absolute; top: -12px; right: -12px; background: #e74c3c; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; font-size: 12px; font-weight: bold; cursor: pointer; display: none; justify-content: center; align-items: center; z-index: 50; box-shadow: 0 2px 5px rgba(0,0,0,0.3); transform-origin: center; }
-        .btn-bg-float { position: absolute; top: -12px; left: -12px; background: #fff; color: #000; border: 1px solid #ccc; border-radius: 50%; width: 24px; height: 24px; font-size: 12px; font-weight: bold; cursor: pointer; display: none; justify-content: center; align-items: center; z-index: 50; box-shadow: 0 2px 5px rgba(0,0,0,0.3); transform-origin: center; }
+        .btn-delete-float, .btn-bg-float, .btn-lock-float { position: absolute; background: #fff; border: 1px solid #ccc; color: #000; border-radius: 50%; width: 24px; height: 24px; font-size: 12px; font-weight: bold; cursor: pointer; display: none; justify-content: center; align-items: center; z-index: 50; box-shadow: 0 2px 5px rgba(0,0,0,0.3); transform-origin: center; }
+        .btn-delete-float { top: -12px; right: -12px; background: #e74c3c; color: white; border: none; }
+        .btn-bg-float { top: -12px; left: -12px; }
+        .btn-lock-float { top: -12px; left: 50%; transform: translateX(-50%); background: #f39c12; color: white; border: none; }
+        
         .resize-handle { position: absolute; bottom: -12px; right: -12px; width: 20px; height: 20px; background: #3498db; border-radius: 50%; cursor: nwse-resize; display: none; z-index: 50; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3); transform-origin: center; }
         
-        .floating-element:hover .btn-delete-float, .floating-element:hover .resize-handle, .floating-element:hover .btn-bg-float,
-        .floating-element.selected .btn-delete-float, .floating-element.selected .resize-handle, .floating-element.selected .btn-bg-float { display: flex !important; }
+        .floating-element:hover .btn-delete-float, .floating-element:hover .resize-handle, .floating-element:hover .btn-bg-float, .floating-element:hover .btn-lock-float,
+        .floating-element.selected .btn-delete-float, .floating-element.selected .resize-handle, .floating-element.selected .btn-bg-float, .floating-element.selected .btn-lock-float { display: flex !important; }
+        
+        .floating-element.locked .btn-delete-float, .floating-element.locked .btn-bg-float, .floating-element.locked .resize-handle { display: none !important; }
 
         /* --- MODALES --- */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center; padding: 20px; }
@@ -89,19 +102,6 @@
         .modal-actions button { margin: 0; width: auto; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
         .symbol-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
         .btn-symbol { background: #333; color: white; border: 1px solid #555; font-size: 30px; padding: 10px; border-radius: 8px; cursor: pointer; display: flex; justify-content: center; align-items: center; }
-        .btn-symbol:hover { background: #f1c40f; color: #000; }
-
-        /* --- CHAT AI --- */
-        #screen-ai-chat { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #121212; z-index: 2000; display: none; flex-direction: column; }
-        #screen-ai-chat.active { display: flex; }
-        .chat-header { background: #2c3e50; padding: 15px; display: flex; align-items: center; gap: 15px; border-bottom: 2px solid #34495e; }
-        .chat-messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-        .chat-message { max-width: 85%; padding: 10px 15px; border-radius: 15px; font-size: 15px; line-height: 1.4; }
-        .chat-message.user { background: #3498db; align-self: flex-end; border-bottom-right-radius: 2px; }
-        .chat-message.ai { background: #2a2a2a; border: 1px solid #444; align-self: flex-start; border-bottom-left-radius: 2px; }
-        .chat-input-area { padding: 15px; background: #1e1e1e; display: flex; gap: 10px; border-top: 1px solid #333; }
-        .chat-input { flex: 1; background: #000; border: 1px solid #444; color: #fff; padding: 12px 15px; border-radius: 25px; outline: none; }
-        .btn-chat-action { background: #3498db; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; font-size: 20px; display: flex; justify-content: center; align-items: center; }
 
         /* --- PANTALLA EDITOR FULL AI --- */
         #screen-ai-editor { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #121212; z-index: 3000; display: none; flex-direction: column; }
@@ -111,7 +111,7 @@
         .btn-editor-tool:hover { background: #3498db; }
         .btn-editor-tool.active { background: #3498db; }
         .editor-canvas-container { flex: 1; overflow: auto; background: #000; padding: 20px; display: flex; flex-direction: column; align-items: center; position: relative; }
-        .a4-page { background: white; width: 100%; max-width: 800px; min-height: 1123px; padding: 1cm; box-shadow: 0 0 20px rgba(0,0,0,0.5); color: black; font-family: 'Times New Roman', Times, serif; font-size: 14px; line-height: 1.5; outline: none; text-align: justify; position: relative; transform-origin: top center; }
+        .a4-page { background: white; width: 100%; max-width: 800px; min-height: 1123px; padding: 2.5cm; box-shadow: 0 0 20px rgba(0,0,0,0.5); color: black; font-family: 'Times New Roman', Times, serif; font-size: 14px; line-height: 1.5; outline: none; text-align: justify; position: relative; transform-origin: top center; }
 
         /* BOTÓN FLOTANTE GLOBAL */
         #btn-float-add-global { position: fixed; bottom: 25px; right: 20px; background: #3498db; color: white; border: none; width: 56px; height: 56px; border-radius: 50%; font-size: 28px; z-index: 4001; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: none; }
@@ -119,7 +119,7 @@
         #menu-flotante-opciones-global button { background: #3498db; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; width: 120px; display: flex; align-items: center; gap: 8px; justify-content: center; }
 
         /* LOADING INDICATOR */
-        .loading-spinner { width: 20px; height: 20px; border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s ease-in-out infinite; display: none; }
+        .loading-spinner { width: 25px; height: 25px; border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: #f1c40f; animation: spin 1s ease-in-out infinite; display: none; }
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
@@ -152,8 +152,30 @@
             </div>
         </div>
 
-        <h2 class="section-title">📚 Documentos Disponibles</h2>
+        <h2 class="section-title">📚 Relleno Manual PDF</h2>
         <div id="lista-plantillas" class="lista-plantillas"></div>
+
+        <h2 class="section-title">✨ Generar con Inteligencia Artificial</h2>
+        <div id="lista-ia-menu" class="grid-cards"></div>
+    </div>
+
+    <!-- PANTALLA: MENÚ PROMPT AI -->
+    <div id="screen-ai-prompt" class="screen" style="padding:0; background:#121212;">
+        <div class="header">
+            <button onclick="showScreen('screen-home')" style="background:#333; border:none; color:white; width:35px; height:35px; border-radius:8px; font-size:18px; cursor:pointer;">←</button>
+            <h1 id="ai-prompt-title" style="margin:0; font-size: 18px;">Redactar</h1>
+            <div style="width:35px;"></div>
+        </div>
+        <div style="flex:1; display:flex; flex-direction:column; padding:20px; gap:15px; justify-content:center; align-items: center;">
+            <p style="text-align:center; color:#ccc; font-size: 15px;">Escribe los detalles clave para tu <b id="ai-prompt-type" style="color:#f1c40f;"></b></p>
+            <textarea id="ai-prompt-input" rows="8" placeholder="Ej: A nombre de Juan Pérez, con fecha de hoy, solicitando vacaciones desde el 15 al 30 de Agosto..." style="width:100%; max-width: 400px; border-radius:10px; padding:15px; background:#1e1e1e; color:white; border:1px solid #444; font-size:16px; outline:none; resize:none;"></textarea>
+            
+            <div style="display:flex; justify-content:center; align-items:center; gap:15px; margin-top: 10px; height: 60px;">
+                <button id="btn-voice-prompt" onclick="iniciarVozPrompt()" style="background:#3498db; color:white; border:none; width:60px; height:60px; border-radius:50%; font-size:24px; box-shadow:0 4px 10px rgba(0,0,0,0.5); cursor:pointer;">🎤</button>
+                <button id="btn-send-prompt" onclick="enviarPromptAI()" style="background:#2ecc71; color:black; font-weight:bold; border:none; padding:15px 30px; border-radius:25px; font-size:18px; display:none; cursor:pointer; box-shadow:0 4px 10px rgba(0,0,0,0.5);">Generar ✨</button>
+            </div>
+            <div id="ai-prompt-loading" class="loading-spinner"></div>
+        </div>
     </div>
 
     <!-- PANTALLA: RELLENADO LIBRE -->
@@ -186,7 +208,6 @@
         <button class="btn-editor-tool" onclick="setAlign('center')">⏺ Cen</button>
         <button class="btn-editor-tool" onclick="setAlign('right')">➡ Der</button>
         <button class="btn-editor-tool active" id="btn-justify" onclick="setAlign('justify')">≡ Jus</button>
-        <button class="btn-editor-tool" style="background:#f1c40f; color:black; font-weight:bold;" onclick="regenerarEstiloAI()">✨ Pulir</button>
         <button class="btn-editor-tool" style="background:#2ecc71; color:black; font-weight:bold; margin-left:auto;" onclick="generarPdfDesdeEditorAI()">✅ Descargar PDF</button>
     </div>
     <div class="editor-canvas-container" id="ai-editor-container">
@@ -211,7 +232,7 @@
         <div class="format-toolbar">
             <button type="button" id="btn-bold" class="btn-format" onclick="toggleFormat('bold')"><b>B</b></button>
             <button type="button" id="btn-italic" class="btn-format" onclick="toggleFormat('italic')"><i>I</i></button>
-            <input type="number" id="input-size-texto" value="14" min="4" max="100" style="width: 60px; padding: 5px; border-radius: 6px; border: 1px solid #444; background: #111; color: white; text-align: center; outline: none; font-size: 16px;">
+            <input type="number" id="input-size-texto" value="14" min="4" max="100" style="width: 60px; padding: 5px; border-radius: 6px; border: 1px solid #444; background: #111; color: white; text-align: center; outline: none; font-size: 16px;" title="Tamaño real de impresión (Pt)">
         </div>
         <input type="text" id="input-texto-modal" placeholder="Escribe aquí..." style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #444; background: #111; color: white; font-size: 16px; outline: none;">
         <div id="chips-historial" class="chips-container"></div>
@@ -242,7 +263,7 @@
     <div class="modal-content">
         <h3>Añadir Símbolo</h3>
         <div style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 10px;">
-            <label style="color: #ccc; font-size: 14px;">Tamaño:</label>
+            <label style="color: #ccc; font-size: 14px;">Tamaño (Pt):</label>
             <input type="number" id="input-size-simbolo" value="24" min="4" max="100" style="width: 60px; padding: 5px; border-radius: 6px; border: 1px solid #444; background: #111; color: white; text-align: center; outline: none; font-size: 16px;">
         </div>
         <div class="symbol-grid">
@@ -256,20 +277,6 @@
     </div>
 </div>
 
-<div id="screen-ai-chat" class="screen">
-    <div class="chat-header">
-        <button class="btn-volver" style="margin:0; background:#333; border:none; color:white; width:35px; height:35px; border-radius:8px;" onclick="location.reload()">←</button>
-        <span style="font-weight:bold; color:white; margin-left:10px;">✨ DocuFácil AI Expert</span>
-    </div>
-    <div class="chat-messages" id="chat-messages"></div>
-    
-    <div class="chat-input-area">
-        <input type="text" id="chat-input" class="chat-input" placeholder="Escribe o usa el micro..." oninput="actualizarBotonChat()">
-        <div id="chat-loading" class="loading-spinner"></div>
-        <button id="btn-chat-action" class="btn-chat-action" onclick="accionChat()">🎤</button>
-    </div>
-</div>
-
 <script>
     const supabaseUrl = 'https://wpzddhmllctdsiuxenss.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwemRkaG1sbGN0ZHNpdXhlbnNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5NjUyNzQsImV4cCI6MjA5OTU0MTI3NH0.hwSxJ3Sk_RlgbvFyr8S64XRuxW7j55BU4gaIneFTuhY';
@@ -278,7 +285,6 @@
 
     let usuarioActual = null;
     let freePdfDoc = null;
-    let freeCanvasScales = {};
     let elementosFlotantes = []; 
     let freePdfPageCount = 0; 
     let historialTextos = JSON.parse(localStorage.getItem('docufacil_historial')) || [];
@@ -290,11 +296,15 @@
     let sigCanvas, sigCtx, isDrawing = false;
     let lastX = 0, lastY = 0;
     let currentColor = '#1a1a1a';
-    let chatHistory = [];
-    let isAITyping = false;
+    
+    // Variables para AI AI Menu
+    let currentAIType = '';
     let currentDocumentDraft = null;
     let currentAlignment = 'justify';
+    
+    // Zoom y Dimensiones Reales
     window.pdfGlobalScale = 1;
+    window.pdfPageDimensions = {}; 
     let initialPdfDist = 0;
     let initialPdfScale = 1;
 
@@ -333,16 +343,17 @@
             container.addEventListener('touchend', () => { initialPdfDist = 0; });
         });
 
-        document.getElementById('chat-input').addEventListener('input', actualizarBotonChat);
-        document.getElementById('chat-input').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') { e.preventDefault(); enviarMensajeAI(); }
-        });
+        // Eventos del Input AI
+        document.getElementById('ai-prompt-input').addEventListener('input', actualizarBotonesPrompt);
     });
 
     function actualizarEscalaControles() {
         const invScale = 1 / window.pdfGlobalScale;
         document.querySelectorAll('.btn-delete-float, .btn-bg-float, .resize-handle').forEach(btn => {
             btn.style.transform = `scale(${invScale})`;
+        });
+        document.querySelectorAll('.btn-lock-float').forEach(btn => {
+            btn.style.transform = `translateX(-50%) scale(${invScale})`;
         });
     }
 
@@ -407,8 +418,9 @@
 
     function renderizarPlantillas() {
         const contenedor = document.getElementById('lista-plantillas');
-        if (!contenedor) return;
-        contenedor.innerHTML = '';
+        const menuIA = document.getElementById('lista-ia-menu');
+        if (!contenedor || !menuIA) return;
+        
         const tieneCreditos = usuarioActual && usuarioActual.creditos > 0;
         const claseBloqueado = tieneCreditos ? '' : 'locked';
         const candadoHtml = tieneCreditos ? '' : '<div class="candado-icon">🔒</div>';
@@ -417,21 +429,135 @@
            <div class="card ${claseBloqueado}" onclick="abrirRellenadoLibre()" style="border-color: #e67e22;">
                 <div class="card-icon">✍️</div>
                 <div class="card-info">
-                    <h3 style="color: #e67e22;">Rellenar mi propio PDF</h3>
-                    <p>Sube cualquier documento, toca donde quieras escribir o firmar y descárgalo.</p>
-                </div>
-                ${candadoHtml}
-            </div>
-            <div class="card ${claseBloqueado}" onclick="mostrarScreen('screen-ai-chat')" style="border-color: #3498db;">
-                <div class="card-icon">✨</div>
-                <div class="card-info">
-                    <h3 style="color: #3498db;">Generación de documento</h3>
-                    <p>Crea documentos personalizados con ayuda de nuestro experto AI.</p>
+                    <h3 style="color: #e67e22;">Sube tu PDF y complétalo</h3>
+                    <p>Agrega texto, firmas e imágenes sobre cualquier documento libremente.</p>
                 </div>
                 ${candadoHtml}
             </div>
         `;
+        
+        menuIA.innerHTML = `
+            <div class="card ${claseBloqueado}" onclick="manejarClickMenuAI('Carta')" style="border-color: #3498db;">
+                <div class="card-icon">✉️</div>
+                <h3 style="color: #3498db; font-size:14px;">Cartas</h3>
+                ${candadoHtml}
+            </div>
+            <div class="card ${claseBloqueado}" onclick="manejarClickMenuAI('Solicitud')" style="border-color: #9b59b6;">
+                <div class="card-icon">📝</div>
+                <h3 style="color: #9b59b6; font-size:14px;">Solicitudes</h3>
+                ${candadoHtml}
+            </div>
+            <div class="card ${claseBloqueado}" onclick="manejarClickMenuAI('Contrato')" style="border-color: #2ecc71;">
+                <div class="card-icon">🤝</div>
+                <h3 style="color: #2ecc71; font-size:14px;">Contrato</h3>
+                ${candadoHtml}
+            </div>
+            <div class="card ${claseBloqueado}" onclick="manejarClickMenuAI('Currículum')" style="border-color: #f1c40f;">
+                <div class="card-icon">💼</div>
+                <h3 style="color: #f1c40f; font-size:14px;">Currículum</h3>
+                ${candadoHtml}
+            </div>
+        `;
     }
+
+    // --- LÓGICA DEL MENÚ DE INTELIGENCIA ARTIFICIAL --- //
+    
+    function manejarClickMenuAI(tipo) {
+        if (!usuarioActual || usuarioActual.creditos <= 0) {
+            alert("🔒 Necesitas activar un código con créditos.");
+            document.getElementById('seccion-compra').scrollIntoView({ behavior: 'smooth' });
+            return;
+        }
+        currentAIType = tipo;
+        document.getElementById('ai-prompt-title').innerText = 'Redactar ' + tipo;
+        document.getElementById('ai-prompt-type').innerText = tipo.toLowerCase();
+        document.getElementById('ai-prompt-input').value = '';
+        actualizarBotonesPrompt();
+        showScreen('screen-ai-prompt');
+    }
+    
+    function actualizarBotonesPrompt() {
+        const val = document.getElementById('ai-prompt-input').value.trim();
+        if (val) {
+            document.getElementById('btn-voice-prompt').style.display = 'none';
+            document.getElementById('btn-send-prompt').style.display = 'flex';
+        } else {
+            document.getElementById('btn-voice-prompt').style.display = 'flex';
+            document.getElementById('btn-send-prompt').style.display = 'none';
+        }
+    }
+    
+    function iniciarVozPrompt() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) { alert("Tu navegador no soporta dictado por voz."); return; }
+        
+        const btn = document.getElementById('btn-voice-prompt');
+        const recog = new SpeechRecognition();
+        recog.lang = 'es-ES';
+        recog.continuous = false;
+        
+        recog.onstart = () => { btn.style.background = '#e74c3c'; };
+        recog.onresult = (e) => { 
+            document.getElementById('ai-prompt-input').value += e.results[0][0].transcript + ' ';
+            actualizarBotonesPrompt();
+        };
+        recog.onend = () => { btn.style.background = '#3498db'; actualizarBotonesPrompt(); };
+        recog.start();
+    }
+    
+    async function enviarPromptAI() {
+        const input = document.getElementById('ai-prompt-input').value.trim();
+        if (!input) return;
+        
+        document.getElementById('ai-prompt-loading').style.display = 'block';
+        document.getElementById('btn-send-prompt').disabled = true;
+        document.getElementById('btn-send-prompt').innerText = 'Generando...';
+        
+        try {
+            const prompt = `Actúa como un experto redactor legal y profesional. El usuario necesita generar un(a) ${currentAIType}. Sus indicaciones son: "${input}". Genera la redacción final lista para imprimir.`;
+            const { data, error } = await supabase.functions.invoke('generar-documento', {
+                body: JSON.stringify({ history: [], user_input: prompt, current_draft: null }),
+            });
+            if (error) throw error;
+            const aiResponse = data.response;
+            if (aiResponse.document_content) {
+                currentDocumentDraft = aiResponse.document_content;
+                prepararEditorPorTipo(currentAIType);
+                
+                const page = document.getElementById('a4-page-content');
+                page.innerText = currentDocumentDraft;
+                
+                showScreen('screen-ai-editor');
+                window.pdfGlobalScale = 1;
+                page.style.transform = 'scale(1)';
+            }
+        } catch (error) {
+            alert('❌ Error al generar: ' + error.message);
+        } finally {
+            document.getElementById('ai-prompt-loading').style.display = 'none';
+            document.getElementById('btn-send-prompt').disabled = false;
+            document.getElementById('btn-send-prompt').innerText = 'Generar ✨';
+        }
+    }
+    
+    function prepararEditorPorTipo(tipo) {
+        const page = document.getElementById('a4-page-content');
+        if (tipo === 'Carta' || tipo === 'Solicitud') {
+            // Márgenes modelo Formal Lester / A4 (ST6cn.jpg / kT4FT.jpg): Arriba/Abajo 2.5cm, Izquierda 3cm, Derecha 2.5cm
+            page.style.padding = '2.5cm 2.5cm 2.5cm 3cm';
+        } else if (tipo === 'Contrato') {
+            // Modelo Contrato (2KJ6h.jpg): Arriba 3cm, Izquierda 2.5cm, Derecha 3cm, Abajo 2.5cm
+            page.style.padding = '3cm 3cm 2.5cm 2.5cm';
+        } else if (tipo === 'Currículum') {
+            // Modelo CV (Mjc5S.jpg): Todos los márgenes aprox 1.5cm - 2cm
+            page.style.padding = '1.5cm';
+        } else {
+            page.style.padding = '2.5cm';
+        }
+    }
+
+
+    // --- LÓGICA DE RELLENADO DE PDF LIBRE --- //
 
     function abrirRellenadoLibre() {
         if (!usuarioActual || usuarioActual.creditos <= 0) {
@@ -445,9 +571,9 @@
         document.getElementById('free-canvas-container').style.display = 'none'; 
         document.getElementById('btn-generar-free').style.display = 'none'; 
         elementosFlotantes = [];
-        freeCanvasScales = {};
         freePdfPageCount = 0;
         window.pdfGlobalScale = 1;
+        window.pdfPageDimensions = {};
         showScreen('screen-rellenado-libre');
     }
 
@@ -470,6 +596,10 @@
         for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
             const page = await pdf.getPage(pageNum);
             const viewportHD = page.getViewport({ scale: 2.0 });
+            
+            // Guardar Dimensiones Reales en puntos del PDF
+            window.pdfPageDimensions[pageNum] = { width: viewportHD.width / 2.0, height: viewportHD.height / 2.0 };
+            
             const wrapper = document.createElement('div');
             wrapper.className = 'pdf-page-wrapper';
             wrapper.dataset.pageNum = pageNum;
@@ -479,7 +609,7 @@
             const ctx = canvas.getContext('2d');
             canvas.width = viewportHD.width;
             canvas.height = viewportHD.height;
-            freeCanvasScales[pageNum] = 2.0;
+            
             wrapper.appendChild(canvas);
             container.appendChild(wrapper);
             await page.render({ canvasContext: ctx, viewport: viewportHD }).promise;
@@ -535,28 +665,24 @@
         currentTarget = { parent: center.wrapper, x: center.x, y: center.y, pageNum: center.pageNum };
         abrirModalTexto();
     }
-
     function abrirModalFirmaDesdeMas() {
         toggleMenuMas();
         const center = getViewportCenter();
         currentTarget = { parent: center.wrapper, x: center.x, y: center.y, pageNum: center.pageNum };
         abrirModalFirma();
     }
-
     function abrirModalSimbolosDesdeMas() {
         toggleMenuMas();
         const center = getViewportCenter();
         currentTarget = { parent: center.wrapper, x: center.x, y: center.y, pageNum: center.pageNum };
         abrirModalSimbolos();
     }
-
     function abrirSubirImagenDesdeMas() {
         toggleMenuMas();
         const center = getViewportCenter();
         currentTarget = { parent: center.wrapper, x: center.x, y: center.y, pageNum: center.pageNum };
         document.getElementById('input-subir-imagen-global').click();
     }
-
     function procesarImagenSubida(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -580,7 +706,6 @@
         document.getElementById('modal-texto').style.display = 'flex';
         setTimeout(() => input.focus(), 100);
     }
-
     function cerrarModalTexto() { document.getElementById('modal-texto').style.display = 'none'; }
 
     function toggleFormat(type) {
@@ -613,6 +738,7 @@
         cerrarModalTexto();
     }
 
+    /* Modal Firma (Omitida su lógica repetitiva para enfocarnos en la corrección) */
     function abrirModalFirma() {
         document.getElementById('modal-firma').style.display = 'flex';
         sigCanvas = document.getElementById('canvas-firma');
@@ -626,33 +752,24 @@
         sigCanvas.ontouchend = stopDrawing;
         document.getElementById('firma-color').oninput = function() { currentColor = this.value; actualizarEstiloFirma(); };
     }
-
-    function actualizarEstiloFirma() {
-        sigCtx.strokeStyle = currentColor; sigCtx.lineCap = 'round'; sigCtx.lineJoin = 'round';
-        sigCtx.shadowColor = currentColor === '#1a1a1a' ? 'rgba(0,0,0,0.4)' : 'transparent'; sigCtx.shadowBlur = 1;
-    }
-
+    function actualizarEstiloFirma() { sigCtx.strokeStyle = currentColor; sigCtx.lineCap = 'round'; sigCtx.lineJoin = 'round'; sigCtx.shadowColor = currentColor === '#1a1a1a' ? 'rgba(0,0,0,0.4)' : 'transparent'; sigCtx.shadowBlur = 1; }
     function startDrawing(e) { isDrawing = true; const pos = getPos(e); lastX = pos.x; lastY = pos.y; }
     function draw(e) {
         if (!isDrawing) return;
-        const pos = getPos(e);
-        const lineWidth = calculateLineWidth(lastX, lastY, pos.x, pos.y);
+        const pos = getPos(e); const lineWidth = calculateLineWidth(lastX, lastY, pos.x, pos.y);
         sigCtx.lineWidth = lineWidth; sigCtx.beginPath(); sigCtx.moveTo(lastX, lastY); sigCtx.lineTo(pos.x, pos.y); sigCtx.stroke();
         lastX = pos.x; lastY = pos.y;
     }
     function stopDrawing() { isDrawing = false; }
     function getPos(e) {
-        const rect = sigCanvas.getBoundingClientRect();
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const rect = sigCanvas.getBoundingClientRect(); const clientX = e.touches ? e.touches[0].clientX : e.clientX; const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         return { x: (clientX - rect.left) * (sigCanvas.width / rect.width), y: (clientY - rect.top) * (sigCanvas.height / rect.height) };
     }
     function calculateLineWidth(x1, y1, x2, y2) { const dist = Math.hypot(x2 - x1, y2 - y1); return Math.max(2.5, Math.min(6.5, 5 - dist * 0.12)); }
     function limpiarFirma() { sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height); }
     function cerrarModalFirma() { document.getElementById('modal-firma').style.display = 'none'; }
     function guardarFirma() {
-        const canvas = document.getElementById('canvas-firma');
-        const dataUrl = canvas.toDataURL('image/png');
+        const dataUrl = document.getElementById('canvas-firma').toDataURL('image/png');
         crearElementoFlotante(currentTarget.parent, currentTarget.x, currentTarget.y, currentTarget.pageNum, 'image', dataUrl);
         cerrarModalFirma();
     }
@@ -664,51 +781,52 @@
     function cerrarModalSimbolos() { document.getElementById('modal-simbolos').style.display = 'none'; }
     function guardarSimbolo(simbolo) {
         lastSymbolSize = parseInt(document.getElementById('input-size-simbolo').value) || 24;
-        const canvas = document.createElement('canvas');
-        canvas.width = 100; canvas.height = 100;
-        const ctx = canvas.getContext('2d');
-        ctx.fillStyle = 'black'; ctx.font = '80px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText(simbolo, 50, 50);
-        const dataUrl = canvas.toDataURL('image/png');
-        crearElementoFlotante(currentTarget.parent, currentTarget.x, currentTarget.y, currentTarget.pageNum, 'image', dataUrl, null, lastSymbolSize * 2);
+        const canvas = document.createElement('canvas'); canvas.width = 100; canvas.height = 100;
+        const ctx = canvas.getContext('2d'); ctx.fillStyle = 'black'; ctx.font = '80px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(simbolo, 50, 50);
+        crearElementoFlotante(currentTarget.parent, currentTarget.x, currentTarget.y, currentTarget.pageNum, 'image', canvas.toDataURL('image/png'), null, lastSymbolSize * 2);
         cerrarModalSimbolos();
     }
 
+    /* ---- CREACIÓN DEL ELEMENTO Y ESCALADO PRECISO ---- */
     function crearElementoFlotante(parent, x, y, pageNum, tipo, contenido, formato = null, customSize = null) {
         const wrapper = document.createElement('div');
         wrapper.className = 'floating-element';
         
+        // Initial size (points in PDF)
         const initialSize = (customSize || (tipo === 'text' ? 14 : 120));
         
+        // Convert points to scaled DOM pixels para previsualización Perfect WYSIWYG
+        const pdfDim = window.pdfPageDimensions[pageNum] || { width: 595.28 }; // A4 fallback
+        const scaleFactor = parent.offsetWidth / pdfDim.width;
+        const domSize = initialSize * scaleFactor;
+        
+        // Posiciones
         const parentWidth = parent.offsetWidth;
         const parentHeight = parent.offsetHeight;
-        const pctX = (x - (initialSize / 2)) / parentWidth;
-        const pctY = (y - (initialSize / 2)) / parentHeight;
+        const pctX = (x - (domSize / 2)) / parentWidth;
+        const pctY = (y - (domSize / 2)) / parentHeight;
         
         wrapper.style.left = `${pctX * 100}%`;
         wrapper.style.top = `${pctY * 100}%`;
-        wrapper.style.position = 'absolute';
-        wrapper.style.transform = `scale(${window.pdfGlobalScale})`;
         
         const resizeHandle = document.createElement('div');
         resizeHandle.className = 'resize-handle';
         
-        let elData = { wrapper, type: tipo, pageNum, hasHalo: false, pctX, pctY };
+        let elData = { wrapper, type: tipo, pageNum, hasHalo: false, locked: false, pctX, pctY, size: initialSize }; // el.size guarda los PTS reales
         let domElement;
+        
         if (tipo === 'text') {
             domElement = document.createElement('span');
             domElement.className = 'floating-text';
             domElement.innerText = contenido;
-            domElement.style.fontSize = `${initialSize}px`;
+            domElement.style.fontSize = `${domSize}px`; // Escala DOM precisa
             domElement.style.color = 'black';
             elData.texto = contenido;
-            elData.size = initialSize;
         } else if (tipo === 'image') {
             domElement = document.createElement('img');
             domElement.src = contenido;
-            domElement.style.width = `${initialSize}px`;
+            domElement.style.width = `${domSize}px`;
             elData.dataUrl = contenido;
-            elData.size = initialSize;
         }
         
         const btnDelete = document.createElement('div');
@@ -717,7 +835,7 @@
         
         const btnBg = document.createElement('div');
         btnBg.innerHTML = '⬜'; btnBg.className = 'btn-bg-float';
-        btnBg.title = "Fondo blanco (Corrector)";
+        btnBg.title = "Fondo blanco (Corrector parcial)";
         btnBg.onclick = (e) => { 
             e.stopPropagation(); 
             elData.hasHalo = !elData.hasHalo; 
@@ -725,12 +843,23 @@
             btnBg.style.background = elData.hasHalo ? '#3498db' : '#fff';
         };
 
+        const btnLock = document.createElement('div');
+        btnLock.innerHTML = '📌'; btnLock.className = 'btn-lock-float';
+        btnLock.title = "Anclar elemento";
+        btnLock.onclick = (e) => {
+            e.stopPropagation();
+            elData.locked = !elData.locked;
+            wrapper.classList.toggle('locked', elData.locked);
+            btnLock.style.background = elData.locked ? '#e74c3c' : '#f39c12';
+        };
+
         const invScale = 1 / window.pdfGlobalScale;
         btnDelete.style.transform = `scale(${invScale})`;
         btnBg.style.transform = `scale(${invScale})`;
+        btnLock.style.transform = `translateX(-50%) scale(${invScale})`;
         resizeHandle.style.transform = `scale(${invScale})`;
 
-        wrapper.appendChild(domElement); wrapper.appendChild(btnDelete); wrapper.appendChild(btnBg); wrapper.appendChild(resizeHandle);
+        wrapper.appendChild(domElement); wrapper.appendChild(btnDelete); wrapper.appendChild(btnBg); wrapper.appendChild(btnLock); wrapper.appendChild(resizeHandle);
         parent.appendChild(wrapper);
         
         const seleccionar = (e) => {
@@ -746,12 +875,15 @@
 
     function hacerInteractivo(wrapper, elData, resizeHandle) {
         let isDragging = false, isResizing = false;
-        let startX, startY, initialLeft, initialTop;
-        let initialDistance = 0, initialSize = 0;
+        let startX, startY, initialLeft, initialTop, initialSize = 0, initialDistance = 0;
+        
         const start = (e) => {
-            if (e.target.classList.contains('btn-delete-float') || e.target.classList.contains('btn-bg-float')) return;
+            if (e.target.classList.contains('btn-delete-float') || e.target.classList.contains('btn-bg-float') || e.target.classList.contains('btn-lock-float')) return;
+            if (elData.locked) return; // Si está anclado no arrastrar ni redimensionar
+            
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            
             if (e.touches && e.touches.length === 2) {
                 isDragging = false;
                 initialDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
@@ -763,11 +895,15 @@
             e.stopPropagation();
         };
         const move = (e) => {
-            if (!isDragging && !isResizing && (!e.touches || e.touches.length !== 2)) return;
+            if (elData.locked || (!isDragging && !isResizing && (!e.touches || e.touches.length !== 2))) return;
+            
+            const pdfDim = window.pdfPageDimensions[elData.pageNum] || { width: 595.28 };
+            const scaleFactor = wrapper.parentElement.offsetWidth / pdfDim.width;
+            
             if (e.touches && e.touches.length === 2 && initialDistance > 0) {
                 const currentDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
                 const scale = currentDistance / initialDistance;
-                actualizarTamano(initialSize * scale);
+                actualizarTamano(initialSize * scale, scaleFactor);
                 e.preventDefault(); return;
             }
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -782,20 +918,26 @@
                 wrapper.style.top = `${elData.pctY * 100}%`;
             } else if (isResizing) {
                 const dx = (clientX - startX) / window.pdfGlobalScale;
-                actualizarTamano(initialSize + dx);
+                const pdfDx = dx / scaleFactor; // Convertir el movimiento de pantalla a Puntos PDF
+                actualizarTamano(initialSize + pdfDx, scaleFactor);
             }
             e.preventDefault();
         };
-        function actualizarTamano(newSize) {
+        
+        function actualizarTamano(newPdfSize, scaleFactor) {
+            if (elData.type === 'text') newPdfSize = Math.max(2, Math.min(newPdfSize, 150));
+            else if (elData.type === 'image') newPdfSize = Math.max(5, Math.min(newPdfSize, 800));
+            
+            elData.size = newPdfSize; // Guardamos en Puntos de impresión
+            const domSize = newPdfSize * scaleFactor; // Mostramos escalado en pantalla
+            
             if (elData.type === 'text') {
-                newSize = Math.max(2, Math.min(newSize, 120));
-                elData.wrapper.querySelector('.floating-text').style.fontSize = newSize + 'px';
+                elData.wrapper.querySelector('.floating-text').style.fontSize = domSize + 'px';
             } else if (elData.type === 'image') {
-                newSize = Math.max(5, Math.min(newSize, 600));
-                elData.wrapper.querySelector('img').style.width = newSize + 'px';
+                elData.wrapper.querySelector('img').style.width = domSize + 'px';
             }
-            elData.size = newSize;
         }
+        
         const stop = () => { isDragging = false; isResizing = false; initialDistance = 0; };
         wrapper.addEventListener('mousedown', start);
         wrapper.addEventListener('touchstart', start, {passive: false});
@@ -808,7 +950,7 @@
     async function generarPdfLibre() {
         if (!freePdfDoc) return;
         if (usuarioActual.creditos < freePdfPageCount) {
-            alert(`⚠️ Necesitas ${freePdfPageCount} créditos para descargar este documento. Tienes ${usuarioActual.creditos}.`);
+            alert(`⚠️ Necesitas ${freePdfPageCount} créditos para descargar. Tienes ${usuarioActual.creditos}.`);
             return;
         }
         const btn = document.getElementById('btn-generar-free');
@@ -820,25 +962,29 @@
                 const { width, height } = page.getSize();
                 
                 const pdfX = el.pctX * width;
-                const pdfY = height - (el.pctY * height) - (el.wrapper.offsetHeight * (width / el.wrapper.parentElement.offsetWidth));
-                const elWidthPdf = el.size * (width / el.wrapper.parentElement.offsetWidth);
-                const elHeightPdf = el.wrapper.offsetHeight * (width / el.wrapper.parentElement.offsetWidth);
+                const domScaleFactor = width / el.wrapper.parentElement.offsetWidth;
+                
+                // Exportación en Puntos Exactos
+                const rectWidthPdf = el.wrapper.offsetWidth * domScaleFactor;
+                const elHeightPdf = el.wrapper.offsetHeight * domScaleFactor;
+                const pdfY = height - (el.pctY * height) - elHeightPdf;
                 
                 if (el.hasHalo) {
                     page.drawRectangle({
-                        x: pdfX - 2,
-                        y: pdfY - 2,
-                        width: elWidthPdf + 4,
-                        height: elHeightPdf + 4,
+                        x: pdfX,
+                        y: pdfY, // Inicia desde abajo
+                        width: rectWidthPdf,
+                        height: elHeightPdf / 2, // Mitad inferior partiendo del centro
                         color: PDFLib.rgb(1, 1, 1)
                     });
                 }
 
                 if (el.type === 'text') {
-                    page.drawText(el.texto, { x: pdfX, y: pdfY, size: elWidthPdf, color: PDFLib.rgb(0, 0, 0) });
+                    // Posición Y de drawText es la base, ajustamos ligeramente la caja
+                    page.drawText(el.texto, { x: pdfX, y: pdfY + (elHeightPdf * 0.2), size: el.size, color: PDFLib.rgb(0, 0, 0) });
                 } else if (el.type === 'image') {
                     const img = await freePdfDoc.embedPng(el.dataUrl);
-                    page.drawImage(img, { x: pdfX, y: pdfY, width: elWidthPdf, height: elHeightPdf });
+                    page.drawImage(img, { x: pdfX, y: pdfY, width: rectWidthPdf, height: elHeightPdf });
                 }
             }
             const pagado = await descontarCredito(freePdfPageCount);
@@ -851,16 +997,6 @@
         finally { btn.innerText = `✨ Descargar PDF Lleno (${freePdfPageCount} Créditos)`; btn.disabled = false; }
     }
 
-    function mostrarScreen(id) {
-        if(id === 'screen-ai-chat') { 
-            document.getElementById(id).classList.add('active'); 
-            if (chatHistory.length === 0) {
-                addMessage('ai', '¡Hola! Soy tu experto en documentos. ¿Qué necesitas redactar hoy?');
-            }
-        }
-        else { showScreen(id); }
-    }
-
     function setAlign(align) {
         currentAlignment = align;
         document.querySelectorAll('.btn-editor-tool').forEach(b => b.classList.remove('active'));
@@ -868,97 +1004,26 @@
         document.getElementById('a4-page-content').style.textAlign = align;
     }
 
-    function accionChat() {
-        const input = document.getElementById('chat-input');
-        if (input.value.trim() === "") { iniciarVozChat(); } else { enviarMensajeAI(); }
-    }
-
-    function actualizarBotonChat() {
-        const input = document.getElementById('chat-input');
-        const btn = document.getElementById('btn-chat-action');
-        if (input.value.trim() !== "") { btn.innerHTML = "➤"; btn.style.background = "#2ecc71"; }
-        else { btn.innerHTML = "🎤"; btn.style.background = "#3498db"; }
-    }
-
-    function addMessage(sender, text) {
-        const container = document.getElementById('chat-messages');
-        if (!container) return;
-        const msgDiv = document.createElement('div');
-        msgDiv.className = 'chat-message ' + sender;
-        msgDiv.innerHTML = text.replace(/\n/g, '<br>');
-        container.appendChild(msgDiv);
-        container.scrollTop = container.scrollHeight;
-    }
-
-    async function enviarMensajeAI() {
-        const input = document.getElementById('chat-input');
-        const texto = input.value.trim();
-        if (!texto || isAITyping) return;
-        addMessage('user', texto); input.value = ""; actualizarBotonChat();
-        isAITyping = true; chatHistory.push({ role: 'user', content: texto });
-        document.getElementById('chat-loading').style.display = 'block';
-        try {
-            const { data, error } = await supabase.functions.invoke('generar-documento', {
-                body: JSON.stringify({ history: chatHistory, user_input: texto, current_draft: currentDocumentDraft }),
-            });
-            if (error) { addMessage('ai', '❌ Error: ' + error.message); return; }
-            const aiResponse = data.response;
-            addMessage('ai', aiResponse.message);
-            chatHistory.push({ role: 'assistant', content: aiResponse.raw_response });
-            if (aiResponse.document_content) {
-                currentDocumentDraft = aiResponse.document_content;
-                abrirEditorFullAI(currentDocumentDraft);
-            }
-        } catch (error) { addMessage('ai', '❌ Error: ' + error.message); }
-        finally { isAITyping = false; document.getElementById('chat-loading').style.display = 'none'; }
-    }
-
-    function abrirEditorFullAI(content) {
-        const screen = document.getElementById('screen-ai-editor');
-        const page = document.getElementById('a4-page-content');
-        page.innerText = content;
-        screen.style.display = 'flex';
-        screen.classList.add('active');
-        window.pdfGlobalScale = 1;
-        page.style.transform = 'scale(1)';
-        
-        document.getElementById('btn-float-add-global').style.display = 'block';
-    }
-
-    async function regenerarEstiloAI() {
-        if (isAITyping) return;
-        const page = document.getElementById('a4-page-content');
-        const textoActual = page.innerText;
-        addMessage('ai', '⏳ Pulido redacción (manteniendo tus datos)...');
-        isAITyping = true;
-        try {
-            const prompt = "Mejora la redacción y profesionalismo del siguiente texto, pero MANTÉN EXACTAMENTE IGUAL todos los nombres propios, DNI, fechas, montos y datos personales. Texto: " + textoActual;
-            const { data, error } = await supabase.functions.invoke('generar-documento', {
-                body: JSON.stringify({ history: chatHistory, user_input: prompt, current_draft: textoActual }),
-            });
-            if (error) throw error;
-            const aiResponse = data.response;
-            if (aiResponse.document_content) {
-                currentDocumentDraft = aiResponse.document_content;
-                page.innerText = currentDocumentDraft;
-                addMessage('ai', '✅ Redacción pulida.');
-            }
-        } catch (e) { addMessage('ai', '❌ Error al pulir: ' + e.message); }
-        finally { isAITyping = false; }
-    }
-
     async function generarPdfDesdeEditorAI() {
-        const page = document.getElementById('a4-page-content');
-        let text = page.innerText.trim();
+        const pageDOM = document.getElementById('a4-page-content');
+        let text = pageDOM.innerText.trim();
         try {
             const pdfDoc = await PDFLib.PDFDocument.create();
             let pdfPage = pdfDoc.addPage(PDFLib.PageSizes.A4);
             const { width, height } = pdfPage.getSize();
             const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
             
-            const marginTop = 85; const marginBottom = 71; const marginSides = 71;
+            // Calculador de márgenes dinámicos del estilo inyectado
+            const style = window.getComputedStyle(pageDOM);
+            const pxToPt = (px) => parseFloat(px) * 0.75; // Aproximado para 96dpi estándar
+            
+            const marginTop = pxToPt(style.paddingTop) || 71;
+            const marginBottom = pxToPt(style.paddingBottom) || 71;
+            const marginLeft = pxToPt(style.paddingLeft) || 71;
+            const marginRight = pxToPt(style.paddingRight) || 71;
+            
             let currentY = height - marginTop;
-            const maxWidth = width - (marginSides * 2);
+            const maxWidth = width - marginLeft - marginRight;
             const paragraphs = text.split('\n');
             
             for (let para of paragraphs) {
@@ -968,44 +1033,42 @@
                 for (let word of words) {
                     const testLine = line + word + ' ';
                     if (font.widthOfTextAtSize(testLine, 11) > maxWidth) {
-                        let xPos = marginSides;
-                        if (currentAlignment === 'center') xPos = marginSides + (maxWidth - font.widthOfTextAtSize(line, 11)) / 2;
-                        else if (currentAlignment === 'right') xPos = marginSides + (maxWidth - font.widthOfTextAtSize(line, 11));
+                        let xPos = marginLeft;
+                        if (currentAlignment === 'center') xPos = marginLeft + (maxWidth - font.widthOfTextAtSize(line, 11)) / 2;
+                        else if (currentAlignment === 'right') xPos = marginLeft + (maxWidth - font.widthOfTextAtSize(line, 11));
                         
                         pdfPage.drawText(line.trim(), { x: xPos, y: currentY, size: 11, font: font });
                         currentY -= 14; line = word + ' ';
                         if (currentY < marginBottom) { pdfPage = pdfDoc.addPage(PDFLib.PageSizes.A4); currentY = height - marginTop; }
                     } else { line = testLine; }
                 }
-                let xPos = marginSides;
-                if (currentAlignment === 'center') xPos = marginSides + (maxWidth - font.widthOfTextAtSize(line, 11)) / 2;
-                else if (currentAlignment === 'right') xPos = marginSides + (maxWidth - font.widthOfTextAtSize(line, 11));
+                let xPos = marginLeft;
+                if (currentAlignment === 'center') xPos = marginLeft + (maxWidth - font.widthOfTextAtSize(line, 11)) / 2;
+                else if (currentAlignment === 'right') xPos = marginLeft + (maxWidth - font.widthOfTextAtSize(line, 11));
+                
                 pdfPage.drawText(line.trim(), { x: xPos, y: currentY, size: 11, font: font });
                 currentY -= 28;
                 if (currentY < marginBottom) { pdfPage = pdfDoc.addPage(PDFLib.PageSizes.A4); currentY = height - marginTop; }
             }
 
+            // Flotantes sobre el AI
             for (const el of elementosFlotantes) {
                 const pdfX = el.pctX * width;
-                const pdfY = height - (el.pctY * height) - (el.wrapper.offsetHeight * (width / page.offsetWidth));
-                const elWidthPdf = el.size * (width / page.offsetWidth);
-                const elHeightPdf = el.wrapper.offsetHeight * (width / page.offsetWidth);
+                const domScaleFactor = width / pageDOM.offsetWidth;
+                const rectWidthPdf = el.wrapper.offsetWidth * domScaleFactor;
+                const elHeightPdf = el.wrapper.offsetHeight * domScaleFactor;
+                const pdfY = height - (el.pctY * height) - elHeightPdf;
                 
                 if (el.hasHalo) {
                     pdfPage.drawRectangle({
-                        x: pdfX - 2,
-                        y: pdfY - 2,
-                        width: elWidthPdf + 4,
-                        height: elHeightPdf + 4,
-                        color: PDFLib.rgb(1, 1, 1)
+                        x: pdfX, y: pdfY, width: rectWidthPdf, height: elHeightPdf / 2, color: PDFLib.rgb(1, 1, 1)
                     });
                 }
-
                 if (el.type === 'text') {
-                    pdfPage.drawText(el.texto, { x: pdfX, y: pdfY, size: elWidthPdf, color: PDFLib.rgb(0, 0, 0) });
+                    pdfPage.drawText(el.texto, { x: pdfX, y: pdfY + (elHeightPdf * 0.2), size: el.size, color: PDFLib.rgb(0, 0, 0) });
                 } else if (el.type === 'image') {
                     const img = await pdfDoc.embedPng(el.dataUrl);
-                    pdfPage.drawImage(img, { x: pdfX, y: pdfY, width: elWidthPdf, height: elHeightPdf });
+                    pdfPage.drawImage(img, { x: pdfX, y: pdfY, width: rectWidthPdf, height: elHeightPdf });
                 }
             }
 
