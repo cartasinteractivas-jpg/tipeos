@@ -16,7 +16,7 @@
 
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #121212; color: #ffffff; display: flex; justify-content: center; min-height: 100vh; overflow: hidden; }
+        body { background-color: #121212; color: #ffffff; display: flex; justify-content: center; min-height: 100vh; overflow-x: hidden; }
         
         .app-container { background: #1e1e1e; width: 100%; max-width: 480px; height: 100vh; display: flex; flex-direction: column; position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.5); overflow: hidden; }
         
@@ -74,20 +74,17 @@
             justify-content: center; 
             transform-origin: top left;
             box-sizing: border-box;
+            padding: 2px;
         }
         .floating-element.selected { border: 2px dashed #3498db !important; }
         .floating-element.locked { border-color: transparent !important; cursor: default; }
         
-        /* FONDO BLANCO (CORRECTOR A LA MITAD) */
-        .floating-element.has-halo { background: transparent !important; }
-        .floating-element.has-halo::before {
-            content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 50%;
-            background: white; z-index: -1; border-radius: 2px;
-        }
+        /* FONDO BLANCO MEJORADO (TEXTO E IMAGEN) */
+        .floating-element.has-halo { background: #ffffff !important; box-shadow: 0 0 0 2px #ffffff; }
 
         .floating-text { color: #000; font-family: sans-serif; white-space: nowrap; pointer-events: none; user-select: none; display: block; }
         
-        /* BOTONES DE EDICIÓN FLOTANTE CORREGIDOS (ANCLADOS A LAS ESQUINAS) */
+        /* BOTONES DE EDICIÓN FLOTANTE CORREGIDOS */
         .btn-delete-float, .btn-bg-float, .btn-lock-float, .resize-handle { 
             position: absolute; 
             background: #fff; 
@@ -130,15 +127,41 @@
         .symbol-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
         .btn-symbol { background: #333; color: white; border: 1px solid #555; font-size: 30px; padding: 10px; border-radius: 8px; cursor: pointer; display: flex; justify-content: center; align-items: center; }
 
-        /* --- PANTALLA EDITOR FULL AI --- */
+        /* --- PANTALLA EDITOR FULL AI (PAGINADO REAL HOJAS A4) --- */
         #screen-ai-editor { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #121212; z-index: 3000; display: none; flex-direction: column; }
         #screen-ai-editor.active { display: flex; }
-        .editor-toolbar { background: #2c3e50; padding: 10px; display: flex; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid #34495e; }
+        .editor-toolbar { background: #2c3e50; padding: 10px; display: flex; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid #34495e; z-index: 10; }
         .btn-editor-tool { background: #34495e; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-size: 13px; cursor: pointer; }
         .btn-editor-tool:hover { background: #3498db; }
         .btn-editor-tool.active { background: #3498db; }
-        .editor-canvas-container { flex: 1; overflow: auto; background: #000; padding: 20px; display: flex; flex-direction: column; align-items: center; position: relative; }
-        .a4-page { background: white; width: 100%; max-width: 800px; min-height: 1123px; padding: 2.5cm; box-shadow: 0 0 20px rgba(0,0,0,0.5); color: black; font-family: 'Times New Roman', Times, serif; font-size: 14px; line-height: 1.5; outline: none; text-align: justify; position: relative; transform-origin: top center; white-space: pre-wrap; }
+        
+        .editor-canvas-container { flex: 1; overflow-y: auto; background: #000; padding: 20px 10px; display: flex; flex-direction: column; align-items: center; gap: 20px; position: relative; }
+        
+        /* HOJAS A4 SEPARADAS CADA UNA DE 210mm x 297mm */
+        .a4-page { 
+            background: white; 
+            width: 100%; 
+            max-width: 210mm; 
+            min-height: 297mm; 
+            padding: 2.5cm; 
+            box-shadow: 0 0 15px rgba(0,0,0,0.6); 
+            color: black; 
+            font-family: 'Times New Roman', Times, serif; 
+            font-size: 14px; 
+            line-height: 1.5; 
+            outline: none; 
+            text-align: justify; 
+            position: relative; 
+            box-sizing: border-box; 
+            word-break: break-word;
+        }
+
+        /* ESTILOS ESPECÍFICOS CURRÍCULUM */
+        .cv-container { font-family: Arial, sans-serif; font-size: 11pt; color: #333; }
+        .cv-header { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #2c3e50; padding-bottom: 15px; margin-bottom: 15px; }
+        .cv-title { font-size: 22pt; font-weight: bold; color: #2c3e50; text-transform: uppercase; }
+        .cv-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; }
+        .cv-section-title { font-size: 12pt; font-weight: bold; color: #2c3e50; text-transform: uppercase; border-bottom: 1px solid #ccc; margin-top: 15px; margin-bottom: 8px; padding-bottom: 3px; }
 
         /* BOTÓN FLOTANTE GLOBAL */
         #btn-float-add-global { position: fixed; bottom: 25px; right: 20px; background: #3498db; color: white; border: none; width: 56px; height: 56px; border-radius: 50%; font-size: 28px; z-index: 4001; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: none; }
@@ -195,7 +218,7 @@
         </div>
         <div style="flex:1; display:flex; flex-direction:column; padding:20px; gap:15px; justify-content:center; align-items: center;">
             <p style="text-align:center; color:#ccc; font-size: 15px;">Escribe los detalles clave para tu <b id="ai-prompt-type" style="color:#f1c40f;"></b></p>
-            <textarea id="ai-prompt-input" rows="8" placeholder="Ej: A nombre de Juan Pérez, con fecha de hoy, solicitando vacaciones desde el 15 al 30 de Agosto..." style="width:100%; max-width: 400px; border-radius:10px; padding:15px; background:#1e1e1e; color:white; border:1px solid #444; font-size:16px; outline:none; resize:none;"></textarea>
+            <textarea id="ai-prompt-input" rows="8" placeholder="Ej: A nombre de Juan Pérez con DNI 12345678, solicitando vacaciones..." style="width:100%; max-width: 400px; border-radius:10px; padding:15px; background:#1e1e1e; color:white; border:1px solid #444; font-size:16px; outline:none; resize:none;"></textarea>
             
             <div style="display:flex; justify-content:center; align-items:center; gap:15px; margin-top: 10px; height: 60px;">
                 <button id="btn-voice-prompt" onclick="iniciarVozPrompt()" style="background:#3498db; color:white; border:none; width:60px; height:60px; border-radius:50%; font-size:24px; box-shadow:0 4px 10px rgba(0,0,0,0.5); cursor:pointer;">🎤</button>
@@ -238,6 +261,7 @@
         <button class="btn-editor-tool" style="background:#2ecc71; color:black; font-weight:bold; margin-left:auto;" onclick="generarPdfDesdeEditorAI()">✅ Descargar PDF</button>
     </div>
     <div class="editor-canvas-container" id="ai-editor-container">
+        <!-- Paginado A4 generado dinámicamente -->
         <div id="a4-page-content" class="a4-page" contenteditable="true"></div>
     </div>
 </div>
@@ -259,7 +283,7 @@
         <div class="format-toolbar">
             <button type="button" id="btn-bold" class="btn-format" onclick="toggleFormat('bold')"><b>B</b></button>
             <button type="button" id="btn-italic" class="btn-format" onclick="toggleFormat('italic')"><i>I</i></button>
-            <input type="number" id="input-size-texto" value="14" min="4" max="100" style="width: 60px; padding: 5px; border-radius: 6px; border: 1px solid #444; background: #111; color: white; text-align: center; outline: none; font-size: 16px;" title="Tamaño real de impresión (Pt)">
+            <input type="number" id="input-size-texto" value="14" min="4" max="100" style="width: 60px; padding: 5px; border-radius: 6px; border: 1px solid #444; background: #111; color: white; text-align: center; outline: none; font-size: 16px;" title="Tamaño real (Pt)">
         </div>
         <input type="text" id="input-texto-modal" placeholder="Escribe aquí..." style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #444; background: #111; color: white; font-size: 16px; outline: none;">
         <div id="chips-historial" class="chips-container"></div>
@@ -335,6 +359,12 @@
     let initialPdfDist = 0;
     let initialPdfScale = 1;
 
+    // LIMPIADOR DE TEXTO PARA PDF-LIB (EVITA WinAnsi ENCODING ERROR)
+    function limpiarTextoParaPdf(texto) {
+        if (!texto) return '';
+        return texto.replace(/[^\x00-\x7F\xC0-\xFF]/g, '');
+    }
+
     document.addEventListener('DOMContentLoaded', async () => {
         renderizarPlantillas(); 
         
@@ -370,7 +400,6 @@
             container.addEventListener('touchend', () => { initialPdfDist = 0; });
         });
 
-        // Eventos del Input AI
         document.getElementById('ai-prompt-input').addEventListener('input', actualizarBotonesPrompt);
     });
 
@@ -484,7 +513,7 @@
         `;
     }
 
-    // --- LÓGICA DEL MENÚ DE INTELIGENCIA ARTIFICIAL --- //
+    // --- MENÚ INTELIGENCIA ARTIFICIAL --- //
     
     function manejarClickMenuAI(tipo) {
         if (!usuarioActual || usuarioActual.creditos <= 0) {
@@ -539,27 +568,31 @@
         
         try {
             let prompt = "";
+            const reglaFirma = `\nIMPORTANTE: Todo documento como Carta, Solicitud o Contrato DEBE incluir al final la estructura formal de firma con la línea superior de esta forma exacta:
+___________________________
+[FIRMA]
+Nombre Completo: [Nombre de la persona o inventar uno si no se especifica]
+DNI / Cargo: [DNI o Cargo correspondiente]`;
+
             if (currentAIType === "Contrato") {
-                prompt = `Actúa como un abogado experto. Redacta un contrato formal en español estructurado estrictamente por CLÁUSULAS (CLÁUSULA PRIMERA, CLÁUSULA SEGUNDA, CLÁUSULA TERCERA, etc.) y organizado en párrafos claros y legibles. Las indicaciones del usuario son: "${input}". Devuelve el documento listo para imprimir.`;
+                prompt = `Actúa como abogado experto. Redacta un contrato formal en español por CLÁUSULAS (CLÁUSULA PRIMERA, CLÁUSULA SEGUNDA, etc.). Indicaciones: "${input}". ${reglaFirma}`;
+            } else if (currentAIType === "Currículum") {
+                prompt = `Actúa como un reclutador profesional. Redacta un Currículum Vitae completo basado en la estructura estándar formal (Perfil Profesional, Experiencia Laboral, Formación Académica, Habilidades/Competencias). Indicaciones del usuario: "${input}". Si faltan datos, invéntalos manteniendo un perfil profesional óptimo.`;
             } else {
-                prompt = `Actúa como un experto redactor legal y profesional. El usuario necesita generar un(a) ${currentAIType}. Sus indicaciones son: "${input}". Genera la redacción final lista para imprimir.`;
+                prompt = `Actúa como redactor legal y profesional. Genera un(a) ${currentAIType}. Indicaciones: "${input}". ${reglaFirma}`;
             }
 
             const { data, error } = await supabase.functions.invoke('generar-documento', {
                 body: JSON.stringify({ history: [], user_input: prompt, current_draft: null }),
             });
             if (error) throw error;
+            
             const aiResponse = data.response;
             if (aiResponse.document_content) {
                 currentDocumentDraft = aiResponse.document_content;
-                prepararEditorPorTipo(currentAIType);
-                
-                const page = document.getElementById('a4-page-content');
-                page.innerText = currentDocumentDraft;
-                
+                prepararEditorPorTipo(currentAIType, currentDocumentDraft);
                 showScreen('screen-ai-editor');
                 window.pdfGlobalScale = 1;
-                page.style.transform = 'scale(1)';
             }
         } catch (error) {
             alert('❌ Error al generar: ' + error.message);
@@ -570,20 +603,79 @@
         }
     }
     
-    function prepararEditorPorTipo(tipo) {
-        const page = document.getElementById('a4-page-content');
-        if (tipo === 'Carta' || tipo === 'Solicitud') {
-            page.style.padding = '2.5cm 2.5cm 2.5cm 3cm';
-        } else if (tipo === 'Contrato') {
-            page.style.padding = '3cm 3cm 2.5cm 2.5cm';
-        } else if (tipo === 'Currículum') {
-            page.style.padding = '1.5cm';
+    function prepararEditorPorTipo(tipo, contenido) {
+        const container = document.getElementById('ai-editor-container');
+        container.innerHTML = '';
+        
+        const page = document.createElement('div');
+        page.id = 'a4-page-content';
+        page.className = 'a4-page';
+        page.contentEditable = 'true';
+
+        if (tipo === 'Currículum') {
+            page.style.padding = '1.5cm 2cm';
+            page.innerHTML = `
+                <div class="cv-container">
+                    <div class="cv-header">
+                        <div>
+                            <div class="cv-title" contenteditable="true">CURRÍCULUM VITAE</div>
+                            <div style="font-size:14pt; font-weight:bold; color:#555;" contenteditable="true">NOMBRES Y APELLIDOS</div>
+                        </div>
+                        <div style="text-align:right; font-size:9pt; color:#666;" contenteditable="true">
+                            📞 Teléfono: 987 654 321<br>
+                            ✉️ Email: correo@ejemplo.com<br>
+                            📍 Lima, Perú
+                        </div>
+                    </div>
+                    <div class="cv-grid">
+                        <div>
+                            <div class="cv-section-title">CONTACTO</div>
+                            <p style="font-size:9pt;">
+                                <b>LinkedIn:</b> /in/usuario<br>
+                                <b>Dirección:</b> Av. Principal 123
+                            </p>
+                            
+                            <div class="cv-section-title">HABILIDADES</div>
+                            <ul style="font-size:9pt; padding-left:15px;">
+                                <li>Gestión de Documentos</li>
+                                <li>Atención al Cliente</li>
+                                <li>Manejo de MS Office</li>
+                                <li>Trabajo en Equipo</li>
+                            </ul>
+                            
+                            <div class="cv-section-title">IDIOMAS</div>
+                            <p style="font-size:9pt;">• Español (Nativo)<br>• Inglés (Intermedio)</p>
+                        </div>
+                        <div>
+                            <div class="cv-section-title">PERFIL PROFESIONAL</div>
+                            <div contenteditable="true" style="font-size:10pt; text-align:justify;">
+                                ${contenido.replace(/\n/g, '<br>')}
+                            </div>
+                            
+                            <div class="cv-section-title">EXPERIENCIA LABORAL</div>
+                            <div contenteditable="true" style="font-size:10pt;">
+                                <b>PUESTO / CARGO</b> - Empresa ABC (2022 - Presente)<br>
+                                • Gestión y auditoría de documentos.<br>
+                                • Coordinación e implementación de procesos.
+                            </div>
+                            
+                            <div class="cv-section-title">EDUCACIÓN</div>
+                            <div contenteditable="true" style="font-size:10pt;">
+                                <b>GRADO / TITULO</b> - Universidad / Instituto (2018 - 2022)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
         } else {
-            page.style.padding = '2.5cm';
+            page.style.padding = tipo === 'Contrato' ? '3cm 3cm 2.5cm 2.5cm' : '2.5cm 2.5cm 2.5cm 3cm';
+            page.innerText = contenido;
         }
+
+        container.appendChild(page);
     }
 
-    // --- LÓGICA DE RELLENADO DE PDF LIBRE --- //
+    // --- RELLENADO DE PDF LIBRE --- //
 
     function abrirRellenadoLibre() {
         if (!usuarioActual || usuarioActual.creditos <= 0) {
@@ -811,7 +903,7 @@
         cerrarModalSimbolos();
     }
 
-    /* ---- CREACIÓN DEL ELEMENTO Y ANCLAJE EXACTO ---- */
+    /* ---- ELEMENTOS FLOTANTES CON FONDO AJUSTABLE ---- */
     function crearElementoFlotante(parent, x, y, pageNum, tipo, contenido, formato = null, customSize = null) {
         const wrapper = document.createElement('div');
         wrapper.className = 'floating-element';
@@ -858,7 +950,7 @@
         
         const btnBg = document.createElement('div');
         btnBg.innerHTML = '⬜'; btnBg.className = 'btn-bg-float';
-        btnBg.title = "Fondo blanco (Corrector parcial)";
+        btnBg.title = "Fondo blanco (Corrector)";
         btnBg.onclick = (e) => { 
             e.stopPropagation(); 
             elData.hasHalo = !elData.hasHalo; 
@@ -992,13 +1084,14 @@
                         x: pdfX,
                         y: pdfY,
                         width: rectWidthPdf,
-                        height: elHeightPdf / 2,
+                        height: elHeightPdf,
                         color: PDFLib.rgb(1, 1, 1)
                     });
                 }
 
                 if (el.type === 'text') {
-                    page.drawText(el.texto, { x: pdfX, y: pdfY + (elHeightPdf * 0.2), size: el.size, color: PDFLib.rgb(0, 0, 0) });
+                    const textoLimpio = limpiarTextoParaPdf(el.texto);
+                    page.drawText(textoLimpio, { x: pdfX, y: pdfY + (elHeightPdf * 0.2), size: el.size, color: PDFLib.rgb(0, 0, 0) });
                 } else if (el.type === 'image') {
                     const img = await freePdfDoc.embedPng(el.dataUrl);
                     page.drawImage(img, { x: pdfX, y: pdfY, width: rectWidthPdf, height: elHeightPdf });
@@ -1021,30 +1114,41 @@
         document.getElementById('a4-page-content').style.textAlign = align;
     }
 
+    // GENERACIÓN DE PDF CON PAGINADO REAL DINÁMICO
     async function generarPdfDesdeEditorAI() {
         const pageDOM = document.getElementById('a4-page-content');
         let text = pageDOM.innerText.trim();
+        
         try {
             const pdfDoc = await PDFLib.PDFDocument.create();
             let pdfPage = pdfDoc.addPage(PDFLib.PageSizes.A4);
+            let totalHojasCreadas = 1;
+            
             const { width, height } = pdfPage.getSize();
             const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
             
-            const style = window.getComputedStyle(pageDOM);
-            const pxToPt = (px) => parseFloat(px) * 0.75;
-            
-            const marginTop = pxToPt(style.paddingTop) || 71;
-            const marginBottom = pxToPt(style.paddingBottom) || 71;
-            const marginLeft = pxToPt(style.paddingLeft) || 71;
-            const marginRight = pxToPt(style.paddingRight) || 71;
+            const marginTop = 70;
+            const marginBottom = 70;
+            const marginLeft = 70;
+            const marginRight = 70;
             
             let currentY = height - marginTop;
             const maxWidth = width - marginLeft - marginRight;
             const paragraphs = text.split('\n');
             
             for (let para of paragraphs) {
-                if (para.trim() === "") { currentY -= 15; continue; }
-                const words = para.split(' ');
+                const paraLimpio = limpiarTextoParaPdf(para);
+                if (paraLimpio.trim() === "") { 
+                    currentY -= 15; 
+                    if (currentY < marginBottom) {
+                        pdfPage = pdfDoc.addPage(PDFLib.PageSizes.A4);
+                        totalHojasCreadas++;
+                        currentY = height - marginTop;
+                    }
+                    continue; 
+                }
+                
+                const words = paraLimpio.split(' ');
                 let line = '';
                 for (let word of words) {
                     const testLine = line + word + ' ';
@@ -1054,21 +1158,36 @@
                         else if (currentAlignment === 'right') xPos = marginLeft + (maxWidth - font.widthOfTextAtSize(line, 11));
                         
                         pdfPage.drawText(line.trim(), { x: xPos, y: currentY, size: 11, font: font });
-                        currentY -= 14; line = word + ' ';
-                        if (currentY < marginBottom) { pdfPage = pdfDoc.addPage(PDFLib.PageSizes.A4); currentY = height - marginTop; }
+                        currentY -= 14; 
+                        line = word + ' ';
+                        
+                        // SALTO AUTOMÁTICO A NUEVA HOJA A4
+                        if (currentY < marginBottom) { 
+                            pdfPage = pdfDoc.addPage(PDFLib.PageSizes.A4); 
+                            totalHojasCreadas++;
+                            currentY = height - marginTop; 
+                        }
                     } else { line = testLine; }
                 }
+                
                 let xPos = marginLeft;
                 if (currentAlignment === 'center') xPos = marginLeft + (maxWidth - font.widthOfTextAtSize(line, 11)) / 2;
                 else if (currentAlignment === 'right') xPos = marginLeft + (maxWidth - font.widthOfTextAtSize(line, 11));
                 
                 pdfPage.drawText(line.trim(), { x: xPos, y: currentY, size: 11, font: font });
-                currentY -= 28;
-                if (currentY < marginBottom) { pdfPage = pdfDoc.addPage(PDFLib.PageSizes.A4); currentY = height - marginTop; }
+                currentY -= 20;
+                
+                if (currentY < marginBottom) { 
+                    pdfPage = pdfDoc.addPage(PDFLib.PageSizes.A4); 
+                    totalHojasCreadas++;
+                    currentY = height - marginTop; 
+                }
             }
 
             // Flotantes sobre el AI
+            const pages = pdfDoc.getPages();
             for (const el of elementosFlotantes) {
+                const targetPage = pages[el.pageNum - 1] || pages[pages.length - 1];
                 const pdfX = el.pctX * width;
                 const domScaleFactor = width / pageDOM.offsetWidth;
                 const rectWidthPdf = el.wrapper.offsetWidth * domScaleFactor;
@@ -1076,23 +1195,30 @@
                 const pdfY = height - (el.pctY * height) - elHeightPdf;
                 
                 if (el.hasHalo) {
-                    pdfPage.drawRectangle({
-                        x: pdfX, y: pdfY, width: rectWidthPdf, height: elHeightPdf / 2, color: PDFLib.rgb(1, 1, 1)
+                    targetPage.drawRectangle({
+                        x: pdfX, y: pdfY, width: rectWidthPdf, height: elHeightPdf, color: PDFLib.rgb(1, 1, 1)
                     });
                 }
                 if (el.type === 'text') {
-                    pdfPage.drawText(el.texto, { x: pdfX, y: pdfY + (elHeightPdf * 0.2), size: el.size, color: PDFLib.rgb(0, 0, 0) });
+                    const tLimpio = limpiarTextoParaPdf(el.texto);
+                    targetPage.drawText(tLimpio, { x: pdfX, y: pdfY + (elHeightPdf * 0.2), size: el.size, color: PDFLib.rgb(0, 0, 0) });
                 } else if (el.type === 'image') {
                     const img = await pdfDoc.embedPng(el.dataUrl);
-                    pdfPage.drawImage(img, { x: pdfX, y: pdfY, width: rectWidthPdf, height: elHeightPdf });
+                    targetPage.drawImage(img, { x: pdfX, y: pdfY, width: rectWidthPdf, height: elHeightPdf });
                 }
+            }
+
+            const pagado = await descontarCredito(totalHojasCreadas);
+            if (!pagado) {
+                alert(`⚠️ Necesitas ${totalHojasCreadas} créditos para exportar este documento.`);
+                return;
             }
 
             const pdfBytes = await pdfDoc.save();
             download(pdfBytes, "Documento_AI.pdf", "application/pdf");
-            alert("✅ ¡Documento generado y descargado!");
+            alert(`✅ Documento generado exitosamente (${totalHojasCreadas} hoja(s)).`);
             location.reload();
-        } catch (e) { alert("Error: " + e.message); }
+        } catch (e) { alert("Error al generar PDF: " + e.message); }
     }
 
     function guardarEnHistorial(texto) {
