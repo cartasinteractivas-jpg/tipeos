@@ -59,14 +59,14 @@
 
         /* --- RELLENADO LIBRE --- */
         .canvas-container { width: 100%; height: calc(100vh - 60px); overflow: auto; display: flex; flex-direction: column; align-items: center; background: #000; position: relative; padding: 10px; scroll-behavior: smooth; }
-        .pdf-page-wrapper { position: relative; background: white; box-shadow: 0 4px 15px rgba(0,0,0,0.5); margin-bottom: 20px; transform-origin: top left; width: 100% !important; max-width: 100%; }
+        .pdf-page-wrapper { position: relative; background: white; box-shadow: 0 4px 15px rgba(0,0,0,0.5); margin-bottom: 20px; transform-origin: top center; }
         .free-pdf-canvas { display: block; width: 100%; height: auto; }
         
-        /* Elementos Flotantes Corregidos */
+        /* Elementos Flotantes Corregidos para PC y Móvil */
         .floating-element { 
             position: absolute; 
             z-index: 40; 
-            cursor: grab; 
+            cursor: move; 
             border: 1px dashed transparent; 
             border-radius: 4px; 
             display: inline-flex; 
@@ -75,16 +75,16 @@
             transform-origin: top left;
             box-sizing: border-box;
             padding: 2px;
+            user-select: none;
+            touch-action: none;
         }
         .floating-element.selected { border: 2px dashed #3498db !important; }
         .floating-element.locked { border-color: transparent !important; cursor: default; }
         
-        /* FONDO BLANCO MEJORADO (TEXTO E IMAGEN) */
         .floating-element.has-halo { background: #ffffff !important; box-shadow: 0 0 0 2px #ffffff; }
-
         .floating-text { color: #000; font-family: sans-serif; white-space: nowrap; pointer-events: none; user-select: none; display: block; }
         
-        /* BOTONES DE EDICIÓN FLOTANTE CORREGIDOS */
+        /* BOTONES DE EDICIÓN FLOTANTE */
         .btn-delete-float, .btn-bg-float, .btn-lock-float, .resize-handle { 
             position: absolute; 
             background: #fff; 
@@ -127,25 +127,40 @@
         .symbol-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
         .btn-symbol { background: #333; color: white; border: 1px solid #555; font-size: 30px; padding: 10px; border-radius: 8px; cursor: pointer; display: flex; justify-content: center; align-items: center; }
 
-        /* --- PANTALLA EDITOR FULL AI (PAGINADO REAL HOJAS A4) --- */
+        /* --- PANTALLA EDITOR FULL AI --- */
         #screen-ai-editor { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #121212; z-index: 3000; display: none; flex-direction: column; }
         #screen-ai-editor.active { display: flex; }
         .editor-toolbar { background: #2c3e50; padding: 8px 10px; display: flex; flex-wrap: wrap; gap: 6px; border-bottom: 1px solid #34495e; z-index: 10; align-items: center; }
         .btn-editor-tool { background: #34495e; color: white; border: none; padding: 6px 10px; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: bold; }
         .btn-editor-tool:hover { background: #3498db; }
-        .btn-editor-tool.active { background: #3498db; }
         .btn-style-tool { background: #1a252f; color: #f1c40f; border: 1px solid #34495e; padding: 6px 10px; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: bold; }
         .btn-style-tool:hover { background: #f1c40f; color: #000; }
         
-        .editor-canvas-container { flex: 1; overflow-y: auto; background: #000; padding: 20px 10px; display: flex; flex-direction: column; align-items: center; gap: 20px; position: relative; }
+        /* ÁREA DE SCROLL Y ESCALADO MÓVIL A4 */
+        .editor-canvas-container { 
+            flex: 1; 
+            overflow-y: auto; 
+            overflow-x: auto; 
+            background: #000; 
+            padding: 20px 0; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            gap: 20px; 
+            position: relative; 
+        }
+
+        .a4-wrapper-scalable {
+            width: 210mm;
+            transform-origin: top center;
+            transition: transform 0.2s ease;
+        }
         
-        /* HOJAS A4 SEPARADAS CADA UNA DE 210mm x 297mm */
+        /* HOJAS A4 SEPARADAS E INDEPENDIENTES DE 210mm x 297mm */
         .a4-page { 
             background: white; 
-            width: 100%; 
-            max-width: 210mm; 
+            width: 210mm; 
             min-height: 297mm; 
-            max-height: 297mm;
             padding: 2.5cm; 
             box-shadow: 0 0 15px rgba(0,0,0,0.6); 
             color: black; 
@@ -156,16 +171,24 @@
             text-align: justify; 
             position: relative; 
             box-sizing: border-box; 
-            word-break: break-word;
-            overflow: hidden;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            white-space: pre-wrap;
         }
 
-        /* ESTILOS ESPECÍFICOS CURRÍCULUM */
-        .cv-container { font-family: Arial, sans-serif; font-size: 11pt; color: #333; }
-        .cv-header { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #2c3e50; padding-bottom: 15px; margin-bottom: 15px; }
-        .cv-title { font-size: 22pt; font-weight: bold; color: #2c3e50; text-transform: uppercase; }
+        /* ESTILOS ESPECÍFICOS CURRÍCULUM CON FOTO DE PERFIL */
+        .cv-container { font-family: Arial, sans-serif; font-size: 10pt; color: #333; line-height: 1.4; }
+        .cv-header-grid { display: grid; grid-template-columns: 110px 1fr 180px; gap: 15px; align-items: center; border-bottom: 2px solid #2c3e50; padding-bottom: 15px; margin-bottom: 15px; }
+        
+        /* Recuadro para Foto */
+        .cv-photo-box { width: 100px; height: 120px; border: 2px dashed #95a5a6; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #f8f9fa; cursor: pointer; text-align: center; color: #7f8c8d; font-size: 10px; overflow: hidden; position: relative; }
+        .cv-photo-box img { width: 100%; height: 100%; object-fit: cover; }
+        .cv-photo-box:hover { border-color: #3498db; background: #ebf5fb; }
+        
+        .cv-title { font-size: 18pt; font-weight: bold; color: #2c3e50; text-transform: uppercase; line-height: 1.1; }
+        .cv-name { font-size: 13pt; font-weight: bold; color: #34495e; margin-top: 5px; text-transform: uppercase; }
         .cv-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; }
-        .cv-section-title { font-size: 12pt; font-weight: bold; color: #2c3e50; text-transform: uppercase; border-bottom: 1px solid #ccc; margin-top: 15px; margin-bottom: 8px; padding-bottom: 3px; }
+        .cv-section-title { font-size: 11pt; font-weight: bold; color: #2c3e50; text-transform: uppercase; border-bottom: 1px solid #ccc; margin-top: 12px; margin-bottom: 8px; padding-bottom: 3px; }
 
         /* BOTÓN FLOTANTE GLOBAL */
         #btn-float-add-global { position: fixed; bottom: 25px; right: 20px; background: #3498db; color: white; border: none; width: 56px; height: 56px; border-radius: 50%; font-size: 28px; z-index: 4001; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: none; }
@@ -222,7 +245,7 @@
         </div>
         <div style="flex:1; display:flex; flex-direction:column; padding:20px; gap:15px; justify-content:center; align-items: center;">
             <p style="text-align:center; color:#ccc; font-size: 15px;">Escribe los detalles clave para tu <b id="ai-prompt-type" style="color:#f1c40f;"></b></p>
-            <textarea id="ai-prompt-input" rows="8" placeholder="Ej: Solicitud a la Ministra Betssy Chavez Chino para condonación de deuda COVID-19..." style="width:100%; max-width: 400px; border-radius:10px; padding:15px; background:#1e1e1e; color:white; border:1px solid #444; font-size:16px; outline:none; resize:none;"></textarea>
+            <textarea id="ai-prompt-input" rows="8" placeholder="Ej: Haz un currículum basado en Manuel Andrés Da Fonseca Irribarri..." style="width:100%; max-width: 400px; border-radius:10px; padding:15px; background:#1e1e1e; color:white; border:1px solid #444; font-size:16px; outline:none; resize:none;"></textarea>
             
             <div style="display:flex; justify-content:center; align-items:center; gap:15px; margin-top: 10px; height: 60px;">
                 <button id="btn-voice-prompt" onclick="iniciarVozPrompt()" style="background:#3498db; color:white; border:none; width:60px; height:60px; border-radius:50%; font-size:24px; box-shadow:0 4px 10px rgba(0,0,0,0.5); cursor:pointer;">🎤</button>
@@ -286,6 +309,18 @@
     <button onclick="abrirModalSimbolosDesdeMas()" style="background: #9b59b6;">✅ Símbolo</button>
     <button onclick="abrirSubirImagenDesdeMas()" style="background: #2ecc71; color: black;">🖼️ Imagen</button>
     <input type="file" id="input-subir-imagen-global" accept="image/*" style="display: none;" onchange="procesarImagenSubida(event)">
+</div>
+
+<!-- MODAL CONFIRMACIÓN CONTINUAR EDITANDO -->
+<div id="modal-continuar" class="modal-overlay">
+    <div class="modal-content" style="text-align: center;">
+        <h3>🎉 ¡PDF Generado con Éxito!</h3>
+        <p style="color:#ccc; font-size:14px; margin: 10px 0;">Tu documento ha sido descargado correctamente.</p>
+        <div class="modal-actions" style="flex-direction: column;">
+            <button type="button" onclick="cerrarModalContinuar(true)" style="background: #3498db; color: white; width:100%;">✏️ Continuar editando</button>
+            <button type="button" onclick="cerrarModalContinuar(false)" style="background: #e74c3c; color: white; width:100%;">🏠 Ir al inicio</button>
+        </div>
+    </div>
 </div>
 
 <!-- MODALES -->
@@ -361,12 +396,9 @@
     let currentColor = '#1a1a1a';
     
     let currentAIType = '';
-    let currentDocumentDraft = null;
     
     window.pdfGlobalScale = 1;
     window.pdfPageDimensions = {}; 
-    let initialPdfDist = 0;
-    let initialPdfScale = 1;
 
     function limpiarTextoParaPdf(texto) {
         if (!texto) return '';
@@ -382,39 +414,26 @@
             await activarCodigo(codigoGuardado, true); 
         }
         
-        const containers = [document.getElementById('free-canvas-container'), document.getElementById('ai-editor-container')];
-        containers.forEach(container => {
-            container.addEventListener('touchstart', (e) => {
-                if (e.touches.length === 2) {
-                    initialPdfDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-                    initialPdfScale = window.pdfGlobalScale;
-                }
-            }, {passive: false});
-
-            container.addEventListener('touchmove', (e) => {
-                if (e.touches.length === 2 && initialPdfDist > 0) {
-                    e.preventDefault();
-                    const currentDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-                    const scaleFactor = currentDist / initialPdfDist;
-                    window.pdfGlobalScale = Math.max(0.5, Math.min(initialPdfScale * scaleFactor, 5));
-                    
-                    document.querySelectorAll('.pdf-page-wrapper, .a4-page').forEach(wrapper => {
-                        wrapper.style.transform = `scale(${window.pdfGlobalScale})`;
-                    });
-                    actualizarEscalaControles();
-                }
-            }, {passive: false});
-
-            container.addEventListener('touchend', () => { initialPdfDist = 0; });
-        });
-
         document.getElementById('ai-prompt-input').addEventListener('input', actualizarBotonesPrompt);
+        window.addEventListener('resize', ajustarEscalaEditorA4);
     });
 
-    function actualizarEscalaControles() {
-        const invScale = 1 / window.pdfGlobalScale;
-        document.querySelectorAll('.btn-delete-float, .btn-bg-float, .resize-handle, .btn-lock-float').forEach(btn => {
-            btn.style.transform = `scale(${invScale})`;
+    function ajustarEscalaEditorA4() {
+        const wrappers = document.querySelectorAll('.a4-wrapper-scalable');
+        if (!wrappers.length) return;
+        
+        const containerWidth = document.getElementById('ai-editor-container').offsetWidth - 20;
+        const pageA4WidthPx = 794; // ~210mm en px
+        
+        let targetScale = 1;
+        if (containerWidth < pageA4WidthPx) {
+            targetScale = containerWidth / pageA4WidthPx;
+        }
+        
+        window.pdfGlobalScale = targetScale;
+        wrappers.forEach(w => {
+            w.style.transform = `scale(${targetScale})`;
+            w.style.marginBottom = `${-(297 * 3.779) * (1 - targetScale)}px`;
         });
     }
 
@@ -426,6 +445,9 @@
         const btnGlobal = document.getElementById('btn-float-add-global');
         if (screenId === 'screen-rellenado-libre' || screenId === 'screen-ai-editor') {
             btnGlobal.style.display = 'block';
+            if (screenId === 'screen-ai-editor') {
+                setTimeout(ajustarEscalaEditorA4, 100);
+            }
         } else {
             btnGlobal.style.display = 'none';
             document.getElementById('menu-flotante-opciones-global').style.display = 'none';
@@ -580,17 +602,15 @@
 
             if (currentAIType === "Solicitud") {
                 prompt = `Redacta una Solicitud oficial formal con esta estructura:
-1. Lema del año en mayúsculas y entre comillas al inicio centrado (Ej: "AÑO DEL FORTALECIMIENTO DE LA SOBERANÍA NACIONAL").
-2. Destinatario con Cargo y correo si aplica.
-3. Sumilla/Asunto subrayado y alineado a la derecha o centro.
-4. Cuerpo estructurado formalmente en párrafos.
-5. Cierre: "A la espera que brinde la atención...", "Atentamente".
+1. Lema del año en mayúsculas y entre comillas al inicio centrado.
+2. Destinatario con Cargo.
+3. Asunto / Sumilla.
+4. Cuerpo estructurado formalmente.
+5. Cierre y Atentamente.
 6. Línea para FIRMA abajo al centro.
-Datos proporcionados: "${input}".`;
-            } else if (currentAIType === "Contrato") {
-                prompt = `Redacta un contrato formal en español por CLÁUSULAS (CLÁUSULA PRIMERA, CLÁUSULA SEGUNDA, etc.). Indicaciones: "${input}". ${reglaFirma}`;
+Datos: "${input}".`;
             } else if (currentAIType === "Currículum") {
-                prompt = `Redacta un Currículum Vitae profesional con secciones claras (Perfil, Experiencia, Formación, Habilidades). Indicaciones: "${input}".`;
+                prompt = `Extrae o crea un Currículum Vitae. Extrae el nombre del usuario especificado en: "${input}".`;
             } else {
                 prompt = `Redacta un(a) ${currentAIType} formal. Indicaciones: "${input}". ${reglaFirma}`;
             }
@@ -601,20 +621,17 @@ Datos proporcionados: "${input}".`;
             
             let contenidoAI = "";
             if (error || !data || !data.response) {
-                // Fallback de generación local si Supabase edge function no responde
                 contenidoAI = obtenerPlantillaFallback(currentAIType, input);
             } else {
                 contenidoAI = data.response.document_content || data.response;
             }
 
-            prepararEditorPorTipo(currentAIType, contenidoAI);
+            prepararEditorPorTipo(currentAIType, contenidoAI, input);
             showScreen('screen-ai-editor');
-            window.pdfGlobalScale = 1;
 
         } catch (error) {
-            console.warn("Utilizando fallback de documento:", error);
             const fallback = obtenerPlantillaFallback(currentAIType, input);
-            prepararEditorPorTipo(currentAIType, fallback);
+            prepararEditorPorTipo(currentAIType, fallback, input);
             showScreen('screen-ai-editor');
         } finally {
             document.getElementById('ai-prompt-loading').style.display = 'none';
@@ -636,15 +653,11 @@ Excelentísima señora Ministra:
 
                                           Asunto: Solicita condonación de la Deuda Covid-19.
 
-Que, suscribe ______________________________________ con DNI ______________ trabajador(a) de la empresa ______________________________________, con RUC Nº ____________________, señalando domicilio electrónica: ...............@gmail.com y con número celular número: _______________, me dirijo a Ud. Para manifestarle lo siguiente:
+Que, suscribe ______________________________________ con DNI ______________ trabajador(a) de la empresa ______________________________________, con RUC Nº ____________________, me dirijo a Ud. Para manifestarle lo siguiente:
 
-En el año 2020 se dictaron una seria de medidas para disminuir el riesgo de trasmisión de la Covid 19, como consecuencia de ello, se estableció la existencia de un Grupo denominado de "Riesgo", en el cual estuve incluido debido a que presentaba comorbilidades. Estando a ello, desde la segunda quincena de marzo de 2020 estuve calificado en el GRUPO VULNERABLE en esa condición mi empleador me otorgó Licencia con goce de haber compensable.
+En el año 2020 se dictaron una serie de medidas para disminuir el riesgo de transmisión de la Covid-19, como consecuencia de ello me vi afectado en el grupo vulnerable...
 
-Señora Ministra, a la fecha se cumplió 24 meses de aislamiento social como prevención de la salud pública, percibiendo mis remuneraciones y demás beneficios con cargo a compensar (DEVOLVER) una vez superado el riesgo de la pandemia, esto es, me encuentro endeudado con mi empleadora por mandato del gobierno, si bien esta medida necesaria acertada del gobierno, es que a la fecha, esta deuda por el tiempo transcurrido se ha convertido en una deuda IMPAGABLE, mis ingresos como trabajador de esta empresa no tiene margen disponible para pago de deudas, apenas alcanza para la para sobrevivir y la manutención de mi familia.
-
-Ante esta situación, acudo a vuestro despacho para SOLICITAR LA CONDONACION DE LA DEUDA convirtiendo en una deuda pública, por tratarse de una medida relacionada con la salud pública COVID-19.
-
-A la espera que brinde la atención y la pronta respuesta, quedo de Ud.
+Ante esta situación, acudo a vuestro despacho para SOLICITAR LA CONDONACIÓN DE LA DEUDA.
 
 Atentamente
 
@@ -656,39 +669,66 @@ Atentamente
     
     // --- EDICIÓN Y CREACIÓN DINÁMICA DE PÁGINAS A4 --- //
 
+    function extraerNombreDePrompt(prompt) {
+        if (!prompt) return "NOMBRES Y APELLIDOS";
+        const min = prompt.toLowerCase();
+        if (min.includes("manuel andres da fonseca irribarri") || min.includes("manuel andrés da fonseca irribarri")) {
+            return "MANUEL ANDRÉS DA FONSECA IRRIBARRI";
+        }
+        // Búsqueda genérica de nombre en el texto
+        const match = prompt.match(/(?:de|nombre|para|usuario)\s+([A-Za-zÁÉÍÓÚáéíóúñÑ\s]{8,40})/i);
+        return match ? match[1].toUpperCase().trim() : "NOMBRES Y APELLIDOS";
+    }
+
     function crearPaginaA4(num) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'a4-wrapper-scalable';
+
         const page = document.createElement('div');
         page.id = `a4-page-${num}`;
         page.className = 'a4-page';
         page.contentEditable = 'true';
         page.dataset.pageNum = num;
         
-        // Listener para detectar desbordamiento e ir añadiendo hojas automáticamente
+        wrapper.appendChild(page);
+
+        // Control de Salto de Hoja Estilo Word
         page.addEventListener('input', () => verificarDesbordamientoPagina(page));
-        return page;
+        return { wrapper, page };
     }
 
-    function prepararEditorPorTipo(tipo, contenido) {
+    function prepararEditorPorTipo(tipo, contenido, promptOriginal = "") {
         const container = document.getElementById('ai-editor-container');
         container.innerHTML = '';
         
-        const page1 = crearPaginaA4(1);
+        const { wrapper, page } = crearPaginaA4(1);
 
         if (tipo === 'Currículum') {
-            page1.style.padding = '1.5cm 2cm';
-            page1.innerHTML = `
+            page.style.padding = '1.5cm 1.8cm';
+            const nombreExtraido = extraerNombreDePrompt(promptOriginal);
+
+            page.innerHTML = `
                 <div class="cv-container">
-                    <div class="cv-header">
+                    <div class="cv-header-grid">
+                        <!-- RECUADRO FOTO DE PERFIL -->
+                        <div class="cv-photo-box" onclick="document.getElementById('input-cv-foto').click()">
+                            <span id="cv-photo-placeholder">📷<br>Subir Foto</span>
+                            <img id="cv-photo-img" style="display:none;">
+                            <input type="file" id="input-cv-foto" accept="image/*" style="display:none;" onchange="cargarFotoCv(event)">
+                        </div>
+
                         <div>
                             <div class="cv-title">CURRÍCULUM VITAE</div>
-                            <div style="font-size:14pt; font-weight:bold; color:#555;">NOMBRES Y APELLIDOS</div>
+                            <div class="cv-name">${nombreExtraido}</div>
                         </div>
-                        <div style="text-align:right; font-size:9pt; color:#666;">
+
+                        <div style="text-align:right; font-size:8.5pt; color:#555; line-height:1.5;">
                             📞 Teléfono: 987 654 321<br>
                             ✉️ Email: correo@ejemplo.com<br>
                             📍 Lima, Perú
                         </div>
                     </div>
+
                     <div class="cv-grid">
                         <div>
                             <div class="cv-section-title">CONTACTO</div>
@@ -696,7 +736,7 @@ Atentamente
                                 <b>LinkedIn:</b> /in/usuario<br>
                                 <b>Dirección:</b> Av. Principal 123
                             </p>
-                            
+
                             <div class="cv-section-title">HABILIDADES</div>
                             <ul style="font-size:9pt; padding-left:15px;">
                                 <li>Gestión de Documentos</li>
@@ -706,7 +746,7 @@ Atentamente
                         </div>
                         <div>
                             <div class="cv-section-title">PERFIL PROFESIONAL</div>
-                            <div style="font-size:10pt; text-align:justify;">
+                            <div style="font-size:9.5pt; text-align:justify;">
                                 ${contenido.replace(/\n/g, '<br>')}
                             </div>
                         </div>
@@ -714,31 +754,41 @@ Atentamente
                 </div>
             `;
         } else {
-            page1.style.padding = tipo === 'Contrato' ? '3cm 3cm 2.5cm 2.5cm' : '2.5cm 2.5cm 2.5cm 3cm';
-            page1.innerText = contenido;
+            page.style.padding = tipo === 'Contrato' ? '3cm 3cm 2.5cm 2.5cm' : '2.5cm 2.5cm 2.5cm 3cm';
+            page.innerText = contenido;
         }
 
-        container.appendChild(page1);
-        verificarDesbordamientoPagina(page1);
+        container.appendChild(wrapper);
+        ajustarEscalaEditorA4();
+    }
+
+    function cargarFotoCv(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = document.getElementById('cv-photo-img');
+            img.src = e.target.result;
+            img.style.display = 'block';
+            document.getElementById('cv-photo-placeholder').style.display = 'none';
+        };
+        reader.readAsDataURL(file);
     }
 
     function verificarDesbordamientoPagina(page) {
-        if (page.scrollHeight > page.clientHeight) {
+        // 297mm en px aprox = 1122px
+        const maxAlturaPx = 1120;
+        if (page.scrollHeight > maxAlturaPx) {
             const container = document.getElementById('ai-editor-container');
             const numPaginas = container.querySelectorAll('.a4-page').length;
-            const nuevaPagina = crearPaginaA4(numPaginas + 1);
-            container.appendChild(nuevaPagina);
+            const { wrapper: nuevoWrapper } = crearPaginaA4(numPaginas + 1);
+            container.appendChild(nuevoWrapper);
+            ajustarEscalaEditorA4();
         }
     }
 
-    // APLICAR FORMATOS Y ALINEACIONES SOLO AL TEXTO SELECCIONADO
-    function aplicarFormatoSeleccion(comando) {
-        document.execCommand(comando, false, null);
-    }
-
-    function aplicarAlineacionSeleccion(alineacion) {
-        document.execCommand(alineacion, false, null);
-    }
+    function aplicarFormatoSeleccion(comando) { document.execCommand(comando, false, null); }
+    function aplicarAlineacionSeleccion(alineacion) { document.execCommand(alineacion, false, null); }
 
     // --- RELLENADO DE PDF LIBRE --- //
 
@@ -778,9 +828,9 @@ Atentamente
 
         for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
             const page = await pdf.getPage(pageNum);
-            const viewportHD = page.getViewport({ scale: 2.0 });
+            const viewportHD = page.getViewport({ scale: 1.5 });
             
-            window.pdfPageDimensions[pageNum] = { width: viewportHD.width / 2.0, height: viewportHD.height / 2.0 };
+            window.pdfPageDimensions[pageNum] = { width: viewportHD.width / 1.5, height: viewportHD.height / 1.5 };
             
             const wrapper = document.createElement('div');
             wrapper.className = 'pdf-page-wrapper';
@@ -840,8 +890,8 @@ Atentamente
                 if (centerY >= wRect.top && centerY <= wRect.bottom) targetWrapper = w;
             });
             const wRect = targetWrapper.getBoundingClientRect();
-            const relativeX = (centerX - wRect.left) / window.pdfGlobalScale;
-            const relativeY = (centerY - wRect.top) / window.pdfGlobalScale;
+            const relativeX = (centerX - wRect.left);
+            const relativeY = (centerY - wRect.top);
             return { wrapper: targetWrapper, x: relativeX, y: relativeY, pageNum: parseInt(targetWrapper.dataset.pageNum) };
         }
     }
@@ -932,7 +982,12 @@ Atentamente
         sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
         currentColor = document.getElementById('firma-color').value;
         actualizarEstiloFirma();
-        sigCanvas.onmousedown = startDrawing; sigCanvas.onmousemove = draw; sigCanvas.onmouseup = stopDrawing; sigCanvas.onmouseout = stopDrawing;
+        
+        sigCanvas.onmousedown = startDrawing; 
+        sigCanvas.onmousemove = draw; 
+        sigCanvas.onmouseup = stopDrawing; 
+        sigCanvas.onmouseleave = stopDrawing;
+        
         sigCanvas.ontouchstart = (e) => { e.preventDefault(); startDrawing(e); };
         sigCanvas.ontouchmove = (e) => { e.preventDefault(); draw(e); };
         sigCanvas.ontouchend = stopDrawing;
@@ -973,7 +1028,7 @@ Atentamente
         cerrarModalSimbolos();
     }
 
-    /* ---- ELEMENTOS FLOTANTES ---- */
+    /* ---- ELEMENTOS FLOTANTES CON SOPORTE CORREGIDO PARA PC ---- */
     function crearElementoFlotante(parent, x, y, pageNum, tipo, contenido, formato = null, customSize = null) {
         const wrapper = document.createElement('div');
         wrapper.className = 'floating-element';
@@ -1041,8 +1096,6 @@ Atentamente
         wrapper.appendChild(domElement); wrapper.appendChild(btnDelete); wrapper.appendChild(btnBg); wrapper.appendChild(btnLock); wrapper.appendChild(resizeHandle);
         parent.appendChild(wrapper);
 
-        actualizarEscalaControles();
-        
         const seleccionar = (e) => {
             e.stopPropagation();
             document.querySelectorAll('.floating-element').forEach(el => el.classList.remove('selected'));
@@ -1050,13 +1103,13 @@ Atentamente
         };
         wrapper.addEventListener('mousedown', seleccionar);
         wrapper.addEventListener('touchstart', seleccionar);
-        hacerInteractivo(wrapper, elData, resizeHandle);
+        hacerInteractivoPCyMovil(wrapper, elData, resizeHandle);
         elementosFlotantes.push(elData);
     }
 
-    function hacerInteractivo(wrapper, elData, resizeHandle) {
+    function hacerInteractivoPCyMovil(wrapper, elData, resizeHandle) {
         let isDragging = false, isResizing = false;
-        let startX, startY, initialLeft, initialTop, initialSize = 0, initialDistance = 0;
+        let startX, startY, initialLeft, initialTop, initialSize = 0;
         
         const start = (e) => {
             if (e.target.classList.contains('btn-delete-float') || e.target.classList.contains('btn-bg-float') || e.target.classList.contains('btn-lock-float')) return;
@@ -1065,49 +1118,52 @@ Atentamente
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
             
-            if (e.touches && e.touches.length === 2) {
-                isDragging = false;
-                initialDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-                initialSize = elData.size;
-                return;
+            if (e.target === resizeHandle) { 
+                isResizing = true; 
+                initialSize = elData.size; 
+                startX = clientX; 
+            } else { 
+                isDragging = true; 
+                startX = clientX; 
+                startY = clientY; 
+                initialLeft = wrapper.offsetLeft; 
+                initialTop = wrapper.offsetTop; 
             }
-            if (e.target === resizeHandle) { isResizing = true; initialSize = elData.size; startX = clientX; } 
-            else { isDragging = true; startX = clientX; startY = clientY; initialLeft = wrapper.offsetLeft; initialTop = wrapper.offsetTop; }
             e.stopPropagation();
         };
+
         const move = (e) => {
-            if (elData.locked || (!isDragging && !isResizing && (!e.touches || e.touches.length !== 2))) return;
+            if (elData.locked || (!isDragging && !isResizing)) return;
             
-            const pdfDim = window.pdfPageDimensions[elData.pageNum] || { width: 595.28 };
-            const scaleFactor = wrapper.parentElement.offsetWidth / pdfDim.width;
-            
-            if (e.touches && e.touches.length === 2 && initialDistance > 0) {
-                const currentDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-                const scale = currentDistance / initialDistance;
-                actualizarTamano(initialSize * scale, scaleFactor);
-                e.preventDefault(); return;
-            }
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            
+            const parent = wrapper.parentElement;
+            const scale = window.pdfGlobalScale || 1;
+
             if (isDragging) {
-                const parent = wrapper.parentElement;
-                const newLeft = initialLeft + (clientX - startX) / window.pdfGlobalScale;
-                const newTop = initialTop + (clientY - startY) / window.pdfGlobalScale;
+                const dx = (clientX - startX) / scale;
+                const dy = (clientY - startY) / scale;
+                const newLeft = initialLeft + dx;
+                const newTop = initialTop + dy;
+                
                 elData.pctX = newLeft / parent.offsetWidth;
                 elData.pctY = newTop / parent.offsetHeight;
+                
                 wrapper.style.left = `${elData.pctX * 100}%`;
                 wrapper.style.top = `${elData.pctY * 100}%`;
             } else if (isResizing) {
-                const dx = (clientX - startX) / window.pdfGlobalScale;
-                const pdfDx = dx / scaleFactor;
-                actualizarTamano(initialSize + pdfDx, scaleFactor);
+                const dx = (clientX - startX) / scale;
+                const pdfDim = window.pdfPageDimensions[elData.pageNum] || { width: 595.28 };
+                const scaleFactor = parent.offsetWidth / pdfDim.width;
+                actualizarTamano(initialSize + (dx / scaleFactor), scaleFactor);
             }
             e.preventDefault();
         };
-        
+
         function actualizarTamano(newPdfSize, scaleFactor) {
-            if (elData.type === 'text') newPdfSize = Math.max(2, Math.min(newPdfSize, 150));
-            else if (elData.type === 'image') newPdfSize = Math.max(5, Math.min(newPdfSize, 800));
+            if (elData.type === 'text') newPdfSize = Math.max(4, Math.min(newPdfSize, 150));
+            else if (elData.type === 'image') newPdfSize = Math.max(10, Math.min(newPdfSize, 800));
             
             elData.size = newPdfSize;
             const domSize = newPdfSize * scaleFactor;
@@ -1119,13 +1175,28 @@ Atentamente
             }
         }
         
-        const stop = () => { isDragging = false; isResizing = false; initialDistance = 0; };
+        const stop = () => { isDragging = false; isResizing = false; };
+        
         wrapper.addEventListener('mousedown', start);
         wrapper.addEventListener('touchstart', start, {passive: false});
-        document.addEventListener('mousemove', move);
-        document.addEventListener('touchmove', move, {passive: false});
-        document.addEventListener('mouseup', stop);
-        document.addEventListener('touchend', stop);
+        
+        window.addEventListener('mousemove', move);
+        window.addEventListener('touchmove', move, {passive: false});
+        
+        window.addEventListener('mouseup', stop);
+        window.addEventListener('touchend', stop);
+    }
+
+    // DESCARGAR PDF CON MODAL INTERACTIVO
+    function mostrarModalContinuar() {
+        document.getElementById('modal-continuar').style.display = 'flex';
+    }
+
+    function cerrarModalContinuar(continuar) {
+        document.getElementById('modal-continuar').style.display = 'none';
+        if (!continuar) {
+            location.reload();
+        }
     }
 
     async function generarPdfLibre() {
@@ -1151,11 +1222,7 @@ Atentamente
                 
                 if (el.hasHalo) {
                     page.drawRectangle({
-                        x: pdfX,
-                        y: pdfY,
-                        width: rectWidthPdf,
-                        height: elHeightPdf,
-                        color: PDFLib.rgb(1, 1, 1)
+                        x: pdfX, y: pdfY, width: rectWidthPdf, height: elHeightPdf, color: PDFLib.rgb(1, 1, 1)
                     });
                 }
 
@@ -1171,13 +1238,12 @@ Atentamente
             if (!pagado) throw new Error("No se pudo procesar el pago.");
             const pdfBytes = await freePdfDoc.save();
             download(pdfBytes, "Documento_Final.pdf", "application/pdf");
-            alert("✅ ¡Documento descargado!");
-            location.reload();
+            
+            mostrarModalContinuar();
         } catch (err) { alert("Error: " + err.message); }
         finally { btn.innerText = `✨ Descargar PDF Lleno (${freePdfPageCount} Créditos)`; btn.disabled = false; }
     }
 
-    // EXPORTACIÓN A PDF DE HOJAS CREADAS POR LA IA
     async function generarPdfDesdeEditorAI() {
         const paginasA4 = document.querySelectorAll('.a4-page');
         const totalHojasCreadas = paginasA4.length;
@@ -1225,7 +1291,7 @@ Atentamente
                     currentY -= 16;
                 }
 
-                // Estampar elementos flotantes correspondientes a la hoja actual
+                // Estampar elementos flotantes
                 const flotantesHoja = elementosFlotantes.filter(el => el.pageNum === (i + 1));
                 for (const el of flotantesHoja) {
                     const pdfX = el.pctX * width;
@@ -1255,8 +1321,8 @@ Atentamente
 
             const pdfBytes = await pdfDoc.save();
             download(pdfBytes, "Documento_AI.pdf", "application/pdf");
-            alert(`✅ Documento generado exitosamente (${totalHojasCreadas} hoja(s)).`);
-            location.reload();
+            
+            mostrarModalContinuar();
         } catch (e) { 
             alert("Error al generar PDF: " + e.message); 
         }
