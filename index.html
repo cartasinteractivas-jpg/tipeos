@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DocuFácil - Editor Profesional</title>
+    <title>DocuFácil - Generador de Documentos</title>
     
     <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8"></script>
-    <!-- PDF-lib -->
+    <!-- PDF-lib para editar y estampar el PDF -->
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-    <!-- PDF.js -->
+    <!-- PDF.js para visualizar el PDF en pantalla -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-    <!-- Download.js -->
+    <!-- Download.js para descargar el archivo -->
     <script src="https://unpkg.com/downloadjs@1.4.7"></script>
 
     <style>
@@ -54,66 +54,61 @@
         .card.locked::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 1; }
         .candado-icon { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); font-size: 24px; z-index: 2; }
 
-        /* --- SUB-MENÚ CATEGORÍAS AI --- */
-        .category-menu { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; }
-        .category-card { background: #2a2a2a; border: 1px solid #444; border-radius: 10px; padding: 15px; text-align: center; cursor: pointer; }
-        .category-icon { font-size: 24px; margin-bottom: 5px; display: block; }
-        .category-name { font-size: 13px; font-weight: bold; color: #fff; }
-
-        /* --- INPUT REDACCIÓN AI --- */
-        .ai-input-container { background: #222; border-radius: 12px; padding: 15px; border: 1px solid #333; display: none; flex-direction: column; gap: 10px; }
-        .ai-textarea { width: 100%; background: #000; border: 1px solid #444; color: #fff; padding: 12px; border-radius: 8px; min-height: 80px; outline: none; resize: none; font-size: 14px; }
-        .ai-actions { display: flex; justify-content: space-between; align-items: center; }
-        .btn-voice { background: #3498db; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 18px; display: flex; justify-content: center; align-items: center; }
-        .btn-voice.recording { background: #e74c3c; animation: pulse 1.5s infinite; }
-        .btn-send-ai { background: #2ecc71; color: black; border: none; padding: 8px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; display: none; font-size: 13px; }
-
         /* --- RELLENADO LIBRE --- */
         .canvas-container { width: 100%; height: calc(100vh - 60px); overflow: auto; display: flex; flex-direction: column; align-items: center; background: #000; position: relative; padding: 10px; scroll-behavior: smooth; }
         .pdf-page-wrapper { position: relative; background: white; box-shadow: 0 4px 15px rgba(0,0,0,0.5); margin-bottom: 20px; transform-origin: top left; width: 100% !important; max-width: 100%; }
         .free-pdf-canvas { display: block; width: 100%; height: auto; }
         
         /* Elementos Flotantes */
-        .floating-element { position: absolute; z-index: 40; cursor: grab; padding: 2px; border: 1px dashed transparent; border-radius: 2px; display: flex; align-items: center; justify-content: center; transform-origin: top left; will-change: transform; }
+        .floating-element { position: absolute; z-index: 40; cursor: grab; padding: 4px; border: 1px dashed transparent; border-radius: 4px; display: flex; align-items: center; justify-content: center; transform-origin: top left; will-change: transform; }
         .floating-element.selected { border: 2px dashed #3498db !important; }
-        .floating-element.has-halo { background: white !important; box-shadow: 0 0 0 4px white; } /* Fondo ceñido */
-        .floating-text { color: #000; font-family: sans-serif; white-space: nowrap; pointer-events: none; user-select: none; line-height: 1; }
-        
-        /* Botones de Edición */
-        .btn-float-tool { position: absolute; background: #3498db; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; font-size: 12px; cursor: pointer; display: none; justify-content: center; align-items: center; z-index: 50; box-shadow: 0 2px 5px rgba(0,0,0,0.3); transform-origin: center; }
-        .btn-delete-float { top: -12px; right: -12px; background: #e74c3c; }
-        .btn-bg-float { top: -12px; left: -12px; background: #fff; color: #000; border: 1px solid #ccc; }
-        .btn-anchor-float { bottom: -12px; left: -12px; background: #f1c40f; color: #000; }
-        .resize-handle { bottom: -12px; right: -12px; background: #3498db; border: 2px solid white; }
-        
-        .floating-element:hover .btn-float-tool, .floating-element.selected .btn-float-tool { display: flex !important; }
+        .floating-element.has-bg { background: white !important; }
+        .floating-text { color: #000; font-family: sans-serif; white-space: nowrap; pointer-events: none; user-select: none; }
+        .btn-delete-float { position: absolute; top: -10px; right: -10px; background: #e74c3c; color: white; border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 10px; font-weight: bold; cursor: pointer; display: none; justify-content: center; align-items: center; z-index: 50; }
+        .btn-bg-float { position: absolute; top: -10px; left: -10px; background: #fff; color: #000; border: 1px solid #ccc; border-radius: 50%; width: 22px; height: 22px; font-size: 10px; font-weight: bold; cursor: pointer; display: none; justify-content: center; align-items: center; z-index: 50; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .resize-handle { position: absolute; bottom: -8px; right: -8px; width: 16px; height: 16px; background: #3498db; border-radius: 50%; cursor: nwse-resize; display: none; z-index: 50; border: 2px solid white; }
+        .floating-element:hover .btn-delete-float, .floating-element:hover .resize-handle, .floating-element:hover .btn-bg-float,
+        .floating-element.selected .btn-delete-float, .floating-element.selected .resize-handle, .floating-element.selected .btn-bg-float { display: flex !important; }
 
-        /* --- EDITOR FULL AI --- */
-        #screen-ai-editor { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #121212; z-index: 3000; display: none; flex-direction: column; }
-        #screen-ai-editor.active { display: flex; }
-        .editor-toolbar { background: #2c3e50; padding: 10px; display: flex; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid #34495e; z-index: 100; }
-        .btn-editor-tool { background: #34495e; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-size: 13px; cursor: pointer; }
-        .btn-editor-tool.active { background: #3498db; }
-        .editor-canvas-container { flex: 1; overflow: auto; background: #000; padding: 20px; display: flex; flex-direction: column; align-items: center; position: relative; }
-        .a4-page { background: white; width: 100%; max-width: 800px; min-height: 1123px; padding: 2.5cm; box-shadow: 0 0 20px rgba(0,0,0,0.5); color: black; font-family: 'Times New Roman', Times, serif; font-size: 12pt; line-height: 1.15; outline: none; text-align: justify; position: relative; transform-origin: top center; }
-
-        /* BOTÓN FLOTANTE GLOBAL */
-        #btn-float-add-global { position: fixed; bottom: 25px; right: 20px; background: #3498db; color: white; border: none; width: 56px; height: 56px; border-radius: 50%; font-size: 28px; z-index: 4001; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: none; }
-        #menu-flotante-opciones-global { display: none; position: fixed; bottom: 90px; right: 20px; flex-direction: column; gap: 10px; z-index: 4000; }
-        #menu-flotante-opciones-global button { background: #3498db; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; width: 120px; display: flex; align-items: center; gap: 8px; justify-content: center; }
-
-        /* MODALES */
+        /* --- MODALES --- */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center; padding: 20px; }
         .modal-content { background: #222; padding: 20px; border-radius: 10px; border: 1px solid #555; width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 15px; }
-        .modal-content h3 { color: #f1c40f; text-align: center; }
-        .modal-actions { display: flex; gap: 10px; justify-content: center; }
-        .modal-actions button { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .modal-content h3 { color: #f1c40f; text-align: center; margin-bottom: 5px; }
+        .format-toolbar { display: flex; gap: 10px; justify-content: center; }
+        .btn-format { background: #333; color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; font-size: 16px; cursor: pointer; }
+        .btn-format.active { background: #3498db; border-color: #2980b9; }
+        .chips-container { display: flex; flex-wrap: wrap; gap: 8px; max-height: 80px; overflow-y: auto; }
+        .chip { background: #444; color: #fff; padding: 6px 12px; border-radius: 15px; font-size: 12px; cursor: pointer; border: none; }
+        .chip:hover { background: #f1c40f; color: #000; }
+        .modal-actions { display: flex; gap: 10px; justify-content: center; margin-top: 10px; }
+        .modal-actions button { margin: 0; width: auto; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
         .symbol-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
         .btn-symbol { background: #333; color: white; border: 1px solid #555; font-size: 30px; padding: 10px; border-radius: 8px; cursor: pointer; display: flex; justify-content: center; align-items: center; }
+        .btn-symbol:hover { background: #f1c40f; color: #000; }
 
-        .loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 5000; flex-direction: column; align-items: center; justify-content: center; gap: 15px; }
-        .spinner { width: 50px; height: 50px; border: 5px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: #f1c40f; animation: spin 1s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        /* --- CHAT AI --- */
+        #screen-ai-chat { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #121212; z-index: 2000; display: none; flex-direction: column; }
+        #screen-ai-chat.active { display: flex; }
+        .chat-header { background: #2c3e50; padding: 15px; display: flex; align-items: center; gap: 15px; border-bottom: 2px solid #34495e; }
+        .chat-messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .chat-message { max-width: 85%; padding: 10px 15px; border-radius: 15px; font-size: 15px; line-height: 1.4; }
+        .chat-message.user { background: #3498db; align-self: flex-end; border-bottom-right-radius: 2px; }
+        .chat-message.ai { background: #2a2a2a; border: 1px solid #444; align-self: flex-start; border-bottom-left-radius: 2px; }
+        .chat-input-area { padding: 15px; background: #1e1e1e; display: flex; gap: 10px; border-top: 1px solid #333; }
+        .chat-input { flex: 1; background: #000; border: 1px solid #444; color: #fff; padding: 12px 15px; border-radius: 25px; outline: none; }
+        .btn-chat-action { background: #3498db; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; font-size: 20px; display: flex; justify-content: center; align-items: center; }
+
+        /* --- MARGENES AI --- */
+        .margin-selector { display: flex; gap: 10px; justify-content: center; margin: 10px 0; }
+        .btn-margin { background: #333; color: white; border: 1px solid #555; padding: 8px 12px; border-radius: 6px; font-size: 13px; cursor: pointer; }
+        .btn-margin.active { background: #f1c40f; color: #000; border-color: #f1c40f; }
+
+        /* --- EDITOR PREVIEW AI --- */
+        .preview-toolbar { display: flex; flex-wrap: wrap; gap: 5px; background: #f0f0f0; padding: 8px; border-radius: 5px 5px 0 0; border: 1px solid #ccc; border-bottom: none; }
+        .btn-tool { background: white; border: 1px solid #ccc; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 14px; color: #333; }
+        .btn-tool:hover { background: #e0e0e0; }
+        .btn-tool.active { background: #3498db; color: white; border-color: #2980b9; }
+        #edit-ai-content { width: 100%; height: 300px; border: 1px solid #ccc; padding: 15px; font-family: 'Times New Roman', Times, serif; font-size: 14px; resize:none; background:white; color:black; outline: none; overflow-y: auto; }
     </style>
 </head>
 <body>
@@ -127,64 +122,34 @@
     <!-- PANTALLA 1: INICIO -->
     <div id="screen-home" class="screen active">
         <div class="compra-section" id="seccion-compra">
-            <img src="https://vectorseek.com/wp-content/uploads/2023/09/Yape-App-Logo-Vector.svg-.png" alt="Yape" class="yape-logo">
+            <img src="https://vectorseek.com/wp-content/uploads/2023/09/Yape-App-Logo-Vector.svg-.png" alt="Yape" class="yape-logo" onerror="this.style.display='none'">
             <div class="compra-info">
-                <p style="font-size: 16px; font-weight: bold;">¿Necesitas crear un documento?</p>
-                <p>1 Crédito = 1 Hoja = <span class="precio-tag">S/ 0.20</span></p>
+                <p style="font-size: 16px; font-weight: bold; margin-bottom: 5px;">¿Necesitas crear un documento?</p>
+                <p>Adquiere créditos y genera documentos profesionales al instante.</p>
+                <p style="margin-top: 10px; font-size: 15px;">1 Crédito = 1 Hoja = <span class="precio-tag">S/ 0.20</span></p>
                 <p style="margin-top: 10px; font-weight: bold; color: #f1c40f; font-size: 18px;">Yapea al: 967 188 120</p>
             </div>
-            <a href="https://wa.me/51967188120" target="_blank" class="btn-whatsapp">💬 Enviar captura por WhatsApp</a>
+            <a href="https://wa.me/51967188120?text=Hola,%20ya%20yapeé.%20Quiero%20comprar%20créditos%20para%20DocuFácil." target="_blank" class="btn-whatsapp">💬 Enviar captura por WhatsApp</a>
         </div>
 
         <div class="activar-section">
+            <h3>🔑 ¿Ya tienes un código? Actívalo aquí:</h3>
             <div class="input-codigo-wrapper">
-                <input type="text" id="input-codigo" class="input-codigo" placeholder="CÓDIGO AQUÍ" oninput="this.value = this.value.toUpperCase()">
+                <input type="text" id="input-codigo" class="input-codigo" placeholder="EJ: MANU-123" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9-]/g, '')">
                 <button class="btn-activar" onclick="activarCodigoBoton()">Activar</button>
             </div>
         </div>
 
         <h2 class="section-title">📚 Documentos Disponibles</h2>
         <div id="lista-plantillas" class="lista-plantillas"></div>
-
-        <!-- SUB-MENÚ AI (OCULTO POR DEFECTO) -->
-        <div id="ai-categories-container" style="display:none; flex-direction:column; gap:15px;">
-            <button onclick="volverAlMenuPrincipal()" style="background:#333; border:none; color:white; padding:8px; border-radius:8px; width:fit-content;">← Volver</button>
-            <h2 class="section-title">✨ Generar con IA</h2>
-            <div class="category-menu">
-                <div class="category-card" onclick="selectCategory('Carta', '✉️')">
-                    <span class="category-icon">✉️</span>
-                    <span class="category-name">Cartas</span>
-                </div>
-                <div class="category-card" onclick="selectCategory('Solicitud', '📝')">
-                    <span class="category-icon">📝</span>
-                    <span class="category-name">Solicitudes</span>
-                </div>
-                <div class="category-card" onclick="selectCategory('Contrato', '🤝')">
-                    <span class="category-icon">🤝</span>
-                    <span class="category-name">Contratos</span>
-                </div>
-                <div class="category-card" onclick="selectCategory('Curriculum', '👤')">
-                    <span class="category-icon">👤</span>
-                    <span class="category-name">Curriculum</span>
-                </div>
-            </div>
-            <div id="ai-input-container" class="ai-input-container">
-                <h3 id="selected-category-title" style="color: #f1c40f; font-size: 15px;">Redactar</h3>
-                <textarea id="ai-textarea" class="ai-textarea" placeholder="Describe lo que necesitas..." oninput="toggleSendBtn()"></textarea>
-                <div class="ai-actions">
-                    <button id="btn-voice" class="btn-voice" onclick="toggleVoice()">🎤</button>
-                    <button id="btn-send-ai" class="btn-send-ai" onclick="enviarRedaccionAI()">Redactar Documento</button>
-                </div>
-            </div>
-        </div>
     </div>
 
     <!-- PANTALLA: RELLENADO LIBRE -->
-    <div id="screen-rellenado-libre" class="screen" style="padding:0; background:#121212;">
+    <div id="screen-rellenado-libre" class="screen" style="padding:0; background:#121212; flex-direction:column; height:100vh; position:relative;">
         <div style="background: #1a1a1a; padding: 12px 15px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #333; width: 100%; z-index: 100;">
-            <button onclick="location.reload()" style="background:#333; border:none; color:white; width:35px; height:35px; border-radius:8px; font-size:18px;">←</button>
+            <button onclick="volverAHome()" style="background:#333; border:none; color:white; width:35px; height:35px; border-radius:8px; font-size:18px; cursor:pointer;">←</button>
             <div style="flex:1; color:#f1c40f; font-weight:bold; font-size:14px;">Editor de PDF</div>
-            <button onclick="abrirRellenadoLibre()" style="background:#34495e; border:none; color:white; padding:8px 10px; border-radius:6px; font-size:11px;">🔄 Cargar</button>
+            <button onclick="abrirRellenadoLibre()" style="background:#34495e; border:none; color:white; padding:8px 10px; border-radius:6px; font-size:11px; font-weight:bold;">🔄 Cargar PDF</button>
             <button id="btn-generar-free" onclick="generarPdfLibre()" style="background:#2ecc71; border:none; color:black; padding:8px 12px; border-radius:6px; font-size:11px; font-weight:bold; display:none;">✅ Descargar</button>
         </div>
 
@@ -192,159 +157,197 @@
             <div style="background: #1e1e1e; border: 2px dashed #f1c40f; padding: 40px 20px; border-radius: 15px; width: 100%; max-width: 280px; text-align: center;">
                 <div style="font-size: 40px; margin-bottom: 10px;">📂</div>
                 <h3 style="color: #fff; margin-bottom: 15px; font-size: 16px;">Selecciona un PDF</h3>
-                <input type="file" id="free-pdf-upload" accept="application/pdf" style="display:none">
-                <button onclick="document.getElementById('free-pdf-upload').click()" style="background:#f1c40f; color:#000; border:none; padding:12px 20px; border-radius:8px; font-weight:bold; cursor:pointer;">Elegir Archivo</button>
+                <label for="free-pdf-upload" style="background: #3498db; color: white; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; display: block;">Elegir Archivo</label>
+                <input type="file" id="free-pdf-upload" accept="application/pdf" style="display: none;">
             </div>
         </div>
 
-        <div id="free-canvas-container" class="canvas-container" style="display:none"></div>
-    </div>
+        <div id="free-canvas-container" class="canvas-container" style="display: none;"></div>
 
-    <!-- PANTALLA: EDITOR FULL AI -->
-    <div id="screen-ai-editor" class="screen" style="padding:0;">
-        <div class="editor-toolbar">
-            <button onclick="location.reload()" class="btn-editor-tool">← Volver</button>
-            <button onclick="setAlign('left')" class="btn-editor-tool">⬅️</button>
-            <button onclick="setAlign('center')" class="btn-editor-tool">⏺️</button>
-            <button onclick="setAlign('right')" class="btn-editor-tool">➡️</button>
-            <button onclick="setAlign('justify')" id="btn-justify" class="btn-editor-tool active">↔️</button>
-            <button onclick="generarPdfDesdeEditorAI()" style="background:#2ecc71; color:black; font-weight:bold;" class="btn-editor-tool">✅ Descargar PDF</button>
-        </div>
-        <div id="ai-editor-container" class="editor-canvas-container">
-            <div id="a4-page-content" class="a4-page" contenteditable="true"></div>
+        <!-- BOTÓN FLOTANTE FIJO -->
+        <button id="btn-float-add" onclick="toggleMenuMas()" style="position: fixed; bottom: 25px; right: 20px; background: #3498db; color: white; border: none; width: 56px; height: 56px; border-radius: 50%; font-size: 28px; z-index: 2001; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: none;">✚</button>
+
+        <div id="menu-flotante-opciones" style="display: none; position: fixed; bottom: 90px; right: 20px; flex-direction: column; gap: 10px; z-index: 2000;">
+            <button onclick="abrirModalTextoDesdeMas()" style="background: #3498db; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; width: 120px; display: flex; align-items: center; gap: 8px; justify-content: center;">📝 Texto</button>
+            <button onclick="abrirModalFirmaDesdeMas()" style="background: #e67e22; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; width: 120px; display: flex; align-items: center; gap: 8px; justify-content: center;">✍️ Firma</button>
+            <button onclick="abrirModalSimbolosDesdeMas()" style="background: #9b59b6; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; width: 120px; display: flex; align-items: center; gap: 8px; justify-content: center;">✅ Símbolo</button>
+            <button onclick="abrirSubirImagenDesdeMas()" style="background: #2ecc71; color: black; border: none; padding: 12px; border-radius: 8px; font-weight: bold; width: 120px; display: flex; align-items: center; gap: 8px; justify-content: center;">🖼️ Imagen</button>
+            <input type="file" id="input-subir-imagen" accept="image/*" style="display: none;" onchange="procesarImagenSubida(event)">
         </div>
     </div>
-</div>
-
-<!-- BOTÓN FLOTANTE GLOBAL -->
-<button id="btn-float-add-global" onclick="toggleMenuMas()">+</button>
-<div id="menu-flotante-opciones-global">
-    <button onclick="abrirModalTextoDesdeMas()">📝 Texto</button>
-    <button onclick="abrirModalFirmaDesdeMas()">✍️ Firma</button>
-    <button onclick="abrirModalSimbolosDesdeMas()">✅ Símbolo</button>
-    <button onclick="abrirSubirImagenDesdeMas()">🖼️ Imagen</button>
 </div>
 
 <!-- MODALES -->
 <div id="modal-texto" class="modal-overlay">
     <div class="modal-content">
         <h3>Añadir Texto</h3>
-        <input type="text" id="input-texto-modal" style="width:100%; padding:12px; background:#000; color:#fff; border:1px solid #444; border-radius:8px;">
-        <div style="display:flex; align-items:center; gap:10px; color:white;">
-            <span>Tamaño:</span>
-            <input type="number" id="input-size-texto" value="14" style="width:60px; padding:5px; background:#000; color:#fff; border:1px solid #444;">
+        <div class="format-toolbar">
+            <button type="button" id="btn-bold" class="btn-format" onclick="toggleFormat('bold')"><b>B</b></button>
+            <button type="button" id="btn-italic" class="btn-format" onclick="toggleFormat('italic')"><i>I</i></button>
+            <input type="number" id="input-size-texto" value="14" min="4" max="100" style="width: 60px; padding: 5px; border-radius: 6px; border: 1px solid #444; background: #111; color: white; text-align: center; outline: none; font-size: 16px;">
         </div>
+        <input type="text" id="input-texto-modal" placeholder="Escribe aquí..." style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #444; background: #111; color: white; font-size: 16px; outline: none;">
+        <div id="chips-historial" class="chips-container"></div>
         <div class="modal-actions">
-            <button onclick="cerrarModalTexto()" style="background:#444; color:white;">Cancelar</button>
-            <button onclick="guardarTextoModal()" style="background:#f1c40f; color:black;">Añadir</button>
+            <button type="button" onclick="cerrarModalTexto()" style="background: #555; color: white;">Cancelar</button>
+            <button type="button" onclick="guardarTextoModal()" style="background: #2ecc71; color: black;">Aceptar</button>
         </div>
     </div>
 </div>
 
 <div id="modal-firma" class="modal-overlay">
     <div class="modal-content">
-        <h3>Dibuja tu Firma</h3>
-        <canvas id="canvas-firma" width="350" height="200" style="background:white; border-radius:8px; width:100%; touch-action:none;"></canvas>
+        <h3>Dibuja tu firma</h3>
+        <div style="text-align:center; margin-bottom:10px;">
+            <label style="color:#ccc; font-size:14px;">Color: </label>
+            <input type="color" id="firma-color" value="#1a1a1a" style="width:60px; height:30px; border:none; background:none; cursor:pointer;">
+        </div>
+        <canvas id="canvas-firma" width="380" height="200" style="background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); touch-action: none; width: 100%;"></canvas>
         <div class="modal-actions">
-            <button onclick="limpiarFirma()" style="background:#444; color:white;">Limpiar</button>
-            <button onclick="cerrarModalFirma()" style="background:#444; color:white;">Cancelar</button>
-            <button onclick="guardarFirma()" style="background:#f1c40f; color:black;">Guardar</button>
+            <button type="button" onclick="limpiarFirma()" style="background: #e74c3c; color: white;">Limpiar</button>
+            <button type="button" onclick="cerrarModalFirma()" style="background: #555; color: white;">Cancelar</button>
+            <button type="button" onclick="guardarFirma()" style="background: #2ecc71; color: black;">Aceptar</button>
         </div>
     </div>
 </div>
 
 <div id="modal-simbolos" class="modal-overlay">
     <div class="modal-content">
-        <h3>Elegir Símbolo</h3>
+        <h3>Añadir Símbolo</h3>
+        <div style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 10px;">
+            <label style="color: #ccc; font-size: 14px;">Tamaño:</label>
+            <input type="number" id="input-size-simbolo" value="24" min="4" max="100" style="width: 60px; padding: 5px; border-radius: 6px; border: 1px solid #444; background: #111; color: white; text-align: center; outline: none; font-size: 16px;">
+        </div>
         <div class="symbol-grid">
-            <button class="btn-symbol" onclick="guardarSimbolo('✔')">✔</button>
-            <button class="btn-symbol" onclick="guardarSimbolo('✘')">✘</button>
-            <button class="btn-symbol" onclick="guardarSimbolo('●')">●</button>
+            <button type="button" class="btn-symbol" onclick="guardarSimbolo('✔')">✔</button>
+            <button type="button" class="btn-symbol" onclick="guardarSimbolo('✘')">✘</button>
+            <button type="button" class="btn-symbol" onclick="guardarSimbolo('•')">•</button>
         </div>
         <div class="modal-actions">
-            <button onclick="cerrarModalSimbolos()" style="background:#444; color:white;">Cerrar</button>
+            <button type="button" onclick="cerrarModalSimbolos()" style="background: #555; color: white; border: none; border-radius: 5px;">Cancelar</button>
         </div>
     </div>
 </div>
 
-<input type="file" id="input-subir-imagen-global" accept="image/*" style="display:none" onchange="procesarImagenSubida(event)">
+<div id="screen-ai-chat" class="screen">
+    <div class="chat-header">
+        <button class="btn-volver" style="margin:0; background:#333; border:none; color:white; width:35px; height:35px; border-radius:8px;" onclick="cerrarChatAI()">←</button>
+        <span style="font-weight:bold; color:white; margin-left:10px;">✨ DocuFácil AI Expert</span>
+    </div>
+    <div class="chat-messages" id="chat-messages"></div>
+    
+    <div id="ai-options-area" style="padding: 10px 15px; background: #1a1a1a; border-top: 1px solid #333; display: none; flex-direction: column; gap: 10px;">
+        <p style="font-size: 12px; color: #aaa; text-align: center;">Selecciona el margen para tu documento A4:</p>
+        <div class="margin-selector">
+            <button class="btn-margin active" id="margin-1" onclick="setMargin(1)">Margen 1.0 cm</button>
+            <button class="btn-margin" id="margin-05" onclick="setMargin(0.5)">Margen 0.5 cm</button>
+        </div>
+    </div>
 
-<div id="loading-overlay" class="loading-overlay">
-    <div class="spinner"></div>
-    <p style="color:white; font-weight:bold;">Redactando documento...</p>
+    <div class="chat-input-area">
+        <input type="text" id="chat-input" class="chat-input" placeholder="Escribe o usa el micro..." oninput="actualizarBotonChat()">
+        <button id="btn-chat-action" class="btn-chat-action" onclick="accionChat()">🎤</button>
+    </div>
+</div>
+
+<div id="modal-preview-ai" class="modal-overlay">
+    <div class="modal-content" style="max-width: 450px; background: #f9f9f9; color: #333;">
+        <h3 style="color: #2c3e50;">Editor Inteligente AI</h3>
+        <p style="font-size: 11px; color: #666; text-align: center; margin-bottom: 5px;">Ajusta el texto y la alineación antes de pasar al editor final.</p>
+        
+        <div class="preview-toolbar">
+            <button class="btn-tool" id="tool-left" onclick="setAlign('left')">⬅ Izq</button>
+            <button class="btn-tool" id="tool-center" onclick="setAlign('center')">⏺ Cen</button>
+            <button class="btn-tool" id="tool-right" onclick="setAlign('right')">➡ Der</button>
+            <button class="btn-tool active" id="tool-justify" onclick="setAlign('justify')">≡ Jus</button>
+            <button class="btn-tool" style="background: #f1c40f; border-color: #d4ac0d; font-weight: bold;" onclick="regenerarEstiloAI()">✨ Pulir Redacción</button>
+        </div>
+        <div id="edit-ai-content" contenteditable="true" style="text-align: justify;"></div>
+        
+        <div class="modal-actions" style="flex-direction: column; gap: 8px;">
+            <button class="btn-generar" onclick="enviarAlEditorFinal()" style="background:#2ecc71; color:black; width:100%; padding:12px; font-size: 14px;">🚀 Pasar al Editor Final (Firma/Sellos)</button>
+            <button class="btn-volver" onclick="document.getElementById('modal-preview-ai').style.display='none'" style="background:transparent; color:#666; border:1px solid #ccc; width:100%; padding:8px; font-size: 12px;">Seguir en Chat</button>
+        </div>
+    </div>
 </div>
 
 <script>
-    const supabase = supabase.createClient('https://vjoxfzhhpxvszvxtfpgn.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqb3hmemhocHh2c3p2eHRmcGduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTI4NjE4NDIsImV4cCI6MjAyODQzNzg0Mn0.7_yZ9Z9Z9Z9Z9Z9Z9Z9Z9Z9Z9Z9Z9Z9Z9Z9Z9Z9Z9Z9');
+    const supabaseUrl = 'https://wpzddhmllctdsiuxenss.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwemRkaG1sbGN0ZHNpdXhlbnNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5NjUyNzQsImV4cCI6MjA5OTU0MTI3NH0.hwSxJ3Sk_RlgbvFyr8S64XRuxW7j55BU4gaIneFTuhY';
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
     let usuarioActual = null;
     let freePdfDoc = null;
-    let freePdfPageCount = 0;
-    let elementosFlotantes = [];
-    let currentTarget = null;
+    let freeCanvasScales = {};
+    let elementosFlotantes = []; 
+    let freePdfPageCount = 0; 
+    let historialTextos = JSON.parse(localStorage.getItem('docufacil_historial')) || [];
     let menuMasAbierto = false;
-    let selectedCategory = '';
+    let currentTarget = null;
+    let textFormat = { bold: false, italic: false };
+    let lastTextSize = 14;
+    let lastSymbolSize = 24;
+    let sigCanvas, sigCtx, isDrawing = false;
+    let lastX = 0, lastY = 0;
+    let currentColor = '#1a1a1a';
+    let chatHistory = [];
+    let isAITyping = false;
+    let currentDocumentDraft = null;
+    let selectedMargin = 1.0;
+    let currentAlignment = 'justify';
     window.pdfGlobalScale = 1;
     let initialPdfDist = 0;
     let initialPdfScale = 1;
 
     document.addEventListener('DOMContentLoaded', async () => {
-        renderizarPlantillas();
+        cargarPlantillas();
         const codigoGuardado = localStorage.getItem('docufacil_codigo');
         if (codigoGuardado) {
             document.getElementById('input-codigo').value = codigoGuardado;
-            await activarCodigo(codigoGuardado, true);
+            await activarCodigo(codigoGuardado, true); 
         }
+        
+        const container = document.getElementById('free-canvas-container');
+        container.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 2) {
+                initialPdfDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                initialPdfScale = window.pdfGlobalScale;
+            }
+        }, {passive: false});
 
-        // Pinch Zoom Logic
-        const containers = [document.getElementById('free-canvas-container'), document.getElementById('ai-editor-container')];
-        containers.forEach(container => {
-            container.addEventListener('touchstart', (e) => {
-                if (e.touches.length === 2) {
-                    initialPdfDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-                    initialPdfScale = window.pdfGlobalScale;
-                }
-            }, {passive: false});
+        container.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 2 && initialPdfDist > 0) {
+                e.preventDefault();
+                const currentDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                const scaleFactor = currentDist / initialPdfDist;
+                window.pdfGlobalScale = Math.max(0.5, Math.min(initialPdfScale * scaleFactor, 5));
+                document.querySelectorAll('.pdf-page-wrapper').forEach(wrapper => {
+                    wrapper.style.transform = `scale(${window.pdfGlobalScale})`;
+                    wrapper.style.transformOrigin = 'top left';
+                });
+                document.querySelectorAll('.floating-element').forEach(el => {
+                    el.style.transform = `scale(${window.pdfGlobalScale})`;
+                    el.style.transformOrigin = 'top left';
+                });
+            }
+        }, {passive: false});
 
-            container.addEventListener('touchmove', (e) => {
-                if (e.touches.length === 2 && initialPdfDist > 0) {
-                    e.preventDefault();
-                    const currentDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-                    const scaleFactor = currentDist / initialPdfDist;
-                    window.pdfGlobalScale = Math.max(0.5, Math.min(initialPdfScale * scaleFactor, 5));
-                    
-                    document.querySelectorAll('.pdf-page-wrapper, .a4-page').forEach(wrapper => {
-                        wrapper.style.transform = `scale(${window.pdfGlobalScale})`;
-                    });
-                    actualizarEscalaControles();
-                }
-            }, {passive: false});
-
-            container.addEventListener('touchend', () => { initialPdfDist = 0; });
+        container.addEventListener('touchend', () => { initialPdfDist = 0; });
+        document.getElementById('chat-input').addEventListener('input', actualizarBotonChat);
+        document.getElementById('chat-input').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); enviarMensajeAI(); }
         });
     });
-
-    function actualizarEscalaControles() {
-        const invScale = 1 / window.pdfGlobalScale;
-        document.querySelectorAll('.btn-float-tool').forEach(btn => {
-            btn.style.transform = `scale(${invScale})`;
-        });
-    }
 
     function showScreen(screenId) {
         document.querySelectorAll('.screen').forEach(s => { s.style.display = 'none'; s.classList.remove('active'); });
         const target = document.getElementById(screenId);
         if (target) { target.style.display = 'flex'; target.classList.add('active'); }
-        
-        const btnGlobal = document.getElementById('btn-float-add-global');
-        if (screenId === 'screen-rellenado-libre' || screenId === 'screen-ai-editor') {
-            btnGlobal.style.display = 'block';
-        } else {
-            btnGlobal.style.display = 'none';
-            document.getElementById('menu-flotante-opciones-global').style.display = 'none';
-            menuMasAbierto = false;
-        }
+        window.scrollTo(0, 0);
     }
+
+    function volverAHome() { showScreen('screen-home'); }
 
     async function activarCodigoBoton() {
         const input = document.getElementById('input-codigo');
@@ -354,23 +357,40 @@
     }
 
     async function activarCodigo(codigo, silencioso = false) {
-        try {
-            const { data, error } = await supabase.from('usuarios_codigos').select('*').eq('codigo', codigo).single();
-            if (error || !data) {
-                localStorage.removeItem('docufacil_codigo');
-                if (!silencioso) alert("❌ Código incorrecto.");
-                return;
-            }
-            if (data.creditos <= 0) {
-                if (!silencioso) alert("⚠️ Código sin créditos.");
-                return;
-            }
-            usuarioActual = data;
-            localStorage.setItem('docufacil_codigo', codigo);
-            document.getElementById('user-creditos').innerText = usuarioActual.creditos;
-            if (!silencioso) alert(`✅ ¡Activado! Tienes ${usuarioActual.creditos} créditos.`);
-            renderizarPlantillas();
-        } catch (e) { if (!silencioso) alert("Error de conexión."); }
+        const { data, error } = await supabase.from('usuarios_codigos').select('*').eq('codigo', codigo).single();
+        if (error || !data) {
+            localStorage.removeItem('docufacil_codigo');
+            if (!silencioso) alert("❌ Código incorrecto o no existe.");
+            return;
+        }
+        if (data.creditos <= 0) {
+            if (!silencioso) alert("⚠️ Este código ya no tiene créditos.");
+            return;
+        }
+        usuarioActual = data;
+        localStorage.setItem('docufacil_codigo', codigo);
+        document.getElementById('user-creditos').innerText = usuarioActual.creditos;
+        if (!silencioso) {
+            document.getElementById('input-codigo').value = '';
+            alert(`✅ ¡Código activado! Tienes ${usuarioActual.creditos} créditos disponibles.`);
+        }
+        renderizarPlantillas();
+    }
+
+    async function descontarCredito(cantidad = 1) {
+        if (!usuarioActual || usuarioActual.creditos < cantidad) return false;
+        const nuevoSaldo = usuarioActual.creditos - cantidad;
+        const { error } = await supabase.from('usuarios_codigos').update({ creditos: nuevoSaldo }).eq('id', usuarioActual.id);
+        if (error) { alert("Error al procesar el crédito."); return false; }
+        usuarioActual.creditos = nuevoSaldo;
+        document.getElementById('user-creditos').innerText = nuevoSaldo;
+        if (nuevoSaldo === 0) renderizarPlantillas(); 
+        return true;
+    }
+
+    async function cargarPlantillas() {
+        const { data, error } = await supabase.from('plantillas').select('*');
+        renderizarPlantillas();
     }
 
     function renderizarPlantillas() {
@@ -381,371 +401,569 @@
         const claseBloqueado = tieneCreditos ? '' : 'locked';
         const candadoHtml = tieneCreditos ? '' : '<div class="candado-icon">🔒</div>';
 
-        contenedor.innerHTML = `
-            <div class="card ${claseBloqueado}" onclick="abrirRellenadoLibre()" style="border-color: #e67e22;">
+        contenedor.innerHTML += `
+           <div class="card ${claseBloqueado}" onclick="abrirRellenadoLibre()" style="border-color: #e67e22;">
                 <div class="card-icon">✍️</div>
                 <div class="card-info">
                     <h3 style="color: #e67e22;">Rellenar mi propio PDF</h3>
-                    <p>Sube cualquier documento, añade texto o firmas y descárgalo.</p>
+                    <p>Sube cualquier documento, toca donde quieras escribir o firmar y descárgalo.</p>
                 </div>
                 ${candadoHtml}
             </div>
-            <div class="card ${claseBloqueado}" onclick="abrirSubMenuAI()" style="border-color: #3498db;">
+            <div class="card ${claseBloqueado}" onclick="mostrarScreen('screen-ai-chat')" style="border-color: #3498db;">
                 <div class="card-icon">✨</div>
                 <div class="card-info">
                     <h3 style="color: #3498db;">Generación de documento</h3>
-                    <p>Crea cartas, contratos o CVs con ayuda de nuestra IA.</p>
+                    <p>Crea documentos personalizados con ayuda de nuestro experto AI.</p>
                 </div>
                 ${candadoHtml}
             </div>
         `;
     }
 
-    function abrirSubMenuAI() {
-        if (!usuarioActual || usuarioActual.creditos <= 0) {
-            alert("🔒 Necesitas créditos.");
-            return;
-        }
-        document.getElementById('lista-plantillas').style.display = 'none';
-        document.getElementById('seccion-compra').style.display = 'none';
-        document.querySelector('.activar-section').style.display = 'none';
-        document.querySelectorAll('.section-title')[0].style.display = 'none';
-        document.getElementById('ai-categories-container').style.display = 'flex';
-    }
-
-    function volverAlMenuPrincipal() {
-        document.getElementById('lista-plantillas').style.display = 'flex';
-        document.getElementById('seccion-compra').style.display = 'block';
-        document.querySelector('.activar-section').style.display = 'block';
-        document.querySelectorAll('.section-title')[0].style.display = 'block';
-        document.getElementById('ai-categories-container').style.display = 'none';
-    }
-
-    function selectCategory(cat, icon) {
-        selectedCategory = cat;
-        document.getElementById('selected-category-title').innerText = `Redactar ${cat} ${icon}`;
-        document.getElementById('ai-input-container').style.display = 'flex';
-        document.getElementById('ai-textarea').focus();
-    }
-
-    function toggleSendBtn() {
-        const text = document.getElementById('ai-textarea').value.trim();
-        document.getElementById('btn-send-ai').style.display = text.length > 5 ? 'block' : 'none';
-    }
-
-    function toggleVoice() {
-        const btn = document.getElementById('btn-voice');
-        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-        recognition.lang = 'es-ES';
-        recognition.onstart = () => btn.classList.add('recording');
-        recognition.onend = () => btn.classList.remove('recording');
-        recognition.onresult = (event) => {
-            document.getElementById('ai-textarea').value += event.results[0][0].transcript + " ";
-            toggleSendBtn();
-        };
-        recognition.start();
-    }
-
-    async function enviarRedaccionAI() {
-        const prompt = document.getElementById('ai-textarea').value.trim();
-        if (!prompt) return;
-        document.getElementById('loading-overlay').style.display = 'flex';
-        try {
-            const { data, error } = await supabase.functions.invoke('generar-documento', {
-                body: JSON.stringify({ category: selectedCategory, user_input: prompt }),
-            });
-            if (error) throw error;
-            abrirEditorFullAI(data.response.document_content);
-        } catch (e) { alert("Error: " + e.message); }
-        finally { document.getElementById('loading-overlay').style.display = 'none'; }
-    }
-
-    function abrirEditorFullAI(content) {
-        const screen = document.getElementById('screen-ai-editor');
-        const page = document.getElementById('a4-page-content');
-        page.innerText = content;
-        showScreen('screen-ai-editor');
-        window.pdfGlobalScale = 1;
-        page.style.transform = 'scale(1)';
-    }
-
     function abrirRellenadoLibre() {
         if (!usuarioActual || usuarioActual.creditos <= 0) {
-            alert("🔒 Necesitas créditos.");
+            alert("🔒 Necesitas activar un código con créditos.");
+            document.getElementById('seccion-compra').scrollIntoView({ behavior: 'smooth' });
             return;
         }
         document.getElementById('free-pdf-upload').value = '';
-        document.getElementById('free-canvas-container').innerHTML = '';
-        document.getElementById('upload-placeholder').style.display = 'flex';
-        document.getElementById('free-canvas-container').style.display = 'none';
-        document.getElementById('btn-generar-free').style.display = 'none';
+        document.getElementById('free-canvas-container').innerHTML = ''; 
+        document.getElementById('upload-placeholder').style.display = 'flex'; 
+        document.getElementById('free-canvas-container').style.display = 'none'; 
+        document.getElementById('btn-generar-free').style.display = 'none'; 
+        document.getElementById('btn-float-add').style.display = 'none'; 
         elementosFlotantes = [];
+        freeCanvasScales = {};
+        freePdfPageCount = 0;
         window.pdfGlobalScale = 1;
         showScreen('screen-rellenado-libre');
     }
 
-    document.getElementById('free-pdf-upload').addEventListener('change', async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = async function() {
-            const typedarray = new Uint8Array(this.result);
-            freePdfDoc = await PDFLib.PDFDocument.load(typedarray);
-            freePdfPageCount = freePdfDoc.getPageCount();
-            renderizarPdfParaEdicion(typedarray);
-        };
-        reader.readAsArrayBuffer(file);
+    document.getElementById('free-pdf-upload').addEventListener('change', async function(e) {
+        if (!e.target.files.length) return;
+        cargarPdfEnEditor(e.target.files[0]);
     });
 
-    async function renderizarPdfParaEdicion(data) {
+    async function cargarPdfEnEditor(fileOrBlob) {
+        const arrayBuffer = await (fileOrBlob instanceof Blob ? fileOrBlob.arrayBuffer() : fileOrBlob.arrayBuffer());
+        freePdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
+        const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+        const pdf = await loadingTask.promise;
+        freePdfPageCount = pdf.numPages; 
         const container = document.getElementById('free-canvas-container');
-        container.innerHTML = '';
+        container.innerHTML = ''; 
         container.style.display = 'flex';
         document.getElementById('upload-placeholder').style.display = 'none';
-        document.getElementById('btn-generar-free').style.display = 'block';
-        document.getElementById('btn-generar-free').innerText = `✨ Descargar (${freePdfPageCount} Créditos)`;
-        document.getElementById('btn-float-add-global').style.display = 'block';
+        document.getElementById('btn-float-add').style.display = 'block';
 
-        const loadingTask = pdfjsLib.getDocument({data});
-        const pdf = await loadingTask.promise;
-        for (let i = 1; i <= pdf.numPages; i++) {
-            const page = await pdf.getPage(i);
-            const viewport = page.getViewport({scale: 2.0});
+        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+            const page = await pdf.getPage(pageNum);
+            const viewportHD = page.getViewport({ scale: 2.0 });
             const wrapper = document.createElement('div');
             wrapper.className = 'pdf-page-wrapper';
-            wrapper.dataset.pageNum = i;
+            wrapper.dataset.pageNum = pageNum;
+            
             const canvas = document.createElement('canvas');
             canvas.className = 'free-pdf-canvas';
-            const context = canvas.getContext('2d');
-            canvas.height = viewport.height; canvas.width = viewport.width;
-            await page.render({canvasContext: context, viewport: viewport}).promise;
+            const ctx = canvas.getContext('2d');
+            canvas.width = viewportHD.width;
+            canvas.height = viewportHD.height;
+            freeCanvasScales[pageNum] = 2.0;
             wrapper.appendChild(canvas);
             container.appendChild(wrapper);
+            await page.render({ canvasContext: ctx, viewport: viewportHD }).promise;
+
+            wrapper.addEventListener('click', function(ev) {
+                if (ev.target.closest('.floating-element')) return; 
+                document.querySelectorAll('.floating-element').forEach(el => el.classList.remove('selected'));
+            });
         }
+        const btnGenerar = document.getElementById('btn-generar-free');
+        btnGenerar.innerText = `✨ Descargar PDF Lleno (${freePdfPageCount} Créditos)`;
+        btnGenerar.style.display = 'block';
+        showScreen('screen-rellenado-libre');
     }
 
     function toggleMenuMas() {
         menuMasAbierto = !menuMasAbierto;
-        const menu = document.getElementById('menu-flotante-opciones-global');
-        menu.style.display = menuMasAbierto ? 'flex' : 'none';
+        const menu = document.getElementById('menu-flotante-opciones');
+        if (menu) menu.style.display = menuMasAbierto ? 'flex' : 'none';
     }
 
     function getViewportCenter() {
-        const isAI = document.getElementById('screen-ai-editor').classList.contains('active');
-        const container = isAI ? document.getElementById('ai-editor-container') : document.getElementById('free-canvas-container');
-        const rect = container.getBoundingClientRect();
-        const centerX = rect.width / 2 + container.scrollLeft;
-        const centerY = rect.height / 2 + container.scrollTop;
-        
-        let parent = isAI ? document.getElementById('a4-page-content') : document.querySelectorAll('.pdf-page-wrapper')[0];
-        if (!isAI) {
-            const wrappers = document.querySelectorAll('.pdf-page-wrapper');
-            for (let w of wrappers) {
-                const wRect = w.getBoundingClientRect();
-                if (rect.top + rect.height/2 > wRect.top && rect.top + rect.height/2 < wRect.bottom) {
-                    parent = w; break;
-                }
-            }
-        }
-        return { parent, x: centerX - parent.offsetLeft, y: centerY - parent.offsetTop, pageNum: parseInt(parent.dataset.pageNum || 1) };
+        const container = document.getElementById('free-canvas-container');
+        const scrollTop = container.scrollTop;
+        const scrollLeft = container.scrollLeft;
+        const containerHeight = container.clientHeight;
+        const containerWidth = container.clientWidth;
+        const centerY = scrollTop + (containerHeight / 2);
+        const centerX = scrollLeft + (containerWidth / 2);
+        const wrappers = document.querySelectorAll('.pdf-page-wrapper');
+        let targetWrapper = wrappers[0];
+        wrappers.forEach(w => {
+            const wrapperTop = w.offsetTop;
+            const wrapperBottom = wrapperTop + w.offsetHeight;
+            if (centerY >= wrapperTop && centerY <= wrapperBottom) targetWrapper = w;
+        });
+        const relativeY = (centerY - targetWrapper.offsetTop) / window.pdfGlobalScale;
+        const relativeX = (centerX - targetWrapper.offsetLeft) / window.pdfGlobalScale;
+        return { wrapper: targetWrapper, x: relativeX, y: relativeY, pageNum: parseInt(targetWrapper.dataset.pageNum) };
     }
 
-    function abrirModalTextoDesdeMas() { toggleMenuMas(); currentTarget = getViewportCenter(); document.getElementById('modal-texto').style.display = 'flex'; }
-    function cerrarModalTexto() { document.getElementById('modal-texto').style.display = 'none'; }
-    function guardarTextoModal() {
-        const txt = document.getElementById('input-texto-modal').value;
-        const size = document.getElementById('input-size-texto').value;
-        if (txt) crearElementoFlotante(currentTarget.parent, currentTarget.x, currentTarget.y, currentTarget.pageNum, 'text', txt, parseInt(size));
-        cerrarModalTexto();
+    function abrirModalTextoDesdeMas() {
+        toggleMenuMas();
+        const center = getViewportCenter();
+        currentTarget = { parent: center.wrapper, x: center.x, y: center.y, pageNum: center.pageNum };
+        abrirModalTexto();
     }
 
-    function abrirModalFirmaDesdeMas() { toggleMenuMas(); currentTarget = getViewportCenter(); document.getElementById('modal-firma').style.display = 'flex'; }
-    function cerrarModalFirma() { document.getElementById('modal-firma').style.display = 'none'; }
-    function limpiarFirma() { const c = document.getElementById('canvas-firma'); c.getContext('2d').clearRect(0,0,c.width,c.height); }
-    function guardarFirma() {
-        const data = document.getElementById('canvas-firma').toDataURL();
-        crearElementoFlotante(currentTarget.parent, currentTarget.x, currentTarget.y, currentTarget.pageNum, 'image', data, 40);
-        cerrarModalFirma();
+    function abrirModalFirmaDesdeMas() {
+        toggleMenuMas();
+        const center = getViewportCenter();
+        currentTarget = { parent: center.wrapper, x: center.x, y: center.y, pageNum: center.pageNum };
+        abrirModalFirma();
     }
 
-    function abrirModalSimbolosDesdeMas() { toggleMenuMas(); currentTarget = getViewportCenter(); document.getElementById('modal-simbolos').style.display = 'flex'; }
-    function cerrarModalSimbolos() { document.getElementById('modal-simbolos').style.display = 'none'; }
-    function guardarSimbolo(s) {
-        const canvas = document.createElement('canvas'); canvas.width = 100; canvas.height = 100;
-        const ctx = canvas.getContext('2d'); ctx.font = "80px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        ctx.fillText(s, 50, 50);
-        crearElementoFlotante(currentTarget.parent, currentTarget.x, currentTarget.y, currentTarget.pageNum, 'image', canvas.toDataURL(), 20);
-        cerrarModalSimbolos();
+    function abrirModalSimbolosDesdeMas() {
+        toggleMenuMas();
+        const center = getViewportCenter();
+        currentTarget = { parent: center.wrapper, x: center.x, y: center.y, pageNum: center.pageNum };
+        abrirModalSimbolos();
     }
 
-    function abrirSubirImagenDesdeMas() { toggleMenuMas(); currentTarget = getViewportCenter(); document.getElementById('input-subir-imagen-global').click(); }
-    function procesarImagenSubida(e) {
-        const file = e.target.files[0];
+    function abrirSubirImagenDesdeMas() {
+        toggleMenuMas();
+        const center = getViewportCenter();
+        currentTarget = { parent: center.wrapper, x: center.x, y: center.y, pageNum: center.pageNum };
+        document.getElementById('input-subir-imagen').click();
+    }
+
+    function procesarImagenSubida(event) {
+        const file = event.target.files[0];
+        if (!file) return;
         const reader = new FileReader();
-        reader.onload = (ev) => crearElementoFlotante(currentTarget.parent, currentTarget.x, currentTarget.y, currentTarget.pageNum, 'image', ev.target.result, 50);
+        reader.onload = function(e) {
+            crearElementoFlotante(currentTarget.parent, currentTarget.x, currentTarget.y, currentTarget.pageNum, 'image', e.target.result);
+        };
         reader.readAsDataURL(file);
     }
 
-    function crearElementoFlotante(parent, x, y, pageNum, tipo, contenido, size = 14) {
+    function abrirModalTexto() {
+        textFormat = { bold: false, italic: false };
+        document.getElementById('btn-bold').classList.remove('active');
+        document.getElementById('btn-italic').classList.remove('active');
+        const input = document.getElementById('input-texto-modal');
+        input.value = '';
+        input.style.fontWeight = 'normal';
+        input.style.fontStyle = 'normal';
+        document.getElementById('input-size-texto').value = lastTextSize;
+        renderizarChipsHistorial();
+        document.getElementById('modal-texto').style.display = 'flex';
+        setTimeout(() => input.focus(), 100);
+    }
+
+    function cerrarModalTexto() { document.getElementById('modal-texto').style.display = 'none'; }
+
+    function toggleFormat(type) {
+        textFormat[type] = !textFormat[type];
+        const btn = document.getElementById(`btn-${type}`);
+        const input = document.getElementById('input-texto-modal');
+        if (textFormat[type]) btn.classList.add('active'); else btn.classList.remove('active');
+        if (type === 'bold') input.style.fontWeight = textFormat.bold ? 'bold' : 'normal';
+        if (type === 'italic') input.style.fontStyle = textFormat.italic ? 'italic' : 'normal';
+    }
+
+    function renderizarChipsHistorial() {
+        const container = document.getElementById('chips-historial');
+        container.innerHTML = '';
+        historialTextos.forEach(texto => {
+            const chip = document.createElement('button');
+            chip.type = 'button'; chip.className = 'chip'; chip.innerText = texto;
+            chip.onclick = () => { document.getElementById('input-texto-modal').value = texto; };
+            container.appendChild(chip);
+        });
+    }
+
+    function guardarTextoModal() {
+        const input = document.getElementById('input-texto-modal');
+        const texto = input.value.trim();
+        if (!texto) return;
+        lastTextSize = parseInt(document.getElementById('input-size-texto').value) || 14;
+        crearElementoFlotante(currentTarget.parent, currentTarget.x, currentTarget.y, currentTarget.pageNum, 'text', texto, null, lastTextSize);
+        guardarEnHistorial(texto);
+        cerrarModalTexto();
+    }
+
+    function abrirModalFirma() {
+        document.getElementById('modal-firma').style.display = 'flex';
+        sigCanvas = document.getElementById('canvas-firma');
+        sigCtx = sigCanvas.getContext('2d', { alpha: true });
+        sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+        currentColor = document.getElementById('firma-color').value;
+        actualizarEstiloFirma();
+        sigCanvas.onmousedown = startDrawing; sigCanvas.onmousemove = draw; sigCanvas.onmouseup = stopDrawing; sigCanvas.onmouseout = stopDrawing;
+        sigCanvas.ontouchstart = (e) => { e.preventDefault(); startDrawing(e); };
+        sigCanvas.ontouchmove = (e) => { e.preventDefault(); draw(e); };
+        sigCanvas.ontouchend = stopDrawing;
+        document.getElementById('firma-color').oninput = function() { currentColor = this.value; actualizarEstiloFirma(); };
+    }
+
+    function actualizarEstiloFirma() {
+        sigCtx.strokeStyle = currentColor; sigCtx.lineCap = 'round'; sigCtx.lineJoin = 'round';
+        sigCtx.shadowColor = currentColor === '#1a1a1a' ? 'rgba(0,0,0,0.4)' : 'transparent'; sigCtx.shadowBlur = 1;
+    }
+
+    function startDrawing(e) { isDrawing = true; const pos = getPos(e); lastX = pos.x; lastY = pos.y; }
+    function draw(e) {
+        if (!isDrawing) return;
+        const pos = getPos(e);
+        const lineWidth = calculateLineWidth(lastX, lastY, pos.x, pos.y);
+        sigCtx.lineWidth = lineWidth; sigCtx.beginPath(); sigCtx.moveTo(lastX, lastY); sigCtx.lineTo(pos.x, pos.y); sigCtx.stroke();
+        lastX = pos.x; lastY = pos.y;
+    }
+    function stopDrawing() { isDrawing = false; }
+    function getPos(e) {
+        const rect = sigCanvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return { x: (clientX - rect.left) * (sigCanvas.width / rect.width), y: (clientY - rect.top) * (sigCanvas.height / rect.height) };
+    }
+    function calculateLineWidth(x1, y1, x2, y2) { const dist = Math.hypot(x2 - x1, y2 - y1); return Math.max(2.5, Math.min(6.5, 5 - dist * 0.12)); }
+    function limpiarFirma() { sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height); }
+    function cerrarModalFirma() { document.getElementById('modal-firma').style.display = 'none'; }
+    function guardarFirma() {
+        const canvas = document.getElementById('canvas-firma');
+        const dataUrl = canvas.toDataURL('image/png');
+        crearElementoFlotante(currentTarget.parent, currentTarget.x, currentTarget.y, currentTarget.pageNum, 'image', dataUrl);
+        cerrarModalFirma();
+    }
+
+    function abrirModalSimbolos() {
+        document.getElementById('input-size-simbolo').value = lastSymbolSize;
+        document.getElementById('modal-simbolos').style.display = 'flex';
+    }
+    function cerrarModalSimbolos() { document.getElementById('modal-simbolos').style.display = 'none'; }
+    function guardarSimbolo(simbolo) {
+        lastSymbolSize = parseInt(document.getElementById('input-size-simbolo').value) || 24;
+        const canvas = document.createElement('canvas');
+        canvas.width = 100; canvas.height = 100;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = 'black'; ctx.font = '80px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(simbolo, 50, 50);
+        const dataUrl = canvas.toDataURL('image/png');
+        crearElementoFlotante(currentTarget.parent, currentTarget.x, currentTarget.y, currentTarget.pageNum, 'image', dataUrl, null, lastSymbolSize * 2);
+        cerrarModalSimbolos();
+    }
+
+    function crearElementoFlotante(parent, x, y, pageNum, tipo, contenido, formato = null, customSize = null) {
         const wrapper = document.createElement('div');
         wrapper.className = 'floating-element';
         
-        const pctX = x / parent.offsetWidth;
-        const pctY = y / parent.offsetHeight;
-        wrapper.style.left = `${pctX * 100}%`;
-        wrapper.style.top = `${pctY * 100}%`;
-        wrapper.style.transform = `scale(${window.pdfGlobalScale})`;
-
-        const elData = { wrapper, type: tipo, pageNum, pctX, pctY, size, hasHalo: false, isAnchored: false };
+        // CORRECCIÓN DE ZOOM: El tamaño visual se ajusta según el zoom actual para que el tamaño real en el PDF sea constante
+        const initialSize = (customSize || (tipo === 'text' ? 14 : 120)) / window.pdfGlobalScale;
         
+        wrapper.style.left = `${x - (initialSize / 2)}px`;
+        wrapper.style.top = `${y - (initialSize / 2)}px`;
+        wrapper.style.position = 'absolute';
+        wrapper.style.transform = `scale(${window.pdfGlobalScale})`;
+        const resizeHandle = document.createElement('div');
+        resizeHandle.className = 'resize-handle';
+        let elData = { wrapper, type: tipo, pageNum, hasBg: false };
         let domElement;
         if (tipo === 'text') {
             domElement = document.createElement('span');
             domElement.className = 'floating-text';
             domElement.innerText = contenido;
-            domElement.style.fontSize = `${size}px`;
-            elData.content = contenido;
-        } else {
+            domElement.style.fontSize = `${initialSize}px`;
+            domElement.style.color = 'black';
+            elData.texto = contenido;
+            elData.size = initialSize;
+        } else if (tipo === 'image') {
             domElement = document.createElement('img');
             domElement.src = contenido;
-            domElement.style.width = `${size * 5}px`;
-            elData.content = contenido;
+            domElement.style.width = `${initialSize}px`;
+            elData.dataUrl = contenido;
+            elData.size = initialSize;
         }
+        const btnDelete = document.createElement('div');
+        btnDelete.innerHTML = '×'; btnDelete.className = 'btn-delete-float';
+        btnDelete.onclick = (e) => { e.stopPropagation(); wrapper.remove(); elementosFlotantes = elementosFlotantes.filter(i => i !== elData); };
+        
+        const btnBg = document.createElement('div');
+        btnBg.innerHTML = '⬜'; btnBg.className = 'btn-bg-float';
+        btnBg.title = "Tapar fondo";
+        btnBg.onclick = (e) => { 
+            e.stopPropagation(); 
+            elData.hasBg = !elData.hasBg; 
+            wrapper.classList.toggle('has-bg', elData.hasBg);
+            btnBg.style.background = elData.hasBg ? '#3498db' : '#fff';
+        };
 
-        const btnDel = crearBtnTool('×', 'btn-delete-float', () => {
-            wrapper.remove();
-            elementosFlotantes = elementosFlotantes.filter(e => e !== elData);
-        });
-        const btnBg = crearBtnTool('⬜', 'btn-bg-float', () => {
-            elData.hasHalo = !elData.hasHalo;
-            wrapper.classList.toggle('has-halo', elData.hasHalo);
-        });
-        const btnAnchor = crearBtnTool('📌', 'btn-anchor-float', () => {
-            elData.isAnchored = !elData.isAnchored;
-            btnAnchor.style.background = elData.isAnchored ? '#2ecc71' : '#f1c40f';
-            wrapper.style.cursor = elData.isAnchored ? 'default' : 'grab';
-        });
-        const handle = document.createElement('div');
-        handle.className = 'btn-float-tool resize-handle';
-
-        const invScale = 1 / window.pdfGlobalScale;
-        [btnDel, btnBg, btnAnchor, handle].forEach(b => b.style.transform = `scale(${invScale})`);
-
-        wrapper.appendChild(domElement); wrapper.appendChild(btnDel); wrapper.appendChild(btnBg); wrapper.appendChild(btnAnchor); wrapper.appendChild(handle);
+        wrapper.appendChild(domElement); wrapper.appendChild(btnDelete); wrapper.appendChild(btnBg); wrapper.appendChild(resizeHandle);
         parent.appendChild(wrapper);
-
-        hacerInteractivo(wrapper, elData, handle);
+        const seleccionar = (e) => {
+            e.stopPropagation();
+            document.querySelectorAll('.floating-element').forEach(el => el.classList.remove('selected'));
+            wrapper.classList.add('selected');
+        };
+        wrapper.addEventListener('mousedown', seleccionar);
+        wrapper.addEventListener('touchstart', seleccionar);
+        hacerInteractivo(wrapper, elData, resizeHandle);
         elementosFlotantes.push(elData);
     }
 
-    function crearBtnTool(txt, cls, fn) {
-        const btn = document.createElement('button');
-        btn.className = `btn-float-tool ${cls}`;
-        btn.innerHTML = txt;
-        btn.onclick = (e) => { e.stopPropagation(); fn(); };
-        return btn;
-    }
-
-    function hacerInteractivo(wrapper, elData, handle) {
+    function hacerInteractivo(wrapper, elData, resizeHandle) {
         let isDragging = false, isResizing = false;
-        let startX, startY, startLeft, startTop, startSize;
-
-        const onStart = (e) => {
-            if (elData.isAnchored) return;
-            const touch = e.touches ? e.touches[0] : e;
-            startX = touch.clientX; startY = touch.clientY;
-            startLeft = wrapper.offsetLeft; startTop = wrapper.offsetTop;
-            startSize = elData.size;
-            if (e.target === handle) isResizing = true; else isDragging = true;
-            document.querySelectorAll('.floating-element').forEach(el => el.classList.remove('selected'));
-            wrapper.classList.add('selected');
+        let startX, startY, initialLeft, initialTop;
+        let initialDistance = 0, initialSize = 0;
+        const start = (e) => {
+            if (e.target.classList.contains('btn-delete-float') || e.target.classList.contains('btn-bg-float')) return;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            if (e.touches && e.touches.length === 2) {
+                isDragging = false;
+                initialDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                initialSize = elData.size;
+                return;
+            }
+            if (e.target === resizeHandle) { isResizing = true; initialSize = elData.size; startX = clientX; } 
+            else { isDragging = true; startX = clientX; startY = clientY; initialLeft = wrapper.offsetLeft; initialTop = wrapper.offsetTop; }
             e.stopPropagation();
         };
-
-        const onMove = (e) => {
-            if (!isDragging && !isResizing) return;
-            const touch = e.touches ? e.touches[0] : e;
-            const dx = (touch.clientX - startX) / window.pdfGlobalScale;
-            const dy = (touch.clientY - startY) / window.pdfGlobalScale;
-
+        const move = (e) => {
+            if (!isDragging && !isResizing && (!e.touches || e.touches.length !== 2)) return;
+            if (e.touches && e.touches.length === 2 && initialDistance > 0) {
+                const currentDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                const scale = currentDistance / initialDistance;
+                actualizarTamano(initialSize * scale);
+                e.preventDefault(); return;
+            }
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
             if (isDragging) {
-                const newX = startLeft + dx;
-                const newY = startTop + dy;
-                elData.pctX = newX / wrapper.parentElement.offsetWidth;
-                elData.pctY = newY / wrapper.parentElement.offsetHeight;
-                wrapper.style.left = `${elData.pctX * 100}%`;
-                wrapper.style.top = `${elData.pctY * 100}%`;
+                wrapper.style.left = (initialLeft + (clientX - startX) / window.pdfGlobalScale) + 'px';
+                wrapper.style.top = (initialTop + (clientY - startY) / window.pdfGlobalScale) + 'px';
             } else if (isResizing) {
-                elData.size = Math.max(8, startSize + dx);
-                if (elData.type === 'text') {
-                    wrapper.querySelector('span').style.fontSize = `${elData.size}px`;
-                } else {
-                    wrapper.querySelector('img').style.width = `${elData.size * 5}px`;
-                }
+                const dx = (clientX - startX) / window.pdfGlobalScale;
+                actualizarTamano(initialSize + dx);
             }
             e.preventDefault();
         };
-
-        const onEnd = () => { isDragging = false; isResizing = false; };
-
-        wrapper.addEventListener('mousedown', onStart);
-        wrapper.addEventListener('touchstart', onStart, {passive:false});
-        document.addEventListener('mousemove', onMove);
-        document.addEventListener('touchmove', onMove, {passive:false});
-        document.addEventListener('mouseup', onEnd);
-        document.addEventListener('touchend', onEnd);
+        function actualizarTamano(newSize) {
+            if (elData.type === 'text') {
+                newSize = Math.max(2, Math.min(newSize, 120));
+                elData.wrapper.querySelector('.floating-text').style.fontSize = newSize + 'px';
+            } else if (elData.type === 'image') {
+                newSize = Math.max(5, Math.min(newSize, 600));
+                elData.wrapper.querySelector('img').style.width = newSize + 'px';
+            }
+            elData.size = newSize;
+        }
+        const stop = () => { isDragging = false; isResizing = false; initialDistance = 0; };
+        wrapper.addEventListener('mousedown', start);
+        wrapper.addEventListener('touchstart', start, {passive: false});
+        document.addEventListener('mousemove', move);
+        document.addEventListener('touchmove', move, {passive: false});
+        document.addEventListener('mouseup', stop);
+        document.addEventListener('touchend', stop);
     }
 
     async function generarPdfLibre() {
         if (!freePdfDoc) return;
-        const pages = freePdfDoc.getPages();
-        for (let el of elementosFlotantes) {
-            const page = pages[el.pageNum - 1];
-            const { width, height } = page.getSize();
-            const pdfX = el.pctX * width;
-            const pdfY = height - (el.pctY * height) - (el.size * (width / el.wrapper.parentElement.offsetWidth));
-            
-            if (el.hasHalo) {
-                const boxW = el.type === 'text' ? el.size * el.content.length * 0.6 : el.size * 5;
-                const boxH = el.size * 1.2;
-                page.drawRectangle({ x: pdfX - 2, y: pdfY - 2, width: boxW, height: boxH, color: PDFLib.rgb(1,1,1) });
-            }
-            if (el.type === 'text') {
-                page.drawText(el.content, { x: pdfX, y: pdfY, size: el.size * (width / el.wrapper.parentElement.offsetWidth), color: PDFLib.rgb(0,0,0) });
-            } else {
-                const img = await freePdfDoc.embedPng(el.content);
-                page.drawImage(img, { x: pdfX, y: pdfY, width: el.size * 5 * (width / el.wrapper.parentElement.offsetWidth), height: el.size * 5 * (width / el.wrapper.parentElement.offsetWidth) });
-            }
+        if (usuarioActual.creditos < freePdfPageCount) {
+            alert(`⚠️ Necesitas ${freePdfPageCount} créditos para descargar este documento. Tienes ${usuarioActual.creditos}.`);
+            return;
         }
-        const pdfBytes = await freePdfDoc.save();
-        download(pdfBytes, "Documento_Final.pdf", "application/pdf");
-        location.reload();
+        const btn = document.getElementById('btn-generar-free');
+        btn.innerText = "⏳ Procesando..."; btn.disabled = true;
+        try {
+            const pages = freePdfDoc.getPages();
+            for (const el of elementosFlotantes) {
+                const page = pages[el.pageNum - 1];
+                const { width, height } = page.getSize();
+                const ratio = width / el.wrapper.parentElement.offsetWidth;
+                const pdfX = el.wrapper.offsetLeft * ratio;
+                const pdfY = height - (el.wrapper.offsetTop * ratio) - (el.wrapper.offsetHeight * ratio);
+                
+                if (el.hasBg) {
+                    page.drawRectangle({ x: pdfX, y: pdfY, width: el.wrapper.offsetWidth * ratio, height: el.wrapper.offsetHeight * ratio, color: PDFLib.rgb(1, 1, 1) });
+                }
+
+                if (el.type === 'text') {
+                    page.drawText(el.texto, { x: pdfX, y: pdfY, size: el.size * ratio, color: PDFLib.rgb(0, 0, 0) });
+                } else if (el.type === 'image') {
+                    const img = await freePdfDoc.embedPng(el.dataUrl);
+                    page.drawImage(img, { x: pdfX, y: pdfY, width: el.size * ratio, height: (el.wrapper.offsetHeight * ratio) });
+                }
+            }
+            const pagado = await descontarCredito(freePdfPageCount);
+            if (!pagado) throw new Error("No se pudo procesar el pago.");
+            const pdfBytes = await freePdfDoc.save();
+            download(pdfBytes, "Documento_Final.pdf", "application/pdf");
+            alert("✅ ¡Documento descargado!");
+            volverAHome();
+        } catch (err) { alert("Error: " + err.message); }
+        finally { btn.innerText = `✨ Descargar PDF Lleno (${freePdfPageCount} Créditos)`; btn.disabled = false; }
     }
 
+    function mostrarScreen(id) {
+        if(id === 'screen-ai-chat') { 
+            document.getElementById(id).classList.add('active'); 
+            if (chatHistory.length === 0) {
+                addMessage('ai', '¡Hola! Soy tu experto en documentos. ¿Qué necesitas redactar hoy? (Contratos, cartas, solicitudes, etc.)');
+                document.getElementById('ai-options-area').style.display = 'flex';
+            }
+        }
+        else { showScreen(id); }
+    }
+    function cerrarChatAI() { document.getElementById('screen-ai-chat').classList.remove('active'); }
+    function setMargin(val) {
+        selectedMargin = val;
+        document.getElementById('margin-1').classList.toggle('active', val === 1);
+        document.getElementById('margin-05').classList.toggle('active', val === 0.5);
+    }
     function setAlign(align) {
-        document.querySelectorAll('.btn-editor-tool').forEach(b => b.classList.remove('active'));
-        document.getElementById('btn-justify').classList.toggle('active', align === 'justify');
-        document.getElementById('a4-page-content').style.textAlign = align;
+        currentAlignment = align;
+        document.querySelectorAll('.btn-tool').forEach(b => b.classList.remove('active'));
+        document.getElementById(`tool-${align}`).classList.add('active');
+        document.getElementById('edit-ai-content').style.textAlign = align;
     }
-
-    async function generarPdfDesdeEditorAI() {
-        const page = document.getElementById('a4-page-content');
-        const text = page.innerText.trim();
-        const pdfDoc = await PDFLib.PDFDocument.create();
-        let pdfPage = pdfDoc.addPage(PDFLib.PageSizes.A4);
-        const { width, height } = pdfPage.getSize();
-        const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
-        const margin = 71; // 2.5cm approx
-        let y = height - 85;
-        const paragraphs = text.split('\n');
-        for (let p of paragraphs) {
-            if (p.trim() === "") { y -= 15; continue; }
-            pdfPage.drawText(p, { x: margin, y: y, size: 11, font: font, maxWidth: width - margin*2 });
-            y -= 20;
+    function accionChat() {
+        const input = document.getElementById('chat-input');
+        if (input.value.trim() === "") { iniciarVozChat(); } else { enviarMensajeAI(); }
+    }
+    function actualizarBotonChat() {
+        const input = document.getElementById('chat-input');
+        const btn = document.getElementById('btn-chat-action');
+        if (input.value.trim() !== "") { btn.innerHTML = "➤"; btn.style.background = "#2ecc71"; }
+        else { btn.innerHTML = "🎤"; btn.style.background = "#3498db"; }
+    }
+    function addMessage(sender, text) {
+        const container = document.getElementById('chat-messages');
+        if (!container) return;
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'chat-message ' + sender;
+        msgDiv.innerHTML = text.replace(/\n/g, '<br>');
+        container.appendChild(msgDiv);
+        container.scrollTop = container.scrollHeight;
+    }
+    function iniciarVozChat() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) return alert("Dictado no soportado.");
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'es-ES'; recognition.start();
+        recognition.onresult = (e) => {
+            const transcript = e.results[0][0].transcript;
+            document.getElementById('chat-input').value = transcript;
+            actualizarBotonChat();
+            setTimeout(() => { enviarMensajeAI(); }, 1000);
+        };
+    }
+    async function enviarMensajeAI() {
+        const input = document.getElementById('chat-input');
+        const texto = input.value.trim();
+        if (!texto || isAITyping) return;
+        addMessage('user', texto); input.value = ""; actualizarBotonChat();
+        isAITyping = true; chatHistory.push({ role: 'user', content: texto });
+        try {
+            const { data, error } = await supabase.functions.invoke('generar-documento', {
+                body: JSON.stringify({ history: chatHistory, user_input: texto, current_draft: currentDocumentDraft }),
+            });
+            if (error) { addMessage('ai', '❌ Error: ' + error.message); return; }
+            const aiResponse = data.response;
+            addMessage('ai', aiResponse.message);
+            chatHistory.push({ role: 'assistant', content: aiResponse.raw_response });
+            if ((aiResponse.action === 'document_draft' || aiResponse.action === 'final_document') && aiResponse.document_content) {
+                currentDocumentDraft = aiResponse.document_content;
+                mostrarModalPreviewAI(currentDocumentDraft);
+            }
+        } catch (error) { addMessage('ai', '❌ Error: ' + error.message); }
+        finally { isAITyping = false; }
+    }
+    async function regenerarEstiloAI() {
+        if (isAITyping) return;
+        const editor = document.getElementById('edit-ai-content');
+        const textoActual = editor.innerText;
+        addMessage('ai', '⏳ Pulido redacción (manteniendo tus datos)...');
+        isAITyping = true;
+        try {
+            const prompt = "Mejora la redacción y profesionalismo del siguiente texto, pero MANTÉN EXACTAMENTE IGUAL todos los nombres propios, DNI, fechas, montos y datos personales. Solo mejora el cuerpo del mensaje. Texto: " + textoActual;
+            const { data, error } = await supabase.functions.invoke('generar-documento', {
+                body: JSON.stringify({ history: chatHistory, user_input: prompt, current_draft: textoActual }),
+            });
+            if (error) throw error;
+            const aiResponse = data.response;
+            if (aiResponse.document_content) {
+                currentDocumentDraft = aiResponse.document_content;
+                editor.innerText = currentDocumentDraft;
+                addMessage('ai', '✅ Redacción pulida.');
+            }
+        } catch (e) { addMessage('ai', '❌ Error al pulir: ' + e.message); }
+        finally { isAITyping = false; }
+    }
+    function mostrarModalPreviewAI(content) {
+        const modal = document.getElementById('modal-preview-ai');
+        const editor = document.getElementById('edit-ai-content');
+        editor.innerText = content;
+        editor.style.textAlign = currentAlignment;
+        modal.style.display = 'flex';
+    }
+    async function enviarAlEditorFinal() {
+        const editor = document.getElementById('edit-ai-content');
+        let text = editor.innerText.trim();
+        try {
+            const pdfDoc = await PDFLib.PDFDocument.create();
+            let page = pdfDoc.addPage(PDFLib.PageSizes.A4);
+            const { width, height } = page.getSize();
+            const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+            
+            // MÁRGENES PROFESIONALES (A4 ESTÁNDAR)
+            const marginTop = 85; // ~3 cm
+            const marginBottom = 71; // ~2.5 cm
+            const marginSides = 71; // ~2.5 cm
+            
+            let currentY = height - marginTop;
+            const maxWidth = width - (marginSides * 2);
+            const paragraphs = text.split('\n');
+            
+            for (let para of paragraphs) {
+                if (para.trim() === "") { currentY -= 15; continue; }
+                const words = para.split(' ');
+                let line = '';
+                for (let word of words) {
+                    const testLine = line + word + ' ';
+                    if (font.widthOfTextAtSize(testLine, 11) > maxWidth) {
+                        let xPos = marginSides;
+                        if (currentAlignment === 'center') xPos = marginSides + (maxWidth - font.widthOfTextAtSize(line, 11)) / 2;
+                        else if (currentAlignment === 'right') xPos = marginSides + (maxWidth - font.widthOfTextAtSize(line, 11));
+                        
+                        page.drawText(line.trim(), { x: xPos, y: currentY, size: 11, font: font });
+                        currentY -= 14; line = word + ' ';
+                        if (currentY < marginBottom) { page = pdfDoc.addPage(PDFLib.PageSizes.A4); currentY = height - marginTop; }
+                    } else { line = testLine; }
+                }
+                let xPos = marginSides;
+                if (currentAlignment === 'center') xPos = marginSides + (maxWidth - font.widthOfTextAtSize(line, 11)) / 2;
+                else if (currentAlignment === 'right') xPos = marginSides + (maxWidth - font.widthOfTextAtSize(line, 11));
+                
+                page.drawText(line.trim(), { x: xPos, y: currentY, size: 11, font: font });
+                currentY -= 28; // Espaciado entre párrafos elegante
+                if (currentY < marginBottom) { page = pdfDoc.addPage(PDFLib.PageSizes.A4); currentY = height - marginTop; }
+            }
+            const pdfBytes = await pdfDoc.save();
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            document.getElementById('modal-preview-ai').style.display = 'none';
+            cerrarChatAI();
+            cargarPdfEnEditor(blob);
+            alert("✅ Documento cargado. Ahora puedes añadir firmas o sellos.");
+        } catch (e) { alert("Error: " + e.message); }
+    }
+    function guardarEnHistorial(texto) {
+        if (texto && !historialTextos.includes(texto)) {
+            historialTextos.push(texto);
+            localStorage.setItem('docufacil_historial', JSON.stringify(historialTextos));
         }
-        const pdfBytes = await pdfDoc.save();
-        download(pdfBytes, "Documento_AI.pdf", "application/pdf");
-        location.reload();
     }
 </script>
 </body>
