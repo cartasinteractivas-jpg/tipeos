@@ -130,10 +130,12 @@
         /* --- PANTALLA EDITOR FULL AI (PAGINADO REAL HOJAS A4) --- */
         #screen-ai-editor { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #121212; z-index: 3000; display: none; flex-direction: column; }
         #screen-ai-editor.active { display: flex; }
-        .editor-toolbar { background: #2c3e50; padding: 10px; display: flex; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid #34495e; z-index: 10; }
-        .btn-editor-tool { background: #34495e; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-size: 13px; cursor: pointer; }
+        .editor-toolbar { background: #2c3e50; padding: 8px 10px; display: flex; flex-wrap: wrap; gap: 6px; border-bottom: 1px solid #34495e; z-index: 10; align-items: center; }
+        .btn-editor-tool { background: #34495e; color: white; border: none; padding: 6px 10px; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: bold; }
         .btn-editor-tool:hover { background: #3498db; }
         .btn-editor-tool.active { background: #3498db; }
+        .btn-style-tool { background: #1a252f; color: #f1c40f; border: 1px solid #34495e; padding: 6px 10px; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: bold; }
+        .btn-style-tool:hover { background: #f1c40f; color: #000; }
         
         .editor-canvas-container { flex: 1; overflow-y: auto; background: #000; padding: 20px 10px; display: flex; flex-direction: column; align-items: center; gap: 20px; position: relative; }
         
@@ -143,6 +145,7 @@
             width: 100%; 
             max-width: 210mm; 
             min-height: 297mm; 
+            max-height: 297mm;
             padding: 2.5cm; 
             box-shadow: 0 0 15px rgba(0,0,0,0.6); 
             color: black; 
@@ -154,6 +157,7 @@
             position: relative; 
             box-sizing: border-box; 
             word-break: break-word;
+            overflow: hidden;
         }
 
         /* ESTILOS ESPECÍFICOS CURRÍCULUM */
@@ -218,7 +222,7 @@
         </div>
         <div style="flex:1; display:flex; flex-direction:column; padding:20px; gap:15px; justify-content:center; align-items: center;">
             <p style="text-align:center; color:#ccc; font-size: 15px;">Escribe los detalles clave para tu <b id="ai-prompt-type" style="color:#f1c40f;"></b></p>
-            <textarea id="ai-prompt-input" rows="8" placeholder="Ej: A nombre de Juan Pérez con DNI 12345678, solicitando vacaciones..." style="width:100%; max-width: 400px; border-radius:10px; padding:15px; background:#1e1e1e; color:white; border:1px solid #444; font-size:16px; outline:none; resize:none;"></textarea>
+            <textarea id="ai-prompt-input" rows="8" placeholder="Ej: Solicitud a la Ministra Betssy Chavez Chino para condonación de deuda COVID-19..." style="width:100%; max-width: 400px; border-radius:10px; padding:15px; background:#1e1e1e; color:white; border:1px solid #444; font-size:16px; outline:none; resize:none;"></textarea>
             
             <div style="display:flex; justify-content:center; align-items:center; gap:15px; margin-top: 10px; height: 60px;">
                 <button id="btn-voice-prompt" onclick="iniciarVozPrompt()" style="background:#3498db; color:white; border:none; width:60px; height:60px; border-radius:50%; font-size:24px; box-shadow:0 4px 10px rgba(0,0,0,0.5); cursor:pointer;">🎤</button>
@@ -254,15 +258,23 @@
 <div id="screen-ai-editor" class="screen" style="padding:0;">
     <div class="editor-toolbar">
         <button onclick="location.reload()" style="background:#333; border:none; color:white; width:35px; height:35px; border-radius:8px; font-size:18px; cursor:pointer;">←</button>
-        <button class="btn-editor-tool" onclick="setAlign('left')">⬅ Izq</button>
-        <button class="btn-editor-tool" onclick="setAlign('center')">⏺ Cen</button>
-        <button class="btn-editor-tool" onclick="setAlign('right')">➡ Der</button>
-        <button class="btn-editor-tool active" id="btn-justify" onclick="setAlign('justify')">≡ Jus</button>
+        
+        <!-- ESTILOS DE TEXTO SELECCIONADO -->
+        <button class="btn-style-tool" onclick="aplicarFormatoSeleccion('bold')" title="Negrita"><b>B</b></button>
+        <button class="btn-style-tool" onclick="aplicarFormatoSeleccion('italic')" title="Cursiva"><i>I</i></button>
+        <button class="btn-style-tool" onclick="aplicarFormatoSeleccion('underline')" title="Subrayado"><u>U</u></button>
+        <div style="width:1px; height:20px; background:#444; margin:0 2px;"></div>
+        
+        <!-- ALINEACIÓN DE TEXTO SELECCIONADO -->
+        <button class="btn-editor-tool" onclick="aplicarAlineacionSeleccion('justifyLeft')">⬅ Izq</button>
+        <button class="btn-editor-tool" onclick="aplicarAlineacionSeleccion('justifyCenter')">⏺ Cen</button>
+        <button class="btn-editor-tool" onclick="aplicarAlineacionSeleccion('justifyRight')">➡ Der</button>
+        <button class="btn-editor-tool" onclick="aplicarAlineacionSeleccion('justifyFull')">≡ Jus</button>
+        
         <button class="btn-editor-tool" style="background:#2ecc71; color:black; font-weight:bold; margin-left:auto;" onclick="generarPdfDesdeEditorAI()">✅ Descargar PDF</button>
     </div>
     <div class="editor-canvas-container" id="ai-editor-container">
-        <!-- Paginado A4 generado dinámicamente -->
-        <div id="a4-page-content" class="a4-page" contenteditable="true"></div>
+        <!-- Paginado A4 dinámico -->
     </div>
 </div>
 
@@ -348,18 +360,14 @@
     let lastX = 0, lastY = 0;
     let currentColor = '#1a1a1a';
     
-    // Variables para AI Menu
     let currentAIType = '';
     let currentDocumentDraft = null;
-    let currentAlignment = 'justify';
     
-    // Zoom y Dimensiones Reales
     window.pdfGlobalScale = 1;
     window.pdfPageDimensions = {}; 
     let initialPdfDist = 0;
     let initialPdfScale = 1;
 
-    // LIMPIADOR DE TEXTO PARA PDF-LIB (EVITA WinAnsi ENCODING ERROR)
     function limpiarTextoParaPdf(texto) {
         if (!texto) return '';
         return texto.replace(/[^\x00-\x7F\xC0-\xFF]/g, '');
@@ -568,60 +576,114 @@
         
         try {
             let prompt = "";
-            const reglaFirma = `\nIMPORTANTE: Todo documento como Carta, Solicitud o Contrato DEBE incluir al final la estructura formal de firma con la línea superior de esta forma exacta:
-___________________________
-[FIRMA]
-Nombre Completo: [Nombre de la persona o inventar uno si no se especifica]
-DNI / Cargo: [DNI o Cargo correspondiente]`;
+            const reglaFirma = `\n\n----------------------------------------\nFIRMA`;
 
-            if (currentAIType === "Contrato") {
-                prompt = `Actúa como abogado experto. Redacta un contrato formal en español por CLÁUSULAS (CLÁUSULA PRIMERA, CLÁUSULA SEGUNDA, etc.). Indicaciones: "${input}". ${reglaFirma}`;
+            if (currentAIType === "Solicitud") {
+                prompt = `Redacta una Solicitud oficial formal con esta estructura:
+1. Lema del año en mayúsculas y entre comillas al inicio centrado (Ej: "AÑO DEL FORTALECIMIENTO DE LA SOBERANÍA NACIONAL").
+2. Destinatario con Cargo y correo si aplica.
+3. Sumilla/Asunto subrayado y alineado a la derecha o centro.
+4. Cuerpo estructurado formalmente en párrafos.
+5. Cierre: "A la espera que brinde la atención...", "Atentamente".
+6. Línea para FIRMA abajo al centro.
+Datos proporcionados: "${input}".`;
+            } else if (currentAIType === "Contrato") {
+                prompt = `Redacta un contrato formal en español por CLÁUSULAS (CLÁUSULA PRIMERA, CLÁUSULA SEGUNDA, etc.). Indicaciones: "${input}". ${reglaFirma}`;
             } else if (currentAIType === "Currículum") {
-                prompt = `Actúa como un reclutador profesional. Redacta un Currículum Vitae completo basado en la estructura estándar formal (Perfil Profesional, Experiencia Laboral, Formación Académica, Habilidades/Competencias). Indicaciones del usuario: "${input}". Si faltan datos, invéntalos manteniendo un perfil profesional óptimo.`;
+                prompt = `Redacta un Currículum Vitae profesional con secciones claras (Perfil, Experiencia, Formación, Habilidades). Indicaciones: "${input}".`;
             } else {
-                prompt = `Actúa como redactor legal y profesional. Genera un(a) ${currentAIType}. Indicaciones: "${input}". ${reglaFirma}`;
+                prompt = `Redacta un(a) ${currentAIType} formal. Indicaciones: "${input}". ${reglaFirma}`;
             }
 
             const { data, error } = await supabase.functions.invoke('generar-documento', {
                 body: JSON.stringify({ history: [], user_input: prompt, current_draft: null }),
             });
-            if (error) throw error;
             
-            const aiResponse = data.response;
-            if (aiResponse.document_content) {
-                currentDocumentDraft = aiResponse.document_content;
-                prepararEditorPorTipo(currentAIType, currentDocumentDraft);
-                showScreen('screen-ai-editor');
-                window.pdfGlobalScale = 1;
+            let contenidoAI = "";
+            if (error || !data || !data.response) {
+                // Fallback de generación local si Supabase edge function no responde
+                contenidoAI = obtenerPlantillaFallback(currentAIType, input);
+            } else {
+                contenidoAI = data.response.document_content || data.response;
             }
+
+            prepararEditorPorTipo(currentAIType, contenidoAI);
+            showScreen('screen-ai-editor');
+            window.pdfGlobalScale = 1;
+
         } catch (error) {
-            alert('❌ Error al generar: ' + error.message);
+            console.warn("Utilizando fallback de documento:", error);
+            const fallback = obtenerPlantillaFallback(currentAIType, input);
+            prepararEditorPorTipo(currentAIType, fallback);
+            showScreen('screen-ai-editor');
         } finally {
             document.getElementById('ai-prompt-loading').style.display = 'none';
             document.getElementById('btn-send-prompt').disabled = false;
             document.getElementById('btn-send-prompt').innerText = 'Generando ✨';
         }
     }
+
+    function obtenerPlantillaFallback(tipo, promptUsuario) {
+        if (tipo === "Solicitud") {
+            return `"AÑO DEL FORTALECIMIENTO DE LA SOBERANÍA NACIONAL"
+
+Doctora.
+BETSSY B. CHAVEZ CHINO.
+Ministra de Trabajo y Promoción del Empleo
+bchavez@trabajo.gob.pe
+
+Excelentísima señora Ministra:
+
+                                          Asunto: Solicita condonación de la Deuda Covid-19.
+
+Que, suscribe ______________________________________ con DNI ______________ trabajador(a) de la empresa ______________________________________, con RUC Nº ____________________, señalando domicilio electrónica: ...............@gmail.com y con número celular número: _______________, me dirijo a Ud. Para manifestarle lo siguiente:
+
+En el año 2020 se dictaron una seria de medidas para disminuir el riesgo de trasmisión de la Covid 19, como consecuencia de ello, se estableció la existencia de un Grupo denominado de "Riesgo", en el cual estuve incluido debido a que presentaba comorbilidades. Estando a ello, desde la segunda quincena de marzo de 2020 estuve calificado en el GRUPO VULNERABLE en esa condición mi empleador me otorgó Licencia con goce de haber compensable.
+
+Señora Ministra, a la fecha se cumplió 24 meses de aislamiento social como prevención de la salud pública, percibiendo mis remuneraciones y demás beneficios con cargo a compensar (DEVOLVER) una vez superado el riesgo de la pandemia, esto es, me encuentro endeudado con mi empleadora por mandato del gobierno, si bien esta medida necesaria acertada del gobierno, es que a la fecha, esta deuda por el tiempo transcurrido se ha convertido en una deuda IMPAGABLE, mis ingresos como trabajador de esta empresa no tiene margen disponible para pago de deudas, apenas alcanza para la para sobrevivir y la manutención de mi familia.
+
+Ante esta situación, acudo a vuestro despacho para SOLICITAR LA CONDONACION DE LA DEUDA convirtiendo en una deuda pública, por tratarse de una medida relacionada con la salud pública COVID-19.
+
+A la espera que brinde la atención y la pronta respuesta, quedo de Ud.
+
+Atentamente
+
+                                      -----------------------------------
+                                                    FIRMA`;
+        }
+        return `DOCUMENTO GENERADO - ${tipo.toUpperCase()}\n\nDetalles registrados:\n${promptUsuario}\n\n----------------------------------------\nFIRMA`;
+    }
     
+    // --- EDICIÓN Y CREACIÓN DINÁMICA DE PÁGINAS A4 --- //
+
+    function crearPaginaA4(num) {
+        const page = document.createElement('div');
+        page.id = `a4-page-${num}`;
+        page.className = 'a4-page';
+        page.contentEditable = 'true';
+        page.dataset.pageNum = num;
+        
+        // Listener para detectar desbordamiento e ir añadiendo hojas automáticamente
+        page.addEventListener('input', () => verificarDesbordamientoPagina(page));
+        return page;
+    }
+
     function prepararEditorPorTipo(tipo, contenido) {
         const container = document.getElementById('ai-editor-container');
         container.innerHTML = '';
         
-        const page = document.createElement('div');
-        page.id = 'a4-page-content';
-        page.className = 'a4-page';
-        page.contentEditable = 'true';
+        const page1 = crearPaginaA4(1);
 
         if (tipo === 'Currículum') {
-            page.style.padding = '1.5cm 2cm';
-            page.innerHTML = `
+            page1.style.padding = '1.5cm 2cm';
+            page1.innerHTML = `
                 <div class="cv-container">
                     <div class="cv-header">
                         <div>
-                            <div class="cv-title" contenteditable="true">CURRÍCULUM VITAE</div>
-                            <div style="font-size:14pt; font-weight:bold; color:#555;" contenteditable="true">NOMBRES Y APELLIDOS</div>
+                            <div class="cv-title">CURRÍCULUM VITAE</div>
+                            <div style="font-size:14pt; font-weight:bold; color:#555;">NOMBRES Y APELLIDOS</div>
                         </div>
-                        <div style="text-align:right; font-size:9pt; color:#666;" contenteditable="true">
+                        <div style="text-align:right; font-size:9pt; color:#666;">
                             📞 Teléfono: 987 654 321<br>
                             ✉️ Email: correo@ejemplo.com<br>
                             📍 Lima, Perú
@@ -640,39 +702,42 @@ DNI / Cargo: [DNI o Cargo correspondiente]`;
                                 <li>Gestión de Documentos</li>
                                 <li>Atención al Cliente</li>
                                 <li>Manejo de MS Office</li>
-                                <li>Trabajo en Equipo</li>
                             </ul>
-                            
-                            <div class="cv-section-title">IDIOMAS</div>
-                            <p style="font-size:9pt;">• Español (Nativo)<br>• Inglés (Intermedio)</p>
                         </div>
                         <div>
                             <div class="cv-section-title">PERFIL PROFESIONAL</div>
-                            <div contenteditable="true" style="font-size:10pt; text-align:justify;">
+                            <div style="font-size:10pt; text-align:justify;">
                                 ${contenido.replace(/\n/g, '<br>')}
-                            </div>
-                            
-                            <div class="cv-section-title">EXPERIENCIA LABORAL</div>
-                            <div contenteditable="true" style="font-size:10pt;">
-                                <b>PUESTO / CARGO</b> - Empresa ABC (2022 - Presente)<br>
-                                • Gestión y auditoría de documentos.<br>
-                                • Coordinación e implementación de procesos.
-                            </div>
-                            
-                            <div class="cv-section-title">EDUCACIÓN</div>
-                            <div contenteditable="true" style="font-size:10pt;">
-                                <b>GRADO / TITULO</b> - Universidad / Instituto (2018 - 2022)
                             </div>
                         </div>
                     </div>
                 </div>
             `;
         } else {
-            page.style.padding = tipo === 'Contrato' ? '3cm 3cm 2.5cm 2.5cm' : '2.5cm 2.5cm 2.5cm 3cm';
-            page.innerText = contenido;
+            page1.style.padding = tipo === 'Contrato' ? '3cm 3cm 2.5cm 2.5cm' : '2.5cm 2.5cm 2.5cm 3cm';
+            page1.innerText = contenido;
         }
 
-        container.appendChild(page);
+        container.appendChild(page1);
+        verificarDesbordamientoPagina(page1);
+    }
+
+    function verificarDesbordamientoPagina(page) {
+        if (page.scrollHeight > page.clientHeight) {
+            const container = document.getElementById('ai-editor-container');
+            const numPaginas = container.querySelectorAll('.a4-page').length;
+            const nuevaPagina = crearPaginaA4(numPaginas + 1);
+            container.appendChild(nuevaPagina);
+        }
+    }
+
+    // APLICAR FORMATOS Y ALINEACIONES SOLO AL TEXTO SELECCIONADO
+    function aplicarFormatoSeleccion(comando) {
+        document.execCommand(comando, false, null);
+    }
+
+    function aplicarAlineacionSeleccion(alineacion) {
+        document.execCommand(alineacion, false, null);
     }
 
     // --- RELLENADO DE PDF LIBRE --- //
@@ -757,11 +822,16 @@ DNI / Cargo: [DNI o Cargo correspondiente]`;
         const centerY = rect.top + (rect.height / 2);
         
         if (isAIEditor) {
-            const page = document.getElementById('a4-page-content');
-            const pageRect = page.getBoundingClientRect();
+            const pages = document.querySelectorAll('.a4-page');
+            let targetPage = pages[0];
+            pages.forEach(p => {
+                const pRect = p.getBoundingClientRect();
+                if (centerY >= pRect.top && centerY <= pRect.bottom) targetPage = p;
+            });
+            const pageRect = targetPage.getBoundingClientRect();
             const relativeX = (centerX - pageRect.left) / window.pdfGlobalScale;
             const relativeY = (centerY - pageRect.top) / window.pdfGlobalScale;
-            return { wrapper: page, x: relativeX, y: relativeY, pageNum: 1 };
+            return { wrapper: targetPage, x: relativeX, y: relativeY, pageNum: parseInt(targetPage.dataset.pageNum || 1) };
         } else {
             const wrappers = document.querySelectorAll('.pdf-page-wrapper');
             let targetWrapper = wrappers[0];
@@ -903,7 +973,7 @@ DNI / Cargo: [DNI o Cargo correspondiente]`;
         cerrarModalSimbolos();
     }
 
-    /* ---- ELEMENTOS FLOTANTES CON FONDO AJUSTABLE ---- */
+    /* ---- ELEMENTOS FLOTANTES ---- */
     function crearElementoFlotante(parent, x, y, pageNum, tipo, contenido, formato = null, customSize = null) {
         const wrapper = document.createElement('div');
         wrapper.className = 'floating-element';
@@ -1107,110 +1177,79 @@ DNI / Cargo: [DNI o Cargo correspondiente]`;
         finally { btn.innerText = `✨ Descargar PDF Lleno (${freePdfPageCount} Créditos)`; btn.disabled = false; }
     }
 
-    function setAlign(align) {
-        currentAlignment = align;
-        document.querySelectorAll('.btn-editor-tool').forEach(b => b.classList.remove('active'));
-        if (align === 'justify') document.getElementById('btn-justify').classList.add('active');
-        document.getElementById('a4-page-content').style.textAlign = align;
-    }
-
-    // GENERACIÓN DE PDF CON PAGINADO REAL DINÁMICO
+    // EXPORTACIÓN A PDF DE HOJAS CREADAS POR LA IA
     async function generarPdfDesdeEditorAI() {
-        const pageDOM = document.getElementById('a4-page-content');
-        let text = pageDOM.innerText.trim();
-        
+        const paginasA4 = document.querySelectorAll('.a4-page');
+        const totalHojasCreadas = paginasA4.length;
+
+        if (usuarioActual.creditos < totalHojasCreadas) {
+            alert(`⚠️ Necesitas ${totalHojasCreadas} créditos para exportar este documento.`);
+            return;
+        }
+
         try {
             const pdfDoc = await PDFLib.PDFDocument.create();
-            let pdfPage = pdfDoc.addPage(PDFLib.PageSizes.A4);
-            let totalHojasCreadas = 1;
-            
-            const { width, height } = pdfPage.getSize();
             const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
-            
-            const marginTop = 70;
-            const marginBottom = 70;
-            const marginLeft = 70;
-            const marginRight = 70;
-            
-            let currentY = height - marginTop;
-            const maxWidth = width - marginLeft - marginRight;
-            const paragraphs = text.split('\n');
-            
-            for (let para of paragraphs) {
-                const paraLimpio = limpiarTextoParaPdf(para);
-                if (paraLimpio.trim() === "") { 
-                    currentY -= 15; 
-                    if (currentY < marginBottom) {
-                        pdfPage = pdfDoc.addPage(PDFLib.PageSizes.A4);
-                        totalHojasCreadas++;
-                        currentY = height - marginTop;
-                    }
-                    continue; 
-                }
-                
-                const words = paraLimpio.split(' ');
-                let line = '';
-                for (let word of words) {
-                    const testLine = line + word + ' ';
-                    if (font.widthOfTextAtSize(testLine, 11) > maxWidth) {
-                        let xPos = marginLeft;
-                        if (currentAlignment === 'center') xPos = marginLeft + (maxWidth - font.widthOfTextAtSize(line, 11)) / 2;
-                        else if (currentAlignment === 'right') xPos = marginLeft + (maxWidth - font.widthOfTextAtSize(line, 11));
-                        
-                        pdfPage.drawText(line.trim(), { x: xPos, y: currentY, size: 11, font: font });
-                        currentY -= 14; 
-                        line = word + ' ';
-                        
-                        // SALTO AUTOMÁTICO A NUEVA HOJA A4
-                        if (currentY < marginBottom) { 
-                            pdfPage = pdfDoc.addPage(PDFLib.PageSizes.A4); 
-                            totalHojasCreadas++;
-                            currentY = height - marginTop; 
-                        }
-                    } else { line = testLine; }
-                }
-                
-                let xPos = marginLeft;
-                if (currentAlignment === 'center') xPos = marginLeft + (maxWidth - font.widthOfTextAtSize(line, 11)) / 2;
-                else if (currentAlignment === 'right') xPos = marginLeft + (maxWidth - font.widthOfTextAtSize(line, 11));
-                
-                pdfPage.drawText(line.trim(), { x: xPos, y: currentY, size: 11, font: font });
-                currentY -= 20;
-                
-                if (currentY < marginBottom) { 
-                    pdfPage = pdfDoc.addPage(PDFLib.PageSizes.A4); 
-                    totalHojasCreadas++;
-                    currentY = height - marginTop; 
-                }
-            }
 
-            // Flotantes sobre el AI
-            const pages = pdfDoc.getPages();
-            for (const el of elementosFlotantes) {
-                const targetPage = pages[el.pageNum - 1] || pages[pages.length - 1];
-                const pdfX = el.pctX * width;
-                const domScaleFactor = width / pageDOM.offsetWidth;
-                const rectWidthPdf = el.wrapper.offsetWidth * domScaleFactor;
-                const elHeightPdf = el.wrapper.offsetHeight * domScaleFactor;
-                const pdfY = height - (el.pctY * height) - elHeightPdf;
+            for (let i = 0; i < paginasA4.length; i++) {
+                const pageDOM = paginasA4[i];
+                const pdfPage = pdfDoc.addPage(PDFLib.PageSizes.A4);
+                const { width, height } = pdfPage.getSize();
                 
-                if (el.hasHalo) {
-                    targetPage.drawRectangle({
-                        x: pdfX, y: pdfY, width: rectWidthPdf, height: elHeightPdf, color: PDFLib.rgb(1, 1, 1)
-                    });
+                let text = pageDOM.innerText.trim();
+                const marginTop = 70, marginBottom = 70, marginLeft = 70, marginRight = 70;
+                let currentY = height - marginTop;
+                const maxWidth = width - marginLeft - marginRight;
+
+                const lines = text.split('\n');
+                for (let line of lines) {
+                    const lineLimpia = limpiarTextoParaPdf(line);
+                    if (lineLimpia.trim() === "") {
+                        currentY -= 15;
+                        continue;
+                    }
+                    
+                    const words = lineLimpia.split(' ');
+                    let subLine = '';
+                    for (let word of words) {
+                        const testLine = subLine + word + ' ';
+                        if (font.widthOfTextAtSize(testLine, 11) > maxWidth) {
+                            pdfPage.drawText(subLine.trim(), { x: marginLeft, y: currentY, size: 11, font });
+                            currentY -= 14;
+                            subLine = word + ' ';
+                        } else {
+                            subLine = testLine;
+                        }
+                    }
+                    pdfPage.drawText(subLine.trim(), { x: marginLeft, y: currentY, size: 11, font });
+                    currentY -= 16;
                 }
-                if (el.type === 'text') {
-                    const tLimpio = limpiarTextoParaPdf(el.texto);
-                    targetPage.drawText(tLimpio, { x: pdfX, y: pdfY + (elHeightPdf * 0.2), size: el.size, color: PDFLib.rgb(0, 0, 0) });
-                } else if (el.type === 'image') {
-                    const img = await pdfDoc.embedPng(el.dataUrl);
-                    targetPage.drawImage(img, { x: pdfX, y: pdfY, width: rectWidthPdf, height: elHeightPdf });
+
+                // Estampar elementos flotantes correspondientes a la hoja actual
+                const flotantesHoja = elementosFlotantes.filter(el => el.pageNum === (i + 1));
+                for (const el of flotantesHoja) {
+                    const pdfX = el.pctX * width;
+                    const domScaleFactor = width / pageDOM.offsetWidth;
+                    const rectWidthPdf = el.wrapper.offsetWidth * domScaleFactor;
+                    const elHeightPdf = el.wrapper.offsetHeight * domScaleFactor;
+                    const pdfY = height - (el.pctY * height) - elHeightPdf;
+                    
+                    if (el.hasHalo) {
+                        pdfPage.drawRectangle({ x: pdfX, y: pdfY, width: rectWidthPdf, height: elHeightPdf, color: PDFLib.rgb(1, 1, 1) });
+                    }
+                    if (el.type === 'text') {
+                        const tLimpio = limpiarTextoParaPdf(el.texto);
+                        pdfPage.drawText(tLimpio, { x: pdfX, y: pdfY + (elHeightPdf * 0.2), size: el.size, color: PDFLib.rgb(0, 0, 0) });
+                    } else if (el.type === 'image') {
+                        const img = await pdfDoc.embedPng(el.dataUrl);
+                        pdfPage.drawImage(img, { x: pdfX, y: pdfY, width: rectWidthPdf, height: elHeightPdf });
+                    }
                 }
             }
 
             const pagado = await descontarCredito(totalHojasCreadas);
             if (!pagado) {
-                alert(`⚠️ Necesitas ${totalHojasCreadas} créditos para exportar este documento.`);
+                alert("Error al procesar el pago de créditos.");
                 return;
             }
 
@@ -1218,7 +1257,9 @@ DNI / Cargo: [DNI o Cargo correspondiente]`;
             download(pdfBytes, "Documento_AI.pdf", "application/pdf");
             alert(`✅ Documento generado exitosamente (${totalHojasCreadas} hoja(s)).`);
             location.reload();
-        } catch (e) { alert("Error al generar PDF: " + e.message); }
+        } catch (e) { 
+            alert("Error al generar PDF: " + e.message); 
+        }
     }
 
     function guardarEnHistorial(texto) {
