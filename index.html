@@ -314,7 +314,7 @@
             <div style="width:35px;"></div>
         </div>
         <div style="flex:1; display:flex; flex-direction:column; padding:20px; gap:15px; justify-content:center; align-items: center;">
-            <p style="text-align:center; color:#ccc; font-size: 14px;">Escribe lo que deseas o adjunta un archivo (Word, Excel, JPG, PDF). Si no escribes nada, se transcribirá el adjunto al formato elegido.</p>
+            <p style="text-align:center; color:#ccc; font-size: 14px;">Escribe lo que deseas para tu <span id="ai-prompt-type" style="font-weight:bold; color:#f1c40f;">documento</span> o adjunta un archivo. Si no escribes nada, se procesará el adjunto.</p>
             
             <!-- BOTÓN ADJUNTAR MODELO -->
             <button class="btn-adjuntar-modelo" onclick="document.getElementById('input-modelo-adjunto').click()">
@@ -327,7 +327,7 @@
             
             <div style="display:flex; justify-content:center; align-items:center; gap:15px; margin-top: 10px; height: 60px;">
                 <button id="btn-voice-prompt" onclick="iniciarVozPrompt()" style="background:#3498db; color:white; border:none; width:60px; height:60px; border-radius:50%; font-size:24px; box-shadow:0 4px 10px rgba(0,0,0,0.5); cursor:pointer;">🎤</button>
-                <button id="btn-send-prompt" onclick="enviarPromptAI()" style="background:#2ecc71; color:black; font-weight:bold; border:none; padding:15px 30px; border-radius:25px; font-size:18px; display:none; cursor:pointer; box-shadow:0 4px 10px rgba(0,0,0,0.5);">Generar ✨</button>
+                <button id="btn-send-prompt" onclick="enviarPromptAI()" style="background:#2ecc71; color:black; font-weight:bold; border:none; padding:15px 30px; border-radius:25px; font-size:18px; display:flex; cursor:pointer; box-shadow:0 4px 10px rgba(0,0,0,0.5);">Generar ✨</button>
             </div>
             <div id="ai-prompt-loading" class="loading-spinner"></div>
         </div>
@@ -668,11 +668,19 @@
         currentAIType = tipo;
         modeloAdjuntoFile = null;
         textoExtraidoAdjunto = "";
-        document.getElementById('label-modelo-adjunto').style.display = 'none';
-        document.getElementById('label-modelo-adjunto').innerText = '';
+        
+        const lblAdjunto = document.getElementById('label-modelo-adjunto');
+        if (lblAdjunto) {
+            lblAdjunto.style.display = 'none';
+            lblAdjunto.innerText = '';
+        }
+
+        const elemType = document.getElementById('ai-prompt-type');
+        if (elemType) elemType.innerText = tipo.toLowerCase();
+
         document.getElementById('ai-prompt-title').innerText = 'Redactar ' + tipo;
-        document.getElementById('ai-prompt-type').innerText = tipo.toLowerCase();
         document.getElementById('ai-prompt-input').value = '';
+        
         actualizarBotonesPrompt();
         showScreen('screen-ai-prompt');
     }
@@ -713,7 +721,7 @@
             } else if (file.type.startsWith('text/')) {
                 textoExtraidoAdjunto = await file.text();
             }
-            lbl.innerText = `✅ Adjunto leídos e integrado: ${file.name}`;
+            lbl.innerText = `✅ Adjunto leído e integrado: ${file.name}`;
         } catch (err) {
             lbl.innerText = `📎 Modelo adjuntado: ${file.name}`;
         }
@@ -722,12 +730,15 @@
     
     function actualizarBotonesPrompt() {
         const val = document.getElementById('ai-prompt-input').value.trim();
+        const btnVoice = document.getElementById('btn-voice-prompt');
+        const btnSend = document.getElementById('btn-send-prompt');
+
         if (val || modeloAdjuntoFile) {
-            document.getElementById('btn-voice-prompt').style.display = 'none';
-            document.getElementById('btn-send-prompt').style.display = 'flex';
+            if (btnVoice) btnVoice.style.display = 'none';
+            if (btnSend) btnSend.style.display = 'flex';
         } else {
-            document.getElementById('btn-voice-prompt').style.display = 'flex';
-            document.getElementById('btn-send-prompt').style.display = 'none';
+            if (btnVoice) btnVoice.style.display = 'flex';
+            if (btnSend) btnSend.style.display = 'flex'; // Garantizar visibilidad constante del botón
         }
     }
     
@@ -753,8 +764,9 @@
         const input = document.getElementById('ai-prompt-input').value.trim();
         
         document.getElementById('ai-prompt-loading').style.display = 'block';
-        document.getElementById('btn-send-prompt').disabled = true;
-        document.getElementById('btn-send-prompt').innerText = 'Generando...';
+        const btnSend = document.getElementById('btn-send-prompt');
+        btnSend.disabled = true;
+        btnSend.innerText = 'Generando...';
         
         try {
             let prompt = "";
@@ -799,33 +811,24 @@
             showScreen('screen-ai-editor');
         } finally {
             document.getElementById('ai-prompt-loading').style.display = 'none';
-            document.getElementById('btn-send-prompt').disabled = false;
-            document.getElementById('btn-send-prompt').innerText = 'Generando ✨';
+            btnSend.disabled = false;
+            btnSend.innerText = 'Generar ✨';
         }
     }
 
     function obtenerPlantillaFallback(tipo, promptUsuario) {
+        const fechaActual = new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+        
         if (tipo === "Solicitud") {
-            return `"AÑO DEL FORTALECIMIENTO DE LA SOBERANÍA NACIONAL"
-
-Doctora.
-BETSSY B. CHAVEZ CHINO.
-Ministra de Trabajo y Promoción del Empleo
-
-Excelentísima señora Ministra:
-
-                                          Asunto: Solicita condonación de deuda.
-
-Que, suscribe ______________________________________ con DNI ______________, me dirijo a Ud. para solicitar...
-
-Ante esta situación, acudo a vuestro despacho para SOLICITAR LA CONDONACIÓN.
-
-Atentamente
-
-                                      -----------------------------------
-                                                    FIRMA`;
+            return `SOLICITUD FORMAL\n\nLima, ${fechaActual}\n\nAL DESPACHO CORRESPONDIENTE:\n\nAsunto: ${promptUsuario.substring(0, 50) || 'Solicitud de trámite'}\n\nPor medio de la presente, me dirijo a usted con el debido respeto para solicitar...\n\nSin otro particular, quedo de usted.\n\nAtentamente,\n\n----------------------------------------\nFIRMA`;
         }
-        return `DOCUMENTO GENERADO - ${tipo.toUpperCase()}\n\nContenido extraído / Instrucción:\n${promptUsuario}\n\n----------------------------------------\nFIRMA`;
+        if (tipo === "Carta") {
+            return `CARTA FORMAL\n\nLima, ${fechaActual}\n\nEstimado(a) Señor(a):\n\nMediante la presente carta, me pongo en contacto para tratar los asuntos indicados:\n${promptUsuario}\n\nAgradeciendo de antemano su atención a la presente.\n\nAtentamente,\n\n----------------------------------------\nFIRMA`;
+        }
+        if (tipo === "Contrato") {
+            return `CONTRATO DE PRESTACIÓN DE SERVICIOS / ACUERDO\n\nConste por el presente documento el acuerdo celebrado entre las partes:\n\n1. ANTECEDENTES Y DETALLES:\n${promptUsuario}\n\n2. ACUERDOS:\nAmbas partes expresan su total conformidad con lo estipulado.\n\nFirmado el ${fechaActual}.\n\n----------------------------------------\nFIRMA`;
+        }
+        return `DOCUMENTO GENERADO - ${tipo.toUpperCase()}\n\nContenido / Instrucciones:\n${promptUsuario}\n\n----------------------------------------\nFIRMA`;
     }
 
     function extraerNombreDePrompt(prompt) {
