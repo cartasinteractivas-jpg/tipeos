@@ -14,6 +14,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <!-- Mammoth.js para extraer texto de Word (.docx) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
+    <!-- SheetJS para extraer texto de Excel (.xlsx) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <!-- Download.js para descargar el archivo -->
     <script src="https://unpkg.com/downloadjs@1.4.7"></script>
 
@@ -61,11 +63,10 @@
         .grid-cards .card { flex-direction: column; text-align: center; padding: 12px; gap: 5px; }
 
         /* --- CONTROLES DE ZOOM Y MOVIMIENTO TÁCTIL --- */
-        .zoom-toolbar { display: flex; align-items: center; gap: 8px; background: #222; padding: 4px 8px; border-radius: 6px; border: 1px solid #444; }
-        .zoom-btn { background: #333; color: white; border: 1px solid #555; width: 28px; height: 28px; border-radius: 4px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; }
-        .zoom-label { font-size: 12px; color: #f1c40f; font-weight: bold; min-width: 40px; text-align: center; }
+        .zoom-toolbar { display: flex; align-items: center; gap: 6px; background: #222; padding: 3px 6px; border-radius: 6px; border: 1px solid #444; }
+        .zoom-btn { background: #333; color: white; border: 1px solid #555; width: 26px; height: 26px; border-radius: 4px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 14px; }
+        .zoom-label { font-size: 11px; color: #f1c40f; font-weight: bold; min-width: 38px; text-align: center; }
 
-        /* Ajuste táctil optimizado para desplazamiento y pinch-zoom nativo */
         .canvas-container { 
             width: 100%; 
             height: calc(100vh - 60px); 
@@ -86,53 +87,55 @@
         /* CAPA DE OVERLAY SUPERIOR PARA ELEMENTOS FLOTANTES */
         .overlay-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1000; }
         
-        /* Elementos Flotantes Corregidos para PC y Móvil */
+        /* ELEMENTOS FLOTANTES CORREGIDOS Y PEGAJOSOS */
         .floating-element { 
             position: absolute; 
             z-index: 1001; 
             cursor: move; 
             border: 1px dashed transparent; 
-            border-radius: 4px; 
+            border-radius: 2px; 
             display: inline-flex; 
             align-items: center; 
             justify-content: center; 
             transform-origin: top left;
             box-sizing: border-box;
-            padding: 2px;
+            padding: 0px 2px;
             user-select: none;
             touch-action: none;
             pointer-events: auto !important;
         }
-        .floating-element.selected { border: 2px dashed #3498db !important; }
+        .floating-element.selected { border: 1.5px dashed #3498db !important; }
         .floating-element.locked { border-color: transparent !important; cursor: default; }
         
-        .floating-element.has-halo { background: #ffffff !important; box-shadow: 0 0 0 2px #ffffff; }
-        .floating-text { color: #000; font-family: sans-serif; white-space: nowrap; pointer-events: none; user-select: none; display: block; }
+        /* Fondo blanco (corrector) ceñido exactamente al texto/símbolo */
+        .floating-element.has-halo { background: #ffffff !important; box-shadow: 0 0 0 1px #ffffff; border-radius: 2px; }
+        .floating-text { color: #000; font-family: sans-serif; white-space: nowrap; pointer-events: none; user-select: none; display: block; line-height: 1; }
         
-        /* BOTONES DE EDICIÓN FLOTANTE OPTIMIZADOS PARA CUALQUIER NIVEL DE ZOOM */
+        /* BOTONES DE EDICIÓN FLOTANTE COMPACTOS Y PEQUEÑOS */
         .btn-delete-float, .btn-bg-float, .btn-lock-float, .resize-handle { 
             position: absolute; 
             background: #fff; 
-            border: 1px solid #ccc; 
+            border: 1px solid #aaa; 
             color: #000; 
             border-radius: 50%; 
-            width: 22px; 
-            height: 22px; 
-            font-size: 11px; 
+            width: 16px; 
+            height: 16px; 
+            font-size: 10px; 
             font-weight: bold; 
             cursor: pointer; 
             display: none; 
             justify-content: center; 
             align-items: center; 
             z-index: 1005; 
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3); 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.4); 
             pointer-events: auto !important;
             transform-origin: center center;
+            line-height: 1;
         }
-        .btn-delete-float { top: -11px; right: -11px; background: #e74c3c; color: white; border: none; }
-        .btn-bg-float { top: -11px; left: -11px; }
-        .btn-lock-float { bottom: -11px; left: -11px; background: #f39c12; color: white; border: none; }
-        .resize-handle { bottom: -11px; right: -11px; background: #3498db; border: 2px solid white; cursor: nwse-resize; }
+        .btn-delete-float { top: -8px; right: -8px; background: #e74c3c; color: white; border: none; }
+        .btn-bg-float { top: -8px; left: -8px; font-size: 8px; }
+        .btn-lock-float { bottom: -8px; left: -8px; background: #f39c12; color: white; border: none; font-size: 8px; }
+        .resize-handle { bottom: -8px; right: -8px; background: #3498db; border: 1px solid white; cursor: nwse-resize; }
         
         .floating-element:hover .btn-delete-float, .floating-element:hover .resize-handle, .floating-element:hover .btn-bg-float, .floating-element:hover .btn-lock-float,
         .floating-element.selected .btn-delete-float, .floating-element.selected .resize-handle, .floating-element.selected .btn-bg-float, .floating-element.selected .btn-lock-float { display: flex !important; }
@@ -163,7 +166,6 @@
         .btn-style-tool { background: #1a252f; color: #f1c40f; border: 1px solid #34495e; padding: 6px 10px; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: bold; }
         .btn-style-tool:hover { background: #f1c40f; color: #000; }
         
-        /* ÁREA DE SCROLL Y ESCALADO MÓVIL A4 CON RESPUESTA TÁCTIL Y DESPLAZAMIENTO LIBRE */
         .editor-canvas-container { 
             flex: 1; 
             overflow-y: auto; 
@@ -186,7 +188,6 @@
             transition: transform 0.1s ease;
         }
         
-        /* HOJAS A4 SEPARADAS E INDEPENDIENTES DE 210mm x 297mm */
         .a4-page { 
             background: white; 
             width: 210mm; 
@@ -207,11 +208,10 @@
             z-index: 1;
         }
 
-        /* ESTILOS ESPECÍFICOS CURRÍCULUM CON FOTO DE PERFIL */
+        /* ESTILOS ESPECÍFICOS CURRÍCULUM */
         .cv-container { font-family: Arial, sans-serif; font-size: 10pt; color: #333; line-height: 1.4; }
         .cv-header-grid { display: grid; grid-template-columns: 110px 1fr 180px; gap: 15px; align-items: center; border-bottom: 2px solid #2c3e50; padding-bottom: 15px; margin-bottom: 15px; }
         
-        /* Recuadro para Foto */
         .cv-photo-box { width: 100px; height: 120px; border: 2px dashed #95a5a6; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #f8f9fa; cursor: pointer; text-align: center; color: #7f8c8d; font-size: 10px; overflow: hidden; position: relative; }
         .cv-photo-box img { width: 100%; height: 100%; object-fit: cover; }
         .cv-photo-box:hover { border-color: #3498db; background: #ebf5fb; }
@@ -221,7 +221,7 @@
         .cv-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; }
         .cv-section-title { font-size: 11pt; font-weight: bold; color: #2c3e50; text-transform: uppercase; border-bottom: 1px solid #ccc; margin-top: 12px; margin-bottom: 8px; padding-bottom: 3px; }
 
-        /* BOTÓN FLOTANTE GLOBAL - SIEMPRE VISIBLE EN ZONTAS DE EDICIÓN */
+        /* BOTÓN FLOTANTE GLOBAL - SIEMPRE VISIBLE FIJO EN PANTALLA */
         #btn-float-add-global { 
             position: fixed !important; 
             bottom: 25px !important; 
@@ -266,7 +266,6 @@
             margin-bottom: 5px;
         }
 
-        /* LOADING INDICATOR */
         .loading-spinner { width: 25px; height: 25px; border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: #f1c40f; animation: spin 1s ease-in-out infinite; display: none; }
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
@@ -300,7 +299,7 @@
             </div>
         </div>
 
-        <h2 class="section-title">📚 Relleno Manual PDF</h2>
+        <h2 class="section-title">📚 Relleno Manual PDF / Doc / Imagen</h2>
         <div id="lista-plantillas" class="lista-plantillas"></div>
 
         <h2 class="section-title">✨ Generar con Inteligencia Artificial</h2>
@@ -315,16 +314,16 @@
             <div style="width:35px;"></div>
         </div>
         <div style="flex:1; display:flex; flex-direction:column; padding:20px; gap:15px; justify-content:center; align-items: center;">
-            <p style="text-align:center; color:#ccc; font-size: 15px;">Escribe los detalles clave o adjunta un modelo para tu <b id="ai-prompt-type" style="color:#f1c40f;"></b></p>
+            <p style="text-align:center; color:#ccc; font-size: 14px;">Escribe lo que deseas o adjunta un archivo (Word, Excel, JPG, PDF). Si no escribes nada, se transcribirá el adjunto al formato elegido.</p>
             
             <!-- BOTÓN ADJUNTAR MODELO -->
             <button class="btn-adjuntar-modelo" onclick="document.getElementById('input-modelo-adjunto').click()">
-                📎 Adjuntar Modelo (PDF, Word, Imagen)
+                📎 Adjuntar Archivo (PDF, Word, Excel, Imagen)
             </button>
-            <input type="file" id="input-modelo-adjunto" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" style="display:none;" onchange="procesarModeloAdjunto(event)">
+            <input type="file" id="input-modelo-adjunto" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" style="display:none;" onchange="procesarModeloAdjunto(event)">
             <span id="label-modelo-adjunto" style="font-size:12px; color:#2ecc71; font-weight:bold; display:none;"></span>
 
-            <textarea id="ai-prompt-input" rows="8" placeholder="Ej: Haz una carta formal dirigida a..." style="width:100%; max-width: 400px; border-radius:10px; padding:15px; background:#1e1e1e; color:white; border:1px solid #444; font-size:16px; outline:none; resize:none;"></textarea>
+            <textarea id="ai-prompt-input" rows="7" placeholder="Ej: Haz un contrato utilizando los datos del recibo adjunto..." style="width:100%; max-width: 400px; border-radius:10px; padding:15px; background:#1e1e1e; color:white; border:1px solid #444; font-size:15px; outline:none; resize:none;"></textarea>
             
             <div style="display:flex; justify-content:center; align-items:center; gap:15px; margin-top: 10px; height: 60px;">
                 <button id="btn-voice-prompt" onclick="iniciarVozPrompt()" style="background:#3498db; color:white; border:none; width:60px; height:60px; border-radius:50%; font-size:24px; box-shadow:0 4px 10px rgba(0,0,0,0.5); cursor:pointer;">🎤</button>
@@ -334,29 +333,29 @@
         </div>
     </div>
 
-    <!-- PANTALLA: RELLENADO LIBRE -->
+    <!-- PANTALLA: RELLENADO LIBRE MULTIFORMATO -->
     <div id="screen-rellenado-libre" class="screen" style="padding:0; background:#121212; flex-direction:column; height:100vh; position:relative;">
         <div style="background: #1a1a1a; padding: 12px 15px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #333; width: 100%; z-index: 100;">
             <button onclick="location.reload()" style="background:#333; border:none; color:white; width:35px; height:35px; border-radius:8px; font-size:18px; cursor:pointer;">←</button>
             <div style="flex:1; color:#f1c40f; font-weight:bold; font-size:14px;">Editor de PDF</div>
             
-            <!-- CONTROL DE ZOOM EN PDF LIBRE -->
             <div class="zoom-toolbar">
                 <button class="zoom-btn" onclick="cambiarZoomPdfLibre(-0.15)">-</button>
                 <span id="zoom-label-free" class="zoom-label">100%</span>
                 <button class="zoom-btn" onclick="cambiarZoomPdfLibre(0.15)">+</button>
             </div>
 
-            <button onclick="abrirRellenadoLibre()" style="background:#34495e; border:none; color:white; padding:8px 10px; border-radius:6px; font-size:11px; font-weight:bold; cursor:pointer;">🔄 Cargar PDF</button>
-            <button id="btn-generar-free" onclick="generarPdfLibre()" style="background:#2ecc71; border:none; color:black; padding:8px 12px; border-radius:6px; font-size:11px; font-weight:bold; display:none; cursor:pointer;">✅ Descargar</button>
+            <button onclick="abrirRellenadoLibre()" style="background:#34495e; border:none; color:white; padding:8px 10px; border-radius:6px; font-size:11px; font-weight:bold; cursor:pointer;">🔄 Cargar</button>
+            <button id="btn-generar-free" onclick="generarPdfLibre()" style="background:#2ecc71; border:none; color:black; padding:8px 12px; border-radius:6px; font-size:11px; font-weight:bold; display:none; cursor:pointer;">✅ Descargar PDF</button>
         </div>
 
         <div id="upload-placeholder" style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex:1; padding: 20px;">
             <div style="background: #1e1e1e; border: 2px dashed #f1c40f; padding: 40px 20px; border-radius: 15px; width: 100%; max-width: 280px; text-align: center;">
                 <div style="font-size: 40px; margin-bottom: 10px;">📂</div>
-                <h3 style="color: #fff; margin-bottom: 15px; font-size: 16px;">Selecciona un PDF</h3>
+                <h3 style="color: #fff; margin-bottom: 5px; font-size: 16px;">Sube tu archivo</h3>
+                <p style="color:#aaa; font-size:12px; margin-bottom:15px;">Acepta PDF, Word, Excel, JPG o PNG</p>
                 <label for="free-pdf-upload" style="background: #3498db; color: white; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; display: block;">Elegir Archivo</label>
-                <input type="file" id="free-pdf-upload" accept="application/pdf" style="display: none;">
+                <input type="file" id="free-pdf-upload" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" style="display: none;">
             </div>
         </div>
 
@@ -369,19 +368,16 @@
     <div class="editor-toolbar">
         <button onclick="location.reload()" style="background:#333; border:none; color:white; width:35px; height:35px; border-radius:8px; font-size:18px; cursor:pointer;">←</button>
         
-        <!-- ESTILOS DE TEXTO SELECCIONADO -->
         <button class="btn-style-tool" onclick="aplicarFormatoSeleccion('bold')" title="Negrita"><b>B</b></button>
         <button class="btn-style-tool" onclick="aplicarFormatoSeleccion('italic')" title="Cursiva"><i>I</i></button>
         <button class="btn-style-tool" onclick="aplicarFormatoSeleccion('underline')" title="Subrayado"><u>U</u></button>
         <div style="width:1px; height:20px; background:#444; margin:0 2px;"></div>
         
-        <!-- ALINEACIÓN DE TEXTO SELECCIONADO -->
         <button class="btn-editor-tool" onclick="aplicarAlineacionSeleccion('justifyLeft')">⬅ Izq</button>
         <button class="btn-editor-tool" onclick="aplicarAlineacionSeleccion('justifyCenter')">⏺ Cen</button>
         <button class="btn-editor-tool" onclick="aplicarAlineacionSeleccion('justifyRight')">➡ Der</button>
         <button class="btn-editor-tool" onclick="aplicarAlineacionSeleccion('justifyFull')">≡ Jus</button>
         
-        <!-- ZOOM EN GENERACIÓN DE DOCUMENTOS AI -->
         <div class="zoom-toolbar" style="margin-left:5px;">
             <button class="zoom-btn" onclick="cambiarZoomAI(-0.15)">-</button>
             <span id="zoom-label-ai" class="zoom-label">100%</span>
@@ -390,12 +386,10 @@
 
         <button class="btn-editor-tool" style="background:#2ecc71; color:black; font-weight:bold; margin-left:auto;" onclick="generarPdfDesdeEditorAI()">✅ Descargar PDF</button>
     </div>
-    <div class="editor-canvas-container" id="ai-editor-container">
-        <!-- Paginado A4 dinámico -->
-    </div>
+    <div class="editor-canvas-container" id="ai-editor-container"></div>
 </div>
 
-<!-- BOTÓN FLOTANTE GLOBAL SIEMPRE VISIBLE -->
+<!-- BOTÓN FLOTANTE GLOBAL - FIJO E INMUNE AL ZOOM -->
 <button id="btn-float-add-global" onclick="toggleMenuMas()">✚</button>
 <div id="menu-flotante-opciones-global">
     <button onclick="abrirModalTextoDesdeMas()">📝 Texto</button>
@@ -405,11 +399,11 @@
     <input type="file" id="input-subir-imagen-global" accept="image/*" style="display: none;" onchange="procesarImagenSubida(event)">
 </div>
 
-<!-- MODAL CONFIRMACIÓN CONTINUAR EDITANDO -->
+<!-- MODAL CONFIRMACIÓN -->
 <div id="modal-continuar" class="modal-overlay">
     <div class="modal-content" style="text-align: center;">
-        <h3>🎉 ¡PDF Generado con Éxito!</h3>
-        <p style="color:#ccc; font-size:14px; margin: 10px 0;">Tu documento ha sido descargado correctamente.</p>
+        <h3>🎉 ¡PDF Descargado con Éxito!</h3>
+        <p style="color:#ccc; font-size:14px; margin: 10px 0;">Tu documento ha sido descargado en formato PDF.</p>
         <div class="modal-actions" style="flex-direction: column;">
             <button type="button" onclick="cerrarModalContinuar(true)" style="background: #3498db; color: white; width:100%;">✏️ Continuar editando</button>
             <button type="button" onclick="cerrarModalContinuar(false)" style="background: #e74c3c; color: white; width:100%;">🏠 Ir al inicio</button>
@@ -490,7 +484,6 @@
     let currentColor = '#1a1a1a';
     let modeloAdjuntoFile = null;
     let textoExtraidoAdjunto = "";
-    
     let currentAIType = '';
     
     window.pdfGlobalScale = 1;
@@ -504,20 +497,18 @@
 
     document.addEventListener('DOMContentLoaded', async () => {
         renderizarPlantillas(); 
-        
         const codigoGuardado = localStorage.getItem('docufacil_codigo');
         if (codigoGuardado) {
             document.getElementById('input-codigo').value = codigoGuardado;
             await activarCodigo(codigoGuardado, true); 
         }
-        
         document.getElementById('ai-prompt-input').addEventListener('input', actualizarBotonesPrompt);
         window.addEventListener('resize', ajustarEscalaEditorA4);
     });
 
     function actualizarEscalaBotonesFlotantes() {
         const currentZoom = document.getElementById('screen-ai-editor').classList.contains('active') ? window.aiGlobalScale : window.pdfGlobalScale;
-        const btnScale = 1 / Math.max(0.4, currentZoom);
+        const btnScale = Math.min(1.2, Math.max(0.5, 1 / currentZoom));
         
         document.querySelectorAll('.btn-delete-float, .btn-bg-float, .btn-lock-float, .resize-handle').forEach(btn => {
             btn.style.transform = `scale(${btnScale})`;
@@ -547,7 +538,7 @@
         if (!wrappers.length) return;
         
         const containerWidth = document.getElementById('ai-editor-container').offsetWidth - 20;
-        const pageA4WidthPx = 794; // ~210mm en px
+        const pageA4WidthPx = 794; 
         
         let autoScale = 1;
         if (containerWidth < pageA4WidthPx) {
@@ -637,8 +628,8 @@
            <div class="card ${claseBloqueado}" onclick="abrirRellenadoLibre()" style="border-color: #e67e22;">
                 <div class="card-icon">✍️</div>
                 <div class="card-info">
-                    <h3 style="color: #e67e22;">Sube tu PDF y complétalo</h3>
-                    <p>Agrega texto, firmas e imágenes sobre cualquier documento libremente.</p>
+                    <h3 style="color: #e67e22;">Cargar PDF, Word, Excel o Imagen</h3>
+                    <p>Completa, edita y estampa firmas o textos. Todo se convierte y descarga en PDF.</p>
                 </div>
                 ${candadoHtml}
             </div>
@@ -668,8 +659,6 @@
         `;
     }
 
-    // --- MENÚ INTELIGENCIA ARTIFICIAL Y LECTURA DE ARCHIVOS ADJUNTOS --- //
-    
     function manejarClickMenuAI(tipo) {
         if (!usuarioActual || usuarioActual.creditos <= 0) {
             alert("🔒 Necesitas activar un código con créditos.");
@@ -695,7 +684,7 @@
         textoExtraidoAdjunto = "";
         
         const lbl = document.getElementById('label-modelo-adjunto');
-        lbl.innerText = `⏳ Leyendo archivo: ${file.name}...`;
+        lbl.innerText = `⏳ Procesando: ${file.name}...`;
         lbl.style.display = 'block';
 
         try {
@@ -713,15 +702,21 @@
                 const arrayBuffer = await file.arrayBuffer();
                 const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
                 textoExtraidoAdjunto = result.value;
+            } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+                const arrayBuffer = await file.arrayBuffer();
+                const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                let excelText = "";
+                workbook.SheetNames.forEach(sheetName => {
+                    excelText += XLSX.utils.sheet_to_txt(workbook.Sheets[sheetName]) + "\n";
+                });
+                textoExtraidoAdjunto = excelText;
             } else if (file.type.startsWith('text/')) {
                 textoExtraidoAdjunto = await file.text();
             }
             lbl.innerText = `✅ Adjunto leídos e integrado: ${file.name}`;
         } catch (err) {
-            console.error("Error leyendo documento:", err);
             lbl.innerText = `📎 Modelo adjuntado: ${file.name}`;
         }
-
         actualizarBotonesPrompt();
     }
     
@@ -766,19 +761,10 @@
             const reglaFirma = `\n\n----------------------------------------\nFIRMA`;
             const contextoAdjunto = textoExtraidoAdjunto ? `\n\nINFORMACIÓN EXTRAÍDA DEL ADJUNTO:\n"""${textoExtraidoAdjunto}"""\n` : "";
 
-            if (currentAIType === "Solicitud") {
-                prompt = `Redacta una Solicitud oficial formal con esta estructura:
-1. Lema del año en mayúsculas y entre comillas al inicio centrado.
-2. Destinatario con Cargo.
-3. Asunto / Sumilla.
-4. Cuerpo estructurado formalmente.
-5. Cierre y Atentamente.
-6. Línea para FIRMA abajo al centro.
-Datos del usuario: "${input}". ${contextoAdjunto}`;
-            } else if (currentAIType === "Currículum") {
-                prompt = `Extrae o crea un Currículum Vitae formal adaptando la información. Datos: "${input}". ${contextoAdjunto}`;
+            if (!input && textoExtraidoAdjunto) {
+                prompt = `Toma la siguiente información del archivo adjunto y reestructúrala o transcríbela tal cual respetando el formato de un(a) ${currentAIType}:\n${contextoAdjunto} ${reglaFirma}`;
             } else {
-                prompt = `Redacta un(a) ${currentAIType} formal respetando el formato requerido. Indicaciones del usuario: "${input}". ${contextoAdjunto} ${reglaFirma}`;
+                prompt = `Redacta un(a) ${currentAIType} formal tomando como base las siguientes instrucciones: "${input}". ${contextoAdjunto} ${reglaFirma}`;
             }
 
             const { data, error } = await supabase.functions.invoke('generar-documento', {
@@ -787,14 +773,13 @@ Datos del usuario: "${input}". ${contextoAdjunto}`;
             
             let contenidoAI = "";
             if (error || !data || !data.response) {
-                contenidoAI = obtenerPlantillaFallback(currentAIType, input + " " + textoExtraidoAdjunto);
+                contenidoAI = obtenerPlantillaFallback(currentAIType, (input || "Transcripción de adjunto") + "\n" + textoExtraidoAdjunto);
             } else {
                 contenidoAI = data.response.document_content || data.response;
             }
 
             prepararEditorPorTipo(currentAIType, contenidoAI, input + " " + textoExtraidoAdjunto);
 
-            // Si se adjuntó una imagen modelo, se incrusta en la previsualización editable
             if (modeloAdjuntoFile && modeloAdjuntoFile.type.startsWith('image/')) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
@@ -826,27 +811,22 @@ Datos del usuario: "${input}". ${contextoAdjunto}`;
 Doctora.
 BETSSY B. CHAVEZ CHINO.
 Ministra de Trabajo y Promoción del Empleo
-bchavez@trabajo.gob.pe
 
 Excelentísima señora Ministra:
 
-                                          Asunto: Solicita condonación de la Deuda Covid-19.
+                                          Asunto: Solicita condonación de deuda.
 
-Que, suscribe ______________________________________ con DNI ______________ trabajador(a) de la empresa ______________________________________, con RUC Nº ____________________, me dirijo a Ud. Para manifestarle lo siguiente:
+Que, suscribe ______________________________________ con DNI ______________, me dirijo a Ud. para solicitar...
 
-En el año 2020 se dictaron una serie de medidas para disminuir el riesgo de transmisión de la Covid-19, como consecuencia de ello me vi afectado en el grupo vulnerable...
-
-Ante esta situación, acudo a vuestro despacho para SOLICITAR LA CONDONACIÓN DE LA DEUDA.
+Ante esta situación, acudo a vuestro despacho para SOLICITAR LA CONDONACIÓN.
 
 Atentamente
 
                                       -----------------------------------
                                                     FIRMA`;
         }
-        return `DOCUMENTO GENERADO - ${tipo.toUpperCase()}\n\nDetalles e Información extraída:\n${promptUsuario}\n\n----------------------------------------\nFIRMA`;
+        return `DOCUMENTO GENERADO - ${tipo.toUpperCase()}\n\nContenido extraído / Instrucción:\n${promptUsuario}\n\n----------------------------------------\nFIRMA`;
     }
-    
-    // --- EDICIÓN Y CREACIÓN DINÁMICA DE PÁGINAS A4 --- //
 
     function extraerNombreDePrompt(prompt) {
         if (!prompt) return "NOMBRES Y APELLIDOS";
@@ -868,7 +848,6 @@ Atentamente
         page.contentEditable = 'true';
         page.dataset.pageNum = num;
 
-        // Capa superior transparente para alojar firmas e imágenes aisladas
         const overlay = document.createElement('div');
         overlay.className = 'overlay-layer';
         overlay.dataset.overlayNum = num;
@@ -876,7 +855,6 @@ Atentamente
         wrapper.appendChild(page);
         wrapper.appendChild(overlay);
 
-        // Control de Salto de Hoja
         page.addEventListener('input', () => verificarDesbordamientoPagina(page));
         return { wrapper, page, overlay };
     }
@@ -974,7 +952,7 @@ Atentamente
     function aplicarFormatoSeleccion(comando) { document.execCommand(comando, false, null); }
     function aplicarAlineacionSeleccion(alineacion) { document.execCommand(alineacion, false, null); }
 
-    // --- RELLENADO DE PDF LIBRE --- //
+    /* --- RELLENADO Y CONVERSIÓN MULTIFORMATO A PDF --- */
 
     function abrirRellenadoLibre() {
         if (!usuarioActual || usuarioActual.creditos <= 0) {
@@ -997,11 +975,59 @@ Atentamente
 
     document.getElementById('free-pdf-upload').addEventListener('change', async function(e) {
         if (!e.target.files.length) return;
-        cargarPdfEnEditor(e.target.files[0]);
+        const file = e.target.files[0];
+        
+        if (file.type === 'application/pdf') {
+            cargarPdfEnEditor(file);
+        } else if (file.type.startsWith('image/')) {
+            const pdfDoc = await PDFLib.PDFDocument.create();
+            const imageBytes = await file.arrayBuffer();
+            const img = file.type.includes('png') ? await pdfDoc.embedPng(imageBytes) : await pdfDoc.embedJpg(imageBytes);
+            const page = pdfDoc.addPage([img.width, img.height]);
+            page.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
+            const pdfBytes = await pdfDoc.save();
+            cargarPdfEnEditor(new Blob([pdfBytes], { type: 'application/pdf' }));
+        } else {
+            let textoExtraido = "";
+            if (file.name.endsWith('.docx') || file.type.includes('wordprocessingml')) {
+                const arrayBuffer = await file.arrayBuffer();
+                const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
+                textoExtraido = result.value;
+            } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+                const arrayBuffer = await file.arrayBuffer();
+                const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                workbook.SheetNames.forEach(sheetName => {
+                    textoExtraido += XLSX.utils.sheet_to_txt(workbook.Sheets[sheetName]) + "\n";
+                });
+            } else {
+                textoExtraido = await file.text();
+            }
+
+            const pdfDoc = await PDFLib.PDFDocument.create();
+            const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+            let page = pdfDoc.addPage(PDFLib.PageSizes.A4);
+            const { width, height } = page.getSize();
+            let y = height - 50;
+            const lines = textoExtraido.split('\n');
+
+            for (let line of lines) {
+                if (y < 50) {
+                    page = pdfDoc.addPage(PDFLib.PageSizes.A4);
+                    y = height - 50;
+                }
+                const lLimpia = limpiarTextoParaPdf(line);
+                if (lLimpia.trim()) {
+                    page.drawText(lLimpia.substring(0, 90), { x: 50, y, size: 11, font });
+                }
+                y -= 15;
+            }
+            const pdfBytes = await pdfDoc.save();
+            cargarPdfEnEditor(new Blob([pdfBytes], { type: 'application/pdf' }));
+        }
     });
 
     async function cargarPdfEnEditor(fileOrBlob) {
-        const arrayBuffer = await (fileOrBlob instanceof Blob ? fileOrBlob.arrayBuffer() : fileOrBlob.arrayBuffer());
+        const arrayBuffer = await fileOrBlob.arrayBuffer();
         freePdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
         const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
         const pdf = await loadingTask.promise;
@@ -1220,7 +1246,7 @@ Atentamente
         cerrarModalSimbolos();
     }
 
-    /* ---- ELEMENTOS FLOTANTES SOBRE CAPA INDEPENDIENTE ---- */
+    /* ---- ELEMENTOS FLOTANTES Y FONDO COMPACTO ---- */
     function crearElementoFlotante(parent, x, y, pageNum, tipo, contenido, formato = null, customSize = null) {
         const wrapper = document.createElement('div');
         wrapper.className = 'floating-element';
@@ -1267,7 +1293,7 @@ Atentamente
         
         const btnBg = document.createElement('div');
         btnBg.innerHTML = '⬜'; btnBg.className = 'btn-bg-float';
-        btnBg.title = "Fondo blanco (Corrector)";
+        btnBg.title = "Fondo blanco";
         btnBg.onclick = (e) => { 
             e.stopPropagation(); 
             elData.hasHalo = !elData.hasHalo; 
@@ -1277,7 +1303,7 @@ Atentamente
 
         const btnLock = document.createElement('div');
         btnLock.innerHTML = '📌'; btnLock.className = 'btn-lock-float';
-        btnLock.title = "Anclar elemento";
+        btnLock.title = "Anclar";
         btnLock.onclick = (e) => {
             e.stopPropagation();
             elData.locked = !elData.locked;
@@ -1382,7 +1408,6 @@ Atentamente
         window.addEventListener('touchend', stop);
     }
 
-    // DESCARGAR PDF CON MODAL INTERACTIVO
     function mostrarModalContinuar() {
         document.getElementById('modal-continuar').style.display = 'flex';
     }
@@ -1488,7 +1513,6 @@ Atentamente
                     currentY -= 16;
                 }
 
-                // Estampar elementos flotantes de la capa independiente
                 const flotantesHoja = elementosFlotantes.filter(el => el.pageNum === (i + 1));
                 for (const el of flotantesHoja) {
                     const pdfX = el.pctX * width;
