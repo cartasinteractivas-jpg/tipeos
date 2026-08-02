@@ -5,17 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>DocuFácil - Generador de Documentos</title>
     
-    <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8"></script>
-    <!-- PDF-lib -->
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-    <!-- PDF.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-    <!-- Mammoth.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
-    <!-- SheetJS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <!-- Download.js -->
     <script src="https://unpkg.com/downloadjs@1.4.7"></script>
 
     <style>
@@ -31,26 +25,23 @@
         .screen { padding: 20px; display: none; flex-direction: column; gap: 20px; flex: 1; overflow-y: auto; padding-bottom: 40px; }
         .screen.active { display: flex; }
 
-        /* --- SECCIÓN YAPE Y COMPRA --- */
         .compra-section { background: linear-gradient(135deg, #742384 0%, #4a1554 100%); border-radius: 12px; padding: 20px; text-align: center; border: 1px solid #8e44ad; }
         .yape-logo { height: 40px; margin-bottom: 10px; object-fit: contain; }
         .compra-info { color: #fff; font-size: 14px; margin-bottom: 15px; line-height: 1.5; }
         .precio-tag { background: #00E4C0; color: #000; font-weight: bold; padding: 3px 8px; border-radius: 5px; font-size: 15px; }
         .btn-whatsapp { background: #25D366; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; width: 100%; display: flex; justify-content: center; align-items: center; gap: 8px; text-decoration: none; }
 
-        /* --- SECCIÓN ACTIVAR CÓDIGO --- */
         .activar-section { background: #222; border-radius: 12px; padding: 15px; border: 1px solid #333; }
         .activar-section h3 { color: #ccc; font-size: 15px; margin-bottom: 10px; }
         .input-codigo-wrapper { display: flex; gap: 10px; }
         .input-codigo { flex: 1; padding: 12px; background: #000; color: #f1c40f; border: 2px solid #444; border-radius: 8px; outline: none; font-size: 16px; text-align: center; font-weight: bold; text-transform: uppercase; }
         .btn-activar { background: #f1c40f; color: #000; border: none; padding: 0 20px; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; }
 
-        /* --- TARJETAS DE DOCUMENTOS --- */
         .section-title { color: #fff; font-size: 18px; margin-top: 10px; border-bottom: 2px solid #333; padding-bottom: 8px; }
         .lista-plantillas { display: flex; flex-direction: column; gap: 12px; }
         
         .card { background: #2a2a2a; border: 1px solid #444; border-radius: 10px; padding: 15px; cursor: pointer; display: flex; align-items: center; gap: 15px; position: relative; overflow: hidden; transition: 0.2s; }
-        .card-icon { font-size: 28px; }
+        .card-icon { font-size: 30px; }
         .card-info { flex: 1; }
         .card-info h3 { color: #fff; font-size: 16px; margin-bottom: 4px; }
         .card-info p { color: #aaa; font-size: 12px; line-height: 1.3; }
@@ -59,26 +50,16 @@
         .candado-icon { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); font-size: 24px; z-index: 2; }
         
         .grid-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .grid-cards .card { flex-direction: column; text-align: center; padding: 12px; gap: 6px; }
+        .grid-cards .card { flex-direction: column; text-align: center; padding: 12px; gap: 5px; }
 
-        /* --- CONTROLES DE ZOOM --- */
         .zoom-toolbar { display: flex; align-items: center; gap: 6px; background: #222; padding: 3px 6px; border-radius: 6px; border: 1px solid #444; }
         .zoom-btn { background: #333; color: white; border: 1px solid #555; width: 26px; height: 26px; border-radius: 4px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 14px; }
         .zoom-label { font-size: 11px; color: #f1c40f; font-weight: bold; min-width: 38px; text-align: center; }
 
         .canvas-container { 
-            width: 100%; 
-            height: calc(100vh - 60px); 
-            overflow: auto; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            background: #000; 
-            position: relative; 
-            padding: 10px; 
-            scroll-behavior: smooth;
-            touch-action: pan-x pan-y pinch-zoom !important;
-            -webkit-overflow-scrolling: touch;
+            width: 100%; height: calc(100vh - 60px); overflow: auto; display: flex; flex-direction: column; 
+            align-items: center; background: #000; position: relative; padding: 10px; 
+            scroll-behavior: smooth; touch-action: pan-x pan-y pinch-zoom !important; -webkit-overflow-scrolling: touch;
         }
         .pdf-page-wrapper { position: relative; background: white; box-shadow: 0 4px 15px rgba(0,0,0,0.5); margin-bottom: 20px; transform-origin: top center; transition: transform 0.1s ease; }
         .free-pdf-canvas { display: block; width: 100%; height: auto; }
@@ -86,20 +67,9 @@
         .overlay-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1000; }
         
         .floating-element { 
-            position: absolute; 
-            z-index: 1001; 
-            cursor: move; 
-            border: 1px dashed transparent; 
-            border-radius: 2px; 
-            display: inline-flex; 
-            align-items: center; 
-            justify-content: center; 
-            transform-origin: top left;
-            box-sizing: border-box;
-            padding: 0px 2px;
-            user-select: none;
-            touch-action: none;
-            pointer-events: auto !important;
+            position: absolute; z-index: 1001; cursor: move; border: 1px dashed transparent; border-radius: 2px; 
+            display: inline-flex; align-items: center; justify-content: center; transform-origin: top left;
+            box-sizing: border-box; padding: 0px 2px; user-select: none; touch-action: none; pointer-events: auto !important;
         }
         .floating-element.selected { border: 1.5px dashed #3498db !important; }
         .floating-element.locked { border-color: transparent !important; cursor: default; }
@@ -108,24 +78,10 @@
         .floating-text { color: #000; font-family: sans-serif; white-space: nowrap; pointer-events: none; user-select: none; display: block; line-height: 1; }
         
         .btn-delete-float, .btn-bg-float, .btn-lock-float, .resize-handle { 
-            position: absolute; 
-            background: #fff; 
-            border: 1px solid #aaa; 
-            color: #000; 
-            border-radius: 50%; 
-            width: 16px; 
-            height: 16px; 
-            font-size: 10px; 
-            font-weight: bold; 
-            cursor: pointer; 
-            display: none; 
-            justify-content: center; 
-            align-items: center; 
-            z-index: 1005; 
-            box-shadow: 0 1px 3px rgba(0,0,0,0.4); 
-            pointer-events: auto !important;
-            transform-origin: center center;
-            line-height: 1;
+            position: absolute; background: #fff; border: 1px solid #aaa; color: #000; border-radius: 50%; 
+            width: 16px; height: 16px; font-size: 10px; font-weight: bold; cursor: pointer; display: none; 
+            justify-content: center; align-items: center; z-index: 1005; box-shadow: 0 1px 3px rgba(0,0,0,0.4); 
+            pointer-events: auto !important; transform-origin: center center; line-height: 1;
         }
         .btn-delete-float { top: -8px; right: -8px; background: #e74c3c; color: white; border: none; }
         .btn-bg-float { top: -8px; left: -8px; font-size: 8px; }
@@ -137,7 +93,6 @@
         
         .floating-element.locked .btn-delete-float, .floating-element.locked .btn-bg-float, .floating-element.locked .resize-handle { display: none !important; }
 
-        /* --- MODALES --- */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 99999; justify-content: center; align-items: center; padding: 20px; }
         .modal-content { background: #222; padding: 20px; border-radius: 10px; border: 1px solid #555; width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 15px; }
         .modal-content h3 { color: #f1c40f; text-align: center; margin-bottom: 5px; }
@@ -152,7 +107,6 @@
         .symbol-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
         .btn-symbol { background: #333; color: white; border: 1px solid #555; font-size: 30px; padding: 10px; border-radius: 8px; cursor: pointer; display: flex; justify-content: center; align-items: center; }
 
-        /* --- PANTALLA EDITOR FULL AI --- */
         #screen-ai-editor { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #121212; z-index: 3000; display: none; flex-direction: column; }
         #screen-ai-editor.active { display: flex; }
         .editor-toolbar { background: #2c3e50; padding: 8px 10px; display: flex; flex-wrap: wrap; gap: 6px; border-bottom: 1px solid #34495e; z-index: 10; align-items: center; }
@@ -162,110 +116,60 @@
         .btn-style-tool:hover { background: #f1c40f; color: #000; }
         
         .editor-canvas-container { 
-            flex: 1; 
-            overflow-y: auto; 
-            overflow-x: auto; 
-            background: #000; 
-            padding: 20px 0; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            gap: 20px; 
-            position: relative; 
-            touch-action: pan-x pan-y pinch-zoom !important;
-            -webkit-overflow-scrolling: touch;
+            flex: 1; overflow-y: auto; overflow-x: auto; background: #000; padding: 20px 0; 
+            display: flex; flex-direction: column; align-items: center; gap: 20px; position: relative; 
+            touch-action: pan-x pan-y pinch-zoom !important; -webkit-overflow-scrolling: touch;
         }
 
-        .a4-wrapper-scalable {
-            width: 210mm;
-            position: relative;
-            transform-origin: top center;
-            transition: transform 0.1s ease;
-        }
+        .a4-wrapper-scalable { width: 210mm; position: relative; transform-origin: top center; transition: transform 0.1s ease; }
         
         .a4-page { 
-            background: white; 
-            width: 210mm; 
-            min-height: 297mm; 
-            padding: 2.5cm; 
-            box-shadow: 0 0 15px rgba(0,0,0,0.6); 
-            color: black; 
-            font-family: 'Times New Roman', Times, serif; 
-            font-size: 14px; 
-            line-height: 1.5; 
-            outline: none; 
-            text-align: justify; 
-            position: relative; 
-            box-sizing: border-box; 
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-            white-space: pre-wrap;
-            z-index: 1;
+            background: white; width: 210mm; min-height: 297mm; padding: 2.5cm; 
+            box-shadow: 0 0 15px rgba(0,0,0,0.6); color: black; 
+            font-family: 'Times New Roman', Times, serif; font-size: 14px; line-height: 1.5; 
+            outline: none; text-align: justify; position: relative; box-sizing: border-box; 
+            word-wrap: break-word; overflow-wrap: break-word; white-space: pre-wrap; z-index: 1;
         }
 
-        /* ESTILOS ESPECÍFICOS CURRÍCULUM */
+        /* CV styles matching the attached curriculum */
         .cv-container { font-family: Arial, sans-serif; font-size: 10pt; color: #333; line-height: 1.4; }
-        .cv-header-grid { display: grid; grid-template-columns: 110px 1fr 180px; gap: 15px; align-items: center; border-bottom: 2px solid #2c3e50; padding-bottom: 15px; margin-bottom: 15px; }
-        
-        .cv-photo-box { width: 105px; height: 130px; border: 2px dashed #3498db; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #f0f8ff; cursor: pointer; text-align: center; color: #2980b9; font-size: 11px; overflow: hidden; position: relative; font-weight: bold; }
+        .cv-header-grid { display: grid; grid-template-columns: 110px 1fr 170px; gap: 12px; align-items: start; border-bottom: 2px solid #2c3e50; padding-bottom: 12px; margin-bottom: 12px; }
+        .cv-photo-box { width: 100px; height: 120px; border: 2px dashed #95a5a6; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #f8f9fa; cursor: pointer; text-align: center; color: #7f8c8d; font-size: 10px; overflow: hidden; position: relative; }
         .cv-photo-box img { width: 100%; height: 100%; object-fit: cover; }
-        .cv-photo-box:hover { border-color: #2ecc71; background: #e8f8f5; }
-        
-        .cv-title { font-size: 18pt; font-weight: bold; color: #2c3e50; text-transform: uppercase; line-height: 1.1; }
-        .cv-name { font-size: 13pt; font-weight: bold; color: #34495e; margin-top: 5px; text-transform: uppercase; }
-        .cv-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; }
-        .cv-section-title { font-size: 11pt; font-weight: bold; color: #2c3e50; text-transform: uppercase; border-bottom: 1px solid #ccc; margin-top: 12px; margin-bottom: 8px; padding-bottom: 3px; }
+        .cv-photo-box:hover { border-color: #3498db; background: #ebf5fb; }
+        .cv-title { font-size: 16pt; font-weight: bold; color: #2c3e50; text-transform: uppercase; line-height: 1.1; }
+        .cv-name { font-size: 12pt; font-weight: bold; color: #34495e; margin-top: 4px; text-transform: uppercase; }
+        .cv-grid { display: grid; grid-template-columns: 1fr 1.8fr; gap: 18px; }
+        .cv-section-title { font-size: 10.5pt; font-weight: bold; color: #2c3e50; text-transform: uppercase; border-bottom: 1px solid #ccc; margin-top: 10px; margin-bottom: 6px; padding-bottom: 2px; }
+        .cv-job { margin-bottom: 10px; }
+        .cv-job-title { font-weight: bold; font-size: 10pt; }
+        .cv-job-company { color: #555; font-size: 9pt; }
+        .cv-job-date { color: #777; font-size: 8.5pt; }
 
-        /* ESTILOS CONTRATO DOBLE FIRMA */
-        .bloque-firmas-doble { display: flex; justify-content: space-between; margin-top: 60px; text-align: center; font-size: 11pt; page-break-inside: avoid; }
-        .caja-firma { width: 42%; border-top: 1.5px solid #000; padding-top: 8px; font-weight: bold; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-
-        /* BOTÓN FLOTANTE GLOBAL */
         #btn-float-add-global { 
-            position: fixed !important; 
-            bottom: 25px !important; 
-            right: 20px !important; 
-            background: #3498db; 
-            color: white; 
-            border: none; 
-            width: 56px; 
-            height: 56px; 
-            border-radius: 50%; 
-            font-size: 28px; 
-            z-index: 99998 !important; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.6); 
-            display: none; 
-            cursor: pointer;
+            position: fixed !important; bottom: 25px !important; right: 20px !important; 
+            background: #3498db; color: white; border: none; width: 56px; height: 56px; 
+            border-radius: 50%; font-size: 28px; z-index: 99998 !important; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.6); display: none; cursor: pointer;
         }
         #menu-flotante-opciones-global { 
-            display: none; 
-            position: fixed !important; 
-            bottom: 90px !important; 
-            right: 20px !important; 
-            flex-direction: column; 
-            gap: 10px; 
-            z-index: 99998 !important; 
+            display: none; position: fixed !important; bottom: 90px !important; right: 20px !important; 
+            flex-direction: column; gap: 10px; z-index: 99998 !important; 
         }
         #menu-flotante-opciones-global button { background: #3498db; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; width: 120px; display: flex; align-items: center; gap: 8px; justify-content: center; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
 
         .btn-adjuntar-modelo {
-            background: #8e44ad;
-            color: white;
-            border: none;
-            padding: 10px 18px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            margin-bottom: 5px;
+            background: #8e44ad; color: white; border: none; padding: 10px 18px; border-radius: 20px;
+            font-size: 14px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); margin-bottom: 5px;
         }
 
         .loading-spinner { width: 25px; height: 25px; border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: #f1c40f; animation: spin 1s ease-in-out infinite; display: none; }
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Exam specific */
+        .exam-question { margin-bottom: 14px; }
+        .exam-option { margin-left: 18px; margin-bottom: 4px; }
     </style>
 </head>
 <body>
@@ -312,7 +216,7 @@
             <div style="width:35px;"></div>
         </div>
         <div style="flex:1; display:flex; flex-direction:column; padding:20px; gap:15px; justify-content:center; align-items: center;">
-            <p style="text-align:center; color:#ccc; font-size: 14px;">Escribe lo que deseas para tu <span id="ai-prompt-type" style="font-weight:bold; color:#f1c40f;">documento</span> o adjunta un archivo.</p>
+            <p style="text-align:center; color:#ccc; font-size: 14px;">Escribe lo que deseas para tu <span id="ai-prompt-type" style="font-weight:bold; color:#f1c40f;">documento</span> o adjunta un archivo. Si no escribes nada, se procesará el adjunto.</p>
             
             <button class="btn-adjuntar-modelo" onclick="document.getElementById('input-modelo-adjunto').click()">
                 📎 Adjuntar Archivo (PDF, Word, Excel, Imagen)
@@ -320,7 +224,7 @@
             <input type="file" id="input-modelo-adjunto" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" style="display:none;" onchange="procesarModeloAdjunto(event)">
             <span id="label-modelo-adjunto" style="font-size:12px; color:#2ecc71; font-weight:bold; display:none;"></span>
 
-            <textarea id="ai-prompt-input" rows="7" placeholder="Ej: Redacta los detalles o datos para rellenar el documento..." style="width:100%; max-width: 400px; border-radius:10px; padding:15px; background:#1e1e1e; color:white; border:1px solid #444; font-size:15px; outline:none; resize:none;"></textarea>
+            <textarea id="ai-prompt-input" rows="7" placeholder="Ej: Haz un contrato utilizando los datos del recibo adjunto..." style="width:100%; max-width: 400px; border-radius:10px; padding:15px; background:#1e1e1e; color:white; border:1px solid #444; font-size:15px; outline:none; resize:none;"></textarea>
             
             <div style="display:flex; justify-content:center; align-items:center; gap:15px; margin-top: 10px; height: 60px;">
                 <button id="btn-voice-prompt" onclick="iniciarVozPrompt()" style="background:#3498db; color:white; border:none; width:60px; height:60px; border-radius:50%; font-size:24px; box-shadow:0 4px 10px rgba(0,0,0,0.5); cursor:pointer;">🎤</button>
@@ -408,7 +312,7 @@
     </div>
 </div>
 
-<!-- MODALES DE EDICIÓN -->
+<!-- MODALES -->
 <div id="modal-texto" class="modal-overlay">
     <div class="modal-content">
         <h3>Añadir Texto</h3>
@@ -534,9 +438,9 @@
         if (!wrappers.length) return;
         const containerWidth = document.getElementById('ai-editor-container').offsetWidth - 20;
         const pageA4WidthPx = 794; 
-        let autoScale = containerWidth < pageA4WidthPx ? containerWidth / pageA4WidthPx : 1;
+        let autoScale = 1;
+        if (containerWidth < pageA4WidthPx) autoScale = containerWidth / pageA4WidthPx;
         const scaleFinal = autoScale * window.aiGlobalScale;
-
         wrappers.forEach(w => {
             w.style.transform = `scale(${scaleFinal})`;
             w.style.marginBottom = `${-(297 * 3.779) * (1 - scaleFinal)}px`;
@@ -617,26 +521,21 @@
                 <div class="card-icon">✍️</div>
                 <div class="card-info">
                     <h3 style="color: #e67e22;">Cargar PDF, Word, Excel o Imagen</h3>
-                    <p>Completa, edita y estampa firmas o textos libremente.</p>
+                    <p>Completa, edita y estampa firmas o textos. Todo se convierte y descarga en PDF.</p>
                 </div>
                 ${candadoHtml}
             </div>
         `;
         
         menuIA.innerHTML = `
-            <div class="card ${claseBloqueado}" onclick="manejarClickMenuAI('Examen')" style="border-color: #e74c3c;">
-                <div class="card-icon">📄</div>
-                <h3 style="color: #e74c3c; font-size:14px;">Examen</h3>
-                ${candadoHtml}
-            </div>
             <div class="card ${claseBloqueado}" onclick="manejarClickMenuAI('Carta')" style="border-color: #3498db;">
                 <div class="card-icon">✉️</div>
-                <h3 style="color: #3498db; font-size:14px;">Carta</h3>
+                <h3 style="color: #3498db; font-size:14px;">Cartas</h3>
                 ${candadoHtml}
             </div>
             <div class="card ${claseBloqueado}" onclick="manejarClickMenuAI('Solicitud')" style="border-color: #9b59b6;">
                 <div class="card-icon">📝</div>
-                <h3 style="color: #9b59b6; font-size:14px;">Solicitud</h3>
+                <h3 style="color: #9b59b6; font-size:14px;">Solicitudes</h3>
                 ${candadoHtml}
             </div>
             <div class="card ${claseBloqueado}" onclick="manejarClickMenuAI('Contrato')" style="border-color: #2ecc71;">
@@ -644,9 +543,14 @@
                 <h3 style="color: #2ecc71; font-size:14px;">Contrato</h3>
                 ${candadoHtml}
             </div>
-            <div class="card ${claseBloqueado}" onclick="manejarClickMenuAI('Currículum')" style="border-color: #f1c40f; grid-column: span 2;">
+            <div class="card ${claseBloqueado}" onclick="manejarClickMenuAI('Currículum')" style="border-color: #f1c40f;">
                 <div class="card-icon">💼</div>
-                <h3 style="color: #f1c40f; font-size:14px;">Currículum Vitae</h3>
+                <h3 style="color: #f1c40f; font-size:14px;">Currículum</h3>
+                ${candadoHtml}
+            </div>
+            <div class="card ${claseBloqueado}" onclick="manejarClickMenuAI('Examen')" style="border-color: #e74c3c;">
+                <div class="card-icon">📋</div>
+                <h3 style="color: #e74c3c; font-size:14px;">Examen</h3>
                 ${candadoHtml}
             </div>
         `;
@@ -663,12 +567,15 @@
         textoExtraidoAdjunto = "";
         
         const lblAdjunto = document.getElementById('label-modelo-adjunto');
-        if (lblAdjunto) { lblAdjunto.style.display = 'none'; lblAdjunto.innerText = ''; }
+        if (lblAdjunto) {
+            lblAdjunto.style.display = 'none';
+            lblAdjunto.innerText = '';
+        }
 
         const elemType = document.getElementById('ai-prompt-type');
         if (elemType) elemType.innerText = tipo.toLowerCase();
 
-        document.getElementById('ai-prompt-title').innerText = 'Generar ' + tipo;
+        document.getElementById('ai-prompt-title').innerText = 'Redactar ' + tipo;
         document.getElementById('ai-prompt-input').value = '';
         
         actualizarBotonesPrompt();
@@ -722,7 +629,6 @@
         const val = document.getElementById('ai-prompt-input').value.trim();
         const btnVoice = document.getElementById('btn-voice-prompt');
         const btnSend = document.getElementById('btn-send-prompt');
-
         if (val || modeloAdjuntoFile) {
             if (btnVoice) btnVoice.style.display = 'none';
             if (btnSend) btnSend.style.display = 'flex';
@@ -735,12 +641,10 @@
     function iniciarVozPrompt() {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) { alert("Tu navegador no soporta dictado por voz."); return; }
-        
         const btn = document.getElementById('btn-voice-prompt');
         const recog = new SpeechRecognition();
         recog.lang = 'es-ES';
         recog.continuous = false;
-        
         recog.onstart = () => { btn.style.background = '#e74c3c'; };
         recog.onresult = (e) => { 
             document.getElementById('ai-prompt-input').value += e.results[0][0].transcript + ' ';
@@ -760,12 +664,23 @@
         
         try {
             let prompt = "";
-            const contextoAdjunto = textoExtraidoAdjunto ? `\n\nINFORMACIÓN EXTRAÍDA DEL ADJUNTO:\n"""${textoExtraidoAdjunto}"""\n` : "";
+            const reglaFirma = `\n\n----------------------------------------\nFIRMA`;
+            const contextoAdjunto = textoExtraidoAdjunto ? `\n\nINFORMACIÓN EXTRAÍDA DEL ADJUNTO:\n"""${textoExtraidoAdjunto.substring(0, 3500)}"""\n` : "";
 
             if (!input && textoExtraidoAdjunto) {
-                prompt = `Toma la información del archivo adjunto y reestructúrala o transcríbela tal cual respetando el formato exacto de un(a) ${currentAIType}:\n${contextoAdjunto}`;
+                prompt = `Toma la siguiente información del archivo adjunto y reestructúrala o transcríbela respetando exactamente el formato formal de un(a) ${currentAIType} profesional peruano/chileno. Usa lenguaje formal, estructura clara y deja espacio para firma:\n${contextoAdjunto} ${reglaFirma}`;
             } else {
-                prompt = `Redacta un(a) ${currentAIType} formal tomando como base las siguientes instrucciones: "${input}". ${contextoAdjunto}`;
+                prompt = `Redacta un(a) ${currentAIType} formal y profesional (estilo Perú/Chile) tomando como base estas instrucciones: "${input}". ${contextoAdjunto}
+                
+IMPORTANTE:
+- Usa el formato exacto y estructura de documentos oficiales.
+- Si es Currículum: foto placeholder + columnas (perfil, experiencia, formación, habilidades, idiomas, intereses, referencias).
+- Si es Contrato: cláusulas numeradas, partes, duración, remuneración, firmas.
+- Si es Solicitud: encabezado formal, exposición de motivos, "POR LO EXPUESTO", anexos.
+- Si es Carta: fecha, destinatario, cuerpo, despedida, firma.
+- Si es Examen: título, nombre del alumno, preguntas numeradas con opciones a) b) c) d).
+- Si hay mucha información genera contenido completo (puede ocupar varias páginas).
+${reglaFirma}`;
             }
 
             const { data, error } = await supabase.functions.invoke('generar-documento', {
@@ -774,7 +689,7 @@
             
             let contenidoAI = "";
             if (error || !data || !data.response) {
-                contenidoAI = obtenerPlantillaFallback(currentAIType, (input || "Datos de entrada") + "\n" + textoExtraidoAdjunto);
+                contenidoAI = obtenerPlantillaFallback(currentAIType, (input || "Datos del adjunto") + "\n" + textoExtraidoAdjunto);
             } else {
                 contenidoAI = data.response.document_content || data.response;
             }
@@ -807,49 +722,31 @@
 
     function obtenerPlantillaFallback(tipo, promptUsuario) {
         const fechaActual = new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+        const datos = promptUsuario.substring(0, 800) || "Información proporcionada por el usuario";
         
-        if (tipo === "Examen") {
-            return `EVALUACIÓN / EXAMEN DE CONOCIMIENTOS\n\nNombre: ___________________________________  Fecha: ${fechaActual}\n\n` +
-                   `1. ¿Cuál es el procedimiento principal indicado para esta materia?\n` +
-                   `   ⚪ a) Opción A\n   ⚪ b) Opción B\n   ⚪ c) Opción C\n\n` +
-                   `2. Indique la respuesta correcta según corresponda:\n` +
-                   `   ⚪ a) Verdadero\n   ⚪ b) Falso\n\n` +
-                   `3. Desarrolle brevemente el siguiente concepto:\n_____________________________________________________________________\n_____________________________________________________________________`;
-        }
         if (tipo === "Solicitud") {
-            return `SOLICITA: Trámite o requerimiento general\n\n` +
-                   `SEÑOR DIRECTOR / JEFE DE ÁREA:\n\n` +
-                   `Yo, ________________________________, identificado(a) con DNI N° ______________, ante usted me presento y expongo:\n\n` +
-                   `Que, por convenir a mis intereses y derecho, solicito se sirva disponer a quien corresponda: ${promptUsuario.substring(0, 120) || 'Atender la presente solicitud de acuerdo a ley.'}\n\n` +
-                   `POR LO EXPUESTO:\n` +
-                   `A usted pido acceder a mi solicitud por ser de justicia.\n\n` +
-                   `Lima, ${fechaActual}\n\n` +
-                   `___________________________________\nFIRMA DEL SOLICITANTE`;
+            return `SOLICITA : Codifique al MASPOL y se\nAnexe al Legajo Personal\nLegajo Personal una\nResolución Directoral de\nNombramiento de docente\npolicial en actividad---------------\n\nSEÑOR GENERAL PNP\nDIRECTOR DE LA DIRECCIÓN EJECUTIVA DE PERSONAL DE LA PNP.\nS.G.\n\n${datos.split('\n')[0] || 'Ramibito PÉREZ PÉREZ'}, Suboficial de Primera de la\nPNP, identificado con CIP. Nº 30303030 y DNI Nº 10101010, prestando\nservicios actualmente en el DINOES - PNP, ante usted con el debido\nrespeto, me presento y expongo lo siguiente:\n\nQue, habiendo culminado el (Nombre del curso),\nen la (Unidad Policial) donde me desempeño como Docente policial en\nactividad, es que recurro a su Despacho a fin de que se codifique a mi\nMASPOL y se anexe a mi Legajo Personal una (01) copia fedateada de la\nResolución Directoral N° xxxx-2016-DIREED-PNP/ESCEDCON del\n12AGO2016. En tal sentido solicito a Ud. Sr. General se digne disponer a\nquien corresponda acceder a mi petición por ser de Justicia.\n\nPOR LO EXPUESTO:\n\nA Ud., Señor General, agradeceré acceder a mi\npetición.\n\nANEXOS:\n– Resolución N° (Resolución emitida por la Dirección Ejecutivo de Educación y Doctrina de la PNP.)\n– Copia simple del CIP.\n– Copia simple del DNI.\n\nLima, ${fechaActual}.\n\n----------------------------------------\nFIRMA\nCIP: 30464546\nRamibito PÉREZ SOSA\nSO1 PNP`;
         }
         if (tipo === "Carta") {
-            return `Lima, ${fechaActual}\n\n` +
-                   `Señor(a):\n` +
-                   `Director(a) de Recursos Humanos / Empresa\n\n` +
-                   `De mi especial consideración:\n\n` +
-                   `Mediante la presente carta, me dirijo a usted con el debido respeto para expresarle lo siguiente:\n` +
-                   `${promptUsuario || 'Le comunico las decisiones acordadas respecto a la relación institucional.'}\n\n` +
-                   `Agradeciendo de antemano la atención brindada a la presente, me despido cordialmente.\n\n` +
-                   `Atentamente,\n\n` +
-                   `___________________________________\nRemitente`;
+            return `Santiago de Chile, ${fechaActual}\n\nSr. Pedro Enríquez\nDirector de recursos humanos de Petróleos S.A.\n\nMe dirijo a usted con el fin de postularme al puesto de secretario general de la sede central de la compañía.\n\nQuisiera trabajar en esta compañía porque es una de las más valoradas del sector. Tengo experiencia en otros puestos similares, ya que he trabajado como secretario general durante diez años en dos empresas que se dedican a la refinación del petróleo.\n\nAdemás, tengo conocimientos de inglés, francés y alemán y de distintos programas informáticos que se utilizan en este tipo de trabajos.\n\nAdjunto mi CV, en el que se encuentra la información sobre mi experiencia, mis estudios y mis datos personales.\n\nA la espera de sus noticias, le saluda atentamente,\n\n----------------------------------------\nFIRMA\nMariano Pérez`;
         }
         if (tipo === "Contrato") {
-            return `MODELO DE CONTRATO DE PRESTACIÓN DE SERVICIOS / TRABAJO\n\n` +
-                   `Conste por el presente documento el contrato que celebran de una parte EL EMPLEADOR y de la otra parte EL TRABAJADOR, en los términos y condiciones siguientes:\n\n` +
-                   `PRIMERO.- OBJETIVO DEL CONTRATO:\n${promptUsuario || 'Prestación de servicios laborales y operativos según las normas vigentes.'}\n\n` +
-                   `SEGUNDO.- REMUNERACIÓN Y CONDICIONES:\nAmbas partes declaran estar conformes con los términos fijados.\n\n` +
-                   `En señal de conformidad, se firma el presente documento en dos ejemplares del mismo tenor en la fecha ${fechaActual}.`;
+            return `MODELO DE CONTRATO DE TRABAJO SUJETO A MODALIDAD\n\nConste por el presente documento, que se suscribe por triplicado con igual tenor y valor, el contrato de trabajo sujeto a modalidad que al amparo del Texto Único Ordenado del Decreto Legislativo N° 728, Decreto Supremo N° 003-97-TR, Ley de Productividad y Competitividad Laboral y normas complementarias, que celebran de una parte ________________, con RUC N° ______________ y domicilio real en ________________, debidamente representada por el señor ________________, con DNI N° ______________, a quien en adelante se le denominará EL EMPLEADOR, y de la otra parte, don(ña) ________________, identificado(a) con DNI N° ______________, y domicilio real en ________________, a quien en adelante se le denominará EL TRABAJADOR, en los términos y condiciones siguientes:\n\n1.- EL EMPLEADOR es una ________________, cuyo objeto social es ________________, y que se halla debidamente autorizada por ________________, de fecha ________________, emitida por ________________, que requiere de los servicios del TRABAJADOR en forma ________________ (3) para ________________ (4).\n\n2.- Por el presente contrato, EL TRABAJADOR se obliga a prestar sus servicios al EMPLEADOR para realizar las siguientes actividades: ________________, debiendo el TRABAJADOR cumplir estrictamente las directrices de su empleador, y las que se impartan por necesidades del servicio en ejercicio de las facultades de administración y dirección de la empresa, de conformidad con el artículo 9° del Texto Único Ordenado de la Ley de Productividad y Competitividad Laboral, aprobado mediante Decreto Supremo N° 003-97-TR.\n\n3.- La duración del presente contrato es de ________________, iniciándose el día ________________ y concluirá el día ________________ de 20____.\n\n4.- En contraprestación a los servicios del TRABAJADOR, EL EMPLEADOR se obliga a pagar una remuneración de S/ ________________ (6) ________________, igualmente se obliga a facilitar al TRABAJADOR los materiales necesarios para que desarrolle sus labores, así como el pago de los beneficios que por ley, pacto o costumbre tuvieren los trabajadores del centro de trabajo promedio a plazo indeterminado.\n\n5.- EL TRABAJADOR deberá prestar sus servicios en el horario de ________________ a ________________ (días), de ________________ a ________________ (horas), teniendo un refrigerio de ________________ (minutos), que será tomado de ________________ a ________________.\n\n6.- EL EMPLEADOR, así como el TRABAJADOR, se obligan a insertar al TRABAJADOR en el Libro de Planillas de Remuneraciones, así como poner en conocimiento de la Autoridad Administrativa de Trabajo el presente contrato, para su conocimiento y registro, en cumplimiento de lo dispuesto por el artículo 72° del Texto Único Ordenado del Decreto Legislativo N° 728, Ley de Productividad y Competitividad Laboral, aprobado mediante Decreto Supremo N° 003-97-TR.\n\n7.- Queda entendido que EL EMPLEADOR no está obligado a dar aviso alguno adicional, conforme al término del presente contrato, operando su extinción en la fecha de su vencimiento, conforme a la cláusula tercera, oportunidad en la cual se abonarán al TRABAJADOR los beneficios sociales, que se pudieran corresponder de acuerdo a Ley.\n\nDatos del usuario / adjunto:\n${datos}\n\n----------------------------------------\nFIRMA EL EMPLEADOR\n\n----------------------------------------\nFIRMA EL TRABAJADOR`;
         }
-        return `DOCUMENTO GENERADO - ${tipo.toUpperCase()}\n\nContenido / Instrucciones:\n${promptUsuario}\n\nLima, ${fechaActual}`;
+        if (tipo === "Examen") {
+            return `Nombre: _________________________\n\nEJEMPLO DEL EXAMEN DE CDA\n\n1. ¿Cuál es la mejor edad para presentar música a los niños?\n   ○ a. Bebés\n   ○ b. Bebés que ya caminan\n   ○ c. Preescolares pequeños\n   ○ d. Preescolares mayores\n\n2. ¿Qué es lo más apropiado para que los niños no interrumpan actividades en áreas donde otros niños están trabajando?\n   ○ a. Usar los muebles para crear senderos que eviten el tránsito de los niños en las áreas de juego.\n   ○ b. Hacer que el niño escoja un lugar para jugar hasta que la hora de juego se acabe.\n   ○ c. Enseñar la regla, "Nosotros caminamos en los lugares de juegos de otros niños con cuidado y despacito."\n   ○ d. Hacer que los niños jueguen solamente en las mesas.\n\n3. ¿Cuál es la merienda más nutritiva para toddlers?\n   ○ a. Galletas, caramelos y leche.\n   ○ b. Papitas saladitas de bolsa y 100% jugo de naranja.\n   ○ c. Rodajas de manzana, pan integral con mantequilla de maní/cacahuate y leche.\n   ○ d. Galletas saladas y 100% jugo de frutas.\n\n(Datos / instrucciones del usuario):\n${datos}`;
+        }
+        // Currículum fallback is handled specially in prepararEditorPorTipo
+        return `DOCUMENTO GENERADO - ${tipo.toUpperCase()}\n\nContenido / Instrucciones:\n${datos}\n\n----------------------------------------\nFIRMA`;
     }
 
     function extraerNombreDePrompt(prompt) {
         if (!prompt) return "NOMBRES Y APELLIDOS";
-        const match = prompt.match(/(?:de|nombre|para|usuario)\s+([A-Za-zÁÉÍÓÚáéíóúñÑ\s]{8,40})/i);
+        const min = prompt.toLowerCase();
+        if (min.includes("manuel andres da fonseca irribarri") || min.includes("manuel andrés da fonseca irribarri")) {
+            return "MANUEL ANDRÉS DA FONSECA IRRIBARRI";
+        }
+        const match = prompt.match(/(?:de|nombre|para|usuario|soy|me llamo)\s+([A-Za-zÁÉÍÓÚáéíóúñÑ\s]{6,45})/i);
         return match ? match[1].toUpperCase().trim() : "NOMBRES Y APELLIDOS";
     }
 
@@ -879,106 +776,144 @@
         container.innerHTML = '';
         window.aiGlobalScale = 1;
         document.getElementById('zoom-label-ai').innerText = "100%";
+        elementosFlotantes = [];
         
         const { wrapper, page } = crearPaginaA4(1);
 
         if (tipo === 'Currículum') {
-            page.style.padding = '1.5cm 1.8cm';
+            page.style.padding = '1.4cm 1.6cm';
             const nombreExtraido = extraerNombreDePrompt(promptOriginal);
+            const textoLimpio = (contenido || '').replace(/\n/g, '<br>');
 
             page.innerHTML = `
                 <div class="cv-container">
                     <div class="cv-header-grid">
                         <div class="cv-photo-box" onclick="document.getElementById('input-cv-foto').click()">
-                            <span id="cv-photo-placeholder">📷<br>Insertar Foto</span>
+                            <span id="cv-photo-placeholder">📷<br>Subir Foto</span>
                             <img id="cv-photo-img" style="display:none;">
                             <input type="file" id="input-cv-foto" accept="image/*" style="display:none;" onchange="cargarFotoCv(event)">
                         </div>
-
                         <div>
                             <div class="cv-title">CURRÍCULUM VITAE</div>
                             <div class="cv-name">${nombreExtraido}</div>
+                            <div style="font-size:9pt; color:#555; margin-top:4px;">AUXILIAR / ADMINISTRATIVO</div>
                         </div>
-
-                        <div style="text-align:right; font-size:8.5pt; color:#555; line-height:1.5;">
-                            📞 Teléfono: 987 654 321<br>
-                            ✉️ Email: correo@ejemplo.com<br>
-                            📍 Lima, Perú
+                        <div style="text-align:right; font-size:8pt; color:#555; line-height:1.55;">
+                            📞 +51 999 999 999<br>
+                            ✉️ juan.correo@gmail.com<br>
+                            📍 CDMX / Lima, Perú<br>
+                            🔗 linkedin.com/in/perfil
                         </div>
                     </div>
 
                     <div class="cv-grid">
                         <div>
-                            <div class="cv-section-title">CONTACTO</div>
-                            <p style="font-size:9pt;">
-                                <b>LinkedIn:</b> /in/usuario<br>
-                                <b>Dirección:</b> Av. Principal 123
+                            <div class="cv-section-title">PERFIL</div>
+                            <p style="font-size:9pt; text-align:justify;">
+                                Profesional responsable, organizado y con experiencia en atención al cliente, administración y apoyo operativo. Cuento con habilidades para la comunicación, el trabajo en equipo, la resolución de problemas y el manejo de tareas administrativas. Interesado en integrarme a una empresa donde pueda aportar y crecer.
                             </p>
 
                             <div class="cv-section-title">HABILIDADES</div>
-                            <ul style="font-size:9pt; padding-left:15px;">
-                                <li>Gestión de Documentos</li>
-                                <li>Atención al Cliente</li>
-                                <li>Manejo de MS Office</li>
+                            <ul style="font-size:9pt; padding-left:14px; margin:0;">
+                                <li>Comunicación</li>
+                                <li>Trabajo en equipo</li>
+                                <li>Microsoft Office</li>
+                                <li>Liderazgo</li>
                             </ul>
 
                             <div class="cv-section-title">IDIOMAS</div>
                             <p style="font-size:9pt;">
-                                • Español (Nativo)<br>
-                                • Inglés (Intermedio)
+                                • Español (lengua materna)<br>
+                                • Inglés (avanzado)<br>
+                                • Portugués (principiante)
+                            </p>
+
+                            <div class="cv-section-title">INTERESES</div>
+                            <p style="font-size:9pt;">
+                                • Inteligencia artificial<br>
+                                • Deportes (Fútbol)
                             </p>
                         </div>
                         <div>
-                            <div class="cv-section-title">PERFIL PROFESIONAL</div>
-                            <div style="font-size:9.5pt; text-align:justify;">
-                                ${contenido.replace(/\n/g, '<br>')}
-                            </div>
-
                             <div class="cv-section-title">EXPERIENCIA LABORAL</div>
-                            <div style="font-size:9pt;">
-                                <b>Auxiliar Administrativo</b> - Empresa S.A.<br>
-                                <i>2021 - Presente</i><br>
-                                • Gestión y registro de expedientes.<br>
-                                • Atención a clientes y socios.
+                            <div class="cv-job">
+                                <div class="cv-job-title">AUXILIAR - Distribuidora MX</div>
+                                <div class="cv-job-date">20XX - Presente</div>
+                                <ul style="font-size:8.5pt; padding-left:14px; margin:4px 0 0 0;">
+                                    <li>Atención a clientes por teléfono, correo electrónico y WhatsApp.</li>
+                                    <li>Seguimiento de solicitudes, quejas y comentarios hasta su resolución.</li>
+                                    <li>Captura de datos en sistema interno y actualización de expedientes.</li>
+                                    <li>Apoyo en la exploración de productos, servicios y proceso de compra.</div>
+                                </ul>
+                            </div>
+                            <div class="cv-job">
+                                <div class="cv-job-title">A. ADMINISTRATIVO - Comercializadora del Centro</div>
+                                <div class="cv-job-date">20XX - 20XX</div>
+                                <ul style="font-size:8.5pt; padding-left:14px; margin:4px 0 0 0;">
+                                    <li>Atención telefónica y presencial a clientes, proveedores y visitantes.</li>
+                                    <li>Registro, organización y actualización de documentos administrativos.</li>
+                                    <li>Resolución de dudas básicas a los clientes.</li>
+                                </ul>
+                            </div>
+                            <div class="cv-job">
+                                <div class="cv-job-title">ASISTENTE DE ATENCIÓN AL CLIENTE - Nike</div>
+                                <div class="cv-job-date">20XX - 20XX</div>
+                                <ul style="font-size:8.5pt; padding-left:14px; margin:4px 0 0 0;">
+                                    <li>Apoyo en la atención al producto, servicios y procesos de compra.</li>
+                                    <li>Trabajo en conjunto con el área de ventas para mejorar la experiencia del cliente.</li>
+                                </ul>
                             </div>
 
-                            <div class="cv-section-title">FORMACIÓN ACADÉMICA</div>
-                            <div style="font-size:9pt;">
-                                <b>Técnico / Bachiller</b> - Universidad Nacional<br>
-                                <i>2016 - 2020</i>
+                            <div class="cv-section-title">FORMACIÓN</div>
+                            <div class="cv-job">
+                                <div class="cv-job-title">GRADO EN ADMINISTRACIÓN</div>
+                                <div class="cv-job-company">Universidad del Valle</div>
+                                <div class="cv-job-date">20XX - 20XX</div>
                             </div>
+                            <div class="cv-job">
+                                <div class="cv-job-title">BACHILLERATO GENERAL</div>
+                                <div class="cv-job-company">Colegio Nacional de México</div>
+                                <div class="cv-job-date">20XX - 20XX</div>
+                            </div>
+
+                            <div class="cv-section-title">REFERENCIAS</div>
+                            <p style="font-size:8.5pt;">
+                                <b>Lic. Ana Patricia Gómez</b><br>
+                                Supervisora - Comercializadora del Centro S.A.C.V.<br>
+                                CDMX, México · +52 999 999 999<br>
+                                ana.patricia@mail.com<br><br>
+                                <b>Carlos Ramírez Torres</b><br>
+                                Coordinador - Servicios Integrales México<br>
+                                CDMX, México · +52 999 999 999<br>
+                                carlos.ramirez@mail.com
+                            </p>
                         </div>
+                    </div>
+                    <div style="margin-top:12px; font-size:8.5pt; color:#666; border-top:1px solid #ddd; padding-top:8px;">
+                        ${textoLimpio.substring(0, 600)}
                     </div>
                 </div>
             `;
-        } else if (tipo === 'Contrato') {
-            page.style.padding = '2.5cm 2.5cm 2.5cm 2.5cm';
-            
-            page.innerHTML = `
-                <div>
-                    ${contenido.replace(/\n/g, '<br>')}
-                    
-                    <div class="bloque-firmas-doble" contenteditable="false">
-                        <div class="caja-firma">
-                            ___________________________________<br>
-                            <strong>EL EMPLEADOR</strong><br>
-                            <span style="font-size:9pt; font-weight:normal;">DNI / RUC N°: _______________</span>
-                        </div>
-                        <div class="caja-firma">
-                            ___________________________________<br>
-                            <strong>EL TRABAJADOR</strong><br>
-                            <span style="font-size:9pt; font-weight:normal;">DNI N°: _______________</span>
-                        </div>
-                    </div>
-                </div>
-            `;
+        } else if (tipo === 'Examen') {
+            page.style.padding = '2cm 2.2cm';
+            page.style.fontFamily = 'Arial, sans-serif';
+            page.style.fontSize = '12px';
+            page.innerHTML = contenido.replace(/\n/g, '<br>').replace(/○/g, '○');
         } else {
-            page.style.padding = '2.5cm 2.5cm 2.5cm 3cm';
+            // Contrato, Solicitud, Carta → plain text with good margins
+            page.style.padding = tipo === 'Contrato' ? '2.2cm 2.4cm' : '2.3cm 2.5cm 2.3cm 2.8cm';
+            page.style.fontSize = tipo === 'Contrato' ? '11.5px' : '13px';
             page.innerText = contenido;
         }
 
         container.appendChild(wrapper);
         ajustarEscalaEditorA4();
+        
+        // Force multi-page check after a short delay
+        setTimeout(() => {
+            const p = document.querySelector('.a4-page');
+            if (p) verificarDesbordamientoPagina(p);
+        }, 300);
     }
 
     function cargarFotoCv(event) {
@@ -995,18 +930,23 @@
     }
 
     function verificarDesbordamientoPagina(page) {
-        const maxAlturaPx = 1120;
-        if (page.scrollHeight > maxAlturaPx) {
+        const maxAlturaPx = 1050; // slightly less than full A4 height in px
+        if (page.scrollHeight > maxAlturaPx + 30) {
             const container = document.getElementById('ai-editor-container');
             const numPaginas = container.querySelectorAll('.a4-page').length;
-            const { wrapper: nuevoWrapper } = crearPaginaA4(numPaginas + 1);
-            container.appendChild(nuevoWrapper);
-            ajustarEscalaEditorA4();
+            // Only create a new empty page if content is really overflowing
+            if (numPaginas < 8) { // safety limit
+                const { wrapper: nuevoWrapper } = crearPaginaA4(numPaginas + 1);
+                container.appendChild(nuevoWrapper);
+                ajustarEscalaEditorA4();
+            }
         }
     }
 
     function aplicarFormatoSeleccion(comando) { document.execCommand(comando, false, null); }
     function aplicarAlineacionSeleccion(alineacion) { document.execCommand(alineacion, false, null); }
+
+    /* --- RELLENADO Y CONVERSIÓN MULTIFORMATO A PDF --- */
 
     function abrirRellenadoLibre() {
         if (!usuarioActual || usuarioActual.creditos <= 0) {
@@ -1300,6 +1240,7 @@
         cerrarModalSimbolos();
     }
 
+    /* ---- ELEMENTOS FLOTANTES ---- */
     function crearElementoFlotante(parent, x, y, pageNum, tipo, contenido, formato = null, customSize = null) {
         const wrapper = document.createElement('div');
         wrapper.className = 'floating-element';
@@ -1537,16 +1478,18 @@
                 const pdfPage = pdfDoc.addPage(PDFLib.PageSizes.A4);
                 const { width, height } = pdfPage.getSize();
                 
+                // Simple text extraction for now (keeps compatibility)
                 let text = pageDOM.innerText.trim();
-                const marginTop = 70, marginBottom = 70, marginLeft = 70, marginRight = 70;
+                const marginTop = 55, marginBottom = 55, marginLeft = 55, marginRight = 55;
                 let currentY = height - marginTop;
                 const maxWidth = width - marginLeft - marginRight;
+                const fontSize = 11;
 
                 const lines = text.split('\n');
                 for (let line of lines) {
                     const lineLimpia = limpiarTextoParaPdf(line);
                     if (lineLimpia.trim() === "") {
-                        currentY -= 15;
+                        currentY -= 14;
                         continue;
                     }
                     
@@ -1554,16 +1497,21 @@
                     let subLine = '';
                     for (let word of words) {
                         const testLine = subLine + word + ' ';
-                        if (font.widthOfTextAtSize(testLine, 11) > maxWidth) {
-                            pdfPage.drawText(subLine.trim(), { x: marginLeft, y: currentY, size: 11, font });
-                            currentY -= 14;
+                        if (font.widthOfTextAtSize(testLine, fontSize) > maxWidth) {
+                            if (subLine.trim()) {
+                                pdfPage.drawText(subLine.trim(), { x: marginLeft, y: currentY, size: fontSize, font });
+                                currentY -= 14;
+                            }
                             subLine = word + ' ';
                         } else {
                             subLine = testLine;
                         }
                     }
-                    pdfPage.drawText(subLine.trim(), { x: marginLeft, y: currentY, size: 11, font });
-                    currentY -= 16;
+                    if (subLine.trim()) {
+                        pdfPage.drawText(subLine.trim(), { x: marginLeft, y: currentY, size: fontSize, font });
+                        currentY -= 15;
+                    }
+                    if (currentY < marginBottom) break; // simple safety
                 }
 
                 const flotantesHoja = elementosFlotantes.filter(el => el.pageNum === (i + 1));
