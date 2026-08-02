@@ -2,21 +2,20 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <!-- Permitir zoom táctil nativo en móviles libremente -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>DocuFácil - Generador de Documentos</title>
     
     <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8"></script>
-    <!-- PDF-lib para editar y estampar el PDF -->
+    <!-- PDF-lib -->
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-    <!-- PDF.js para visualizar y extraer texto de PDF -->
+    <!-- PDF.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-    <!-- Mammoth.js para extraer texto de Word (.docx) -->
+    <!-- Mammoth.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
-    <!-- SheetJS para extraer texto de Excel (.xlsx) -->
+    <!-- SheetJS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <!-- Download.js para descargar el archivo -->
+    <!-- Download.js -->
     <script src="https://unpkg.com/downloadjs@1.4.7"></script>
 
     <style>
@@ -51,7 +50,7 @@
         .lista-plantillas { display: flex; flex-direction: column; gap: 12px; }
         
         .card { background: #2a2a2a; border: 1px solid #444; border-radius: 10px; padding: 15px; cursor: pointer; display: flex; align-items: center; gap: 15px; position: relative; overflow: hidden; transition: 0.2s; }
-        .card-icon { font-size: 30px; }
+        .card-icon { font-size: 28px; }
         .card-info { flex: 1; }
         .card-info h3 { color: #fff; font-size: 16px; margin-bottom: 4px; }
         .card-info p { color: #aaa; font-size: 12px; line-height: 1.3; }
@@ -60,9 +59,9 @@
         .candado-icon { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); font-size: 24px; z-index: 2; }
         
         .grid-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .grid-cards .card { flex-direction: column; text-align: center; padding: 12px; gap: 5px; }
+        .grid-cards .card { flex-direction: column; text-align: center; padding: 12px; gap: 6px; }
 
-        /* --- CONTROLES DE ZOOM Y MOVIMIENTO TÁCTIL --- */
+        /* --- CONTROLES DE ZOOM --- */
         .zoom-toolbar { display: flex; align-items: center; gap: 6px; background: #222; padding: 3px 6px; border-radius: 6px; border: 1px solid #444; }
         .zoom-btn { background: #333; color: white; border: 1px solid #555; width: 26px; height: 26px; border-radius: 4px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 14px; }
         .zoom-label { font-size: 11px; color: #f1c40f; font-weight: bold; min-width: 38px; text-align: center; }
@@ -84,10 +83,8 @@
         .pdf-page-wrapper { position: relative; background: white; box-shadow: 0 4px 15px rgba(0,0,0,0.5); margin-bottom: 20px; transform-origin: top center; transition: transform 0.1s ease; }
         .free-pdf-canvas { display: block; width: 100%; height: auto; }
         
-        /* CAPA DE OVERLAY SUPERIOR PARA ELEMENTOS FLOTANTES */
         .overlay-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1000; }
         
-        /* ELEMENTOS FLOTANTES CORREGIDOS Y PEGAJOSOS */
         .floating-element { 
             position: absolute; 
             z-index: 1001; 
@@ -107,11 +104,9 @@
         .floating-element.selected { border: 1.5px dashed #3498db !important; }
         .floating-element.locked { border-color: transparent !important; cursor: default; }
         
-        /* Fondo blanco (corrector) ceñido exactamente al texto/símbolo */
         .floating-element.has-halo { background: #ffffff !important; box-shadow: 0 0 0 1px #ffffff; border-radius: 2px; }
         .floating-text { color: #000; font-family: sans-serif; white-space: nowrap; pointer-events: none; user-select: none; display: block; line-height: 1; }
         
-        /* BOTONES DE EDICIÓN FLOTANTE COMPACTOS Y PEQUEÑOS */
         .btn-delete-float, .btn-bg-float, .btn-lock-float, .resize-handle { 
             position: absolute; 
             background: #fff; 
@@ -212,16 +207,20 @@
         .cv-container { font-family: Arial, sans-serif; font-size: 10pt; color: #333; line-height: 1.4; }
         .cv-header-grid { display: grid; grid-template-columns: 110px 1fr 180px; gap: 15px; align-items: center; border-bottom: 2px solid #2c3e50; padding-bottom: 15px; margin-bottom: 15px; }
         
-        .cv-photo-box { width: 100px; height: 120px; border: 2px dashed #95a5a6; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #f8f9fa; cursor: pointer; text-align: center; color: #7f8c8d; font-size: 10px; overflow: hidden; position: relative; }
+        .cv-photo-box { width: 105px; height: 130px; border: 2px dashed #3498db; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #f0f8ff; cursor: pointer; text-align: center; color: #2980b9; font-size: 11px; overflow: hidden; position: relative; font-weight: bold; }
         .cv-photo-box img { width: 100%; height: 100%; object-fit: cover; }
-        .cv-photo-box:hover { border-color: #3498db; background: #ebf5fb; }
+        .cv-photo-box:hover { border-color: #2ecc71; background: #e8f8f5; }
         
         .cv-title { font-size: 18pt; font-weight: bold; color: #2c3e50; text-transform: uppercase; line-height: 1.1; }
         .cv-name { font-size: 13pt; font-weight: bold; color: #34495e; margin-top: 5px; text-transform: uppercase; }
         .cv-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; }
         .cv-section-title { font-size: 11pt; font-weight: bold; color: #2c3e50; text-transform: uppercase; border-bottom: 1px solid #ccc; margin-top: 12px; margin-bottom: 8px; padding-bottom: 3px; }
 
-        /* BOTÓN FLOTANTE GLOBAL - SIEMPRE VISIBLE FIJO EN PANTALLA */
+        /* ESTILOS CONTRATO DOBLE FIRMA */
+        .bloque-firmas-doble { display: flex; justify-content: space-between; margin-top: 60px; text-align: center; font-size: 11pt; page-break-inside: avoid; }
+        .caja-firma { width: 42%; border-top: 1.5px solid #000; padding-top: 8px; font-weight: bold; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+
+        /* BOTÓN FLOTANTE GLOBAL */
         #btn-float-add-global { 
             position: fixed !important; 
             bottom: 25px !important; 
@@ -249,7 +248,6 @@
         }
         #menu-flotante-opciones-global button { background: #3498db; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; width: 120px; display: flex; align-items: center; gap: 8px; justify-content: center; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
 
-        /* BOTÓN DE ADJUNTAR MODELO */
         .btn-adjuntar-modelo {
             background: #8e44ad;
             color: white;
@@ -314,16 +312,15 @@
             <div style="width:35px;"></div>
         </div>
         <div style="flex:1; display:flex; flex-direction:column; padding:20px; gap:15px; justify-content:center; align-items: center;">
-            <p style="text-align:center; color:#ccc; font-size: 14px;">Escribe lo que deseas para tu <span id="ai-prompt-type" style="font-weight:bold; color:#f1c40f;">documento</span> o adjunta un archivo. Si no escribes nada, se procesará el adjunto.</p>
+            <p style="text-align:center; color:#ccc; font-size: 14px;">Escribe lo que deseas para tu <span id="ai-prompt-type" style="font-weight:bold; color:#f1c40f;">documento</span> o adjunta un archivo.</p>
             
-            <!-- BOTÓN ADJUNTAR MODELO -->
             <button class="btn-adjuntar-modelo" onclick="document.getElementById('input-modelo-adjunto').click()">
                 📎 Adjuntar Archivo (PDF, Word, Excel, Imagen)
             </button>
             <input type="file" id="input-modelo-adjunto" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" style="display:none;" onchange="procesarModeloAdjunto(event)">
             <span id="label-modelo-adjunto" style="font-size:12px; color:#2ecc71; font-weight:bold; display:none;"></span>
 
-            <textarea id="ai-prompt-input" rows="7" placeholder="Ej: Haz un contrato utilizando los datos del recibo adjunto..." style="width:100%; max-width: 400px; border-radius:10px; padding:15px; background:#1e1e1e; color:white; border:1px solid #444; font-size:15px; outline:none; resize:none;"></textarea>
+            <textarea id="ai-prompt-input" rows="7" placeholder="Ej: Redacta los detalles o datos para rellenar el documento..." style="width:100%; max-width: 400px; border-radius:10px; padding:15px; background:#1e1e1e; color:white; border:1px solid #444; font-size:15px; outline:none; resize:none;"></textarea>
             
             <div style="display:flex; justify-content:center; align-items:center; gap:15px; margin-top: 10px; height: 60px;">
                 <button id="btn-voice-prompt" onclick="iniciarVozPrompt()" style="background:#3498db; color:white; border:none; width:60px; height:60px; border-radius:50%; font-size:24px; box-shadow:0 4px 10px rgba(0,0,0,0.5); cursor:pointer;">🎤</button>
@@ -389,7 +386,7 @@
     <div class="editor-canvas-container" id="ai-editor-container"></div>
 </div>
 
-<!-- BOTÓN FLOTANTE GLOBAL - FIJO E INMUNE AL ZOOM -->
+<!-- BOTÓN FLOTANTE GLOBAL -->
 <button id="btn-float-add-global" onclick="toggleMenuMas()">✚</button>
 <div id="menu-flotante-opciones-global">
     <button onclick="abrirModalTextoDesdeMas()">📝 Texto</button>
@@ -411,7 +408,7 @@
     </div>
 </div>
 
-<!-- MODALES -->
+<!-- MODALES DE EDICIÓN -->
 <div id="modal-texto" class="modal-overlay">
     <div class="modal-content">
         <h3>Añadir Texto</h3>
@@ -509,7 +506,6 @@
     function actualizarEscalaBotonesFlotantes() {
         const currentZoom = document.getElementById('screen-ai-editor').classList.contains('active') ? window.aiGlobalScale : window.pdfGlobalScale;
         const btnScale = Math.min(1.2, Math.max(0.5, 1 / currentZoom));
-        
         document.querySelectorAll('.btn-delete-float, .btn-bg-float, .btn-lock-float, .resize-handle').forEach(btn => {
             btn.style.transform = `scale(${btnScale})`;
         });
@@ -536,15 +532,9 @@
     function ajustarEscalaEditorA4() {
         const wrappers = document.querySelectorAll('.a4-wrapper-scalable');
         if (!wrappers.length) return;
-        
         const containerWidth = document.getElementById('ai-editor-container').offsetWidth - 20;
         const pageA4WidthPx = 794; 
-        
-        let autoScale = 1;
-        if (containerWidth < pageA4WidthPx) {
-            autoScale = containerWidth / pageA4WidthPx;
-        }
-        
+        let autoScale = containerWidth < pageA4WidthPx ? containerWidth / pageA4WidthPx : 1;
         const scaleFinal = autoScale * window.aiGlobalScale;
 
         wrappers.forEach(w => {
@@ -561,9 +551,7 @@
         const btnGlobal = document.getElementById('btn-float-add-global');
         if (screenId === 'screen-rellenado-libre' || screenId === 'screen-ai-editor') {
             btnGlobal.style.display = 'block';
-            if (screenId === 'screen-ai-editor') {
-                setTimeout(ajustarEscalaEditorA4, 100);
-            }
+            if (screenId === 'screen-ai-editor') setTimeout(ajustarEscalaEditorA4, 100);
         } else {
             btnGlobal.style.display = 'none';
             document.getElementById('menu-flotante-opciones-global').style.display = 'none';
@@ -629,21 +617,26 @@
                 <div class="card-icon">✍️</div>
                 <div class="card-info">
                     <h3 style="color: #e67e22;">Cargar PDF, Word, Excel o Imagen</h3>
-                    <p>Completa, edita y estampa firmas o textos. Todo se convierte y descarga en PDF.</p>
+                    <p>Completa, edita y estampa firmas o textos libremente.</p>
                 </div>
                 ${candadoHtml}
             </div>
         `;
         
         menuIA.innerHTML = `
+            <div class="card ${claseBloqueado}" onclick="manejarClickMenuAI('Examen')" style="border-color: #e74c3c;">
+                <div class="card-icon">📄</div>
+                <h3 style="color: #e74c3c; font-size:14px;">Examen</h3>
+                ${candadoHtml}
+            </div>
             <div class="card ${claseBloqueado}" onclick="manejarClickMenuAI('Carta')" style="border-color: #3498db;">
                 <div class="card-icon">✉️</div>
-                <h3 style="color: #3498db; font-size:14px;">Cartas</h3>
+                <h3 style="color: #3498db; font-size:14px;">Carta</h3>
                 ${candadoHtml}
             </div>
             <div class="card ${claseBloqueado}" onclick="manejarClickMenuAI('Solicitud')" style="border-color: #9b59b6;">
                 <div class="card-icon">📝</div>
-                <h3 style="color: #9b59b6; font-size:14px;">Solicitudes</h3>
+                <h3 style="color: #9b59b6; font-size:14px;">Solicitud</h3>
                 ${candadoHtml}
             </div>
             <div class="card ${claseBloqueado}" onclick="manejarClickMenuAI('Contrato')" style="border-color: #2ecc71;">
@@ -651,9 +644,9 @@
                 <h3 style="color: #2ecc71; font-size:14px;">Contrato</h3>
                 ${candadoHtml}
             </div>
-            <div class="card ${claseBloqueado}" onclick="manejarClickMenuAI('Currículum')" style="border-color: #f1c40f;">
+            <div class="card ${claseBloqueado}" onclick="manejarClickMenuAI('Currículum')" style="border-color: #f1c40f; grid-column: span 2;">
                 <div class="card-icon">💼</div>
-                <h3 style="color: #f1c40f; font-size:14px;">Currículum</h3>
+                <h3 style="color: #f1c40f; font-size:14px;">Currículum Vitae</h3>
                 ${candadoHtml}
             </div>
         `;
@@ -670,15 +663,12 @@
         textoExtraidoAdjunto = "";
         
         const lblAdjunto = document.getElementById('label-modelo-adjunto');
-        if (lblAdjunto) {
-            lblAdjunto.style.display = 'none';
-            lblAdjunto.innerText = '';
-        }
+        if (lblAdjunto) { lblAdjunto.style.display = 'none'; lblAdjunto.innerText = ''; }
 
         const elemType = document.getElementById('ai-prompt-type');
         if (elemType) elemType.innerText = tipo.toLowerCase();
 
-        document.getElementById('ai-prompt-title').innerText = 'Redactar ' + tipo;
+        document.getElementById('ai-prompt-title').innerText = 'Generar ' + tipo;
         document.getElementById('ai-prompt-input').value = '';
         
         actualizarBotonesPrompt();
@@ -770,13 +760,12 @@
         
         try {
             let prompt = "";
-            const reglaFirma = `\n\n----------------------------------------\nFIRMA`;
             const contextoAdjunto = textoExtraidoAdjunto ? `\n\nINFORMACIÓN EXTRAÍDA DEL ADJUNTO:\n"""${textoExtraidoAdjunto}"""\n` : "";
 
             if (!input && textoExtraidoAdjunto) {
-                prompt = `Toma la siguiente información del archivo adjunto y reestructúrala o transcríbela tal cual respetando el formato de un(a) ${currentAIType}:\n${contextoAdjunto} ${reglaFirma}`;
+                prompt = `Toma la información del archivo adjunto y reestructúrala o transcríbela tal cual respetando el formato exacto de un(a) ${currentAIType}:\n${contextoAdjunto}`;
             } else {
-                prompt = `Redacta un(a) ${currentAIType} formal tomando como base las siguientes instrucciones: "${input}". ${contextoAdjunto} ${reglaFirma}`;
+                prompt = `Redacta un(a) ${currentAIType} formal tomando como base las siguientes instrucciones: "${input}". ${contextoAdjunto}`;
             }
 
             const { data, error } = await supabase.functions.invoke('generar-documento', {
@@ -785,7 +774,7 @@
             
             let contenidoAI = "";
             if (error || !data || !data.response) {
-                contenidoAI = obtenerPlantillaFallback(currentAIType, (input || "Transcripción de adjunto") + "\n" + textoExtraidoAdjunto);
+                contenidoAI = obtenerPlantillaFallback(currentAIType, (input || "Datos de entrada") + "\n" + textoExtraidoAdjunto);
             } else {
                 contenidoAI = data.response.document_content || data.response;
             }
@@ -819,24 +808,47 @@
     function obtenerPlantillaFallback(tipo, promptUsuario) {
         const fechaActual = new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
         
+        if (tipo === "Examen") {
+            return `EVALUACIÓN / EXAMEN DE CONOCIMIENTOS\n\nNombre: ___________________________________  Fecha: ${fechaActual}\n\n` +
+                   `1. ¿Cuál es el procedimiento principal indicado para esta materia?\n` +
+                   `   ⚪ a) Opción A\n   ⚪ b) Opción B\n   ⚪ c) Opción C\n\n` +
+                   `2. Indique la respuesta correcta según corresponda:\n` +
+                   `   ⚪ a) Verdadero\n   ⚪ b) Falso\n\n` +
+                   `3. Desarrolle brevemente el siguiente concepto:\n_____________________________________________________________________\n_____________________________________________________________________`;
+        }
         if (tipo === "Solicitud") {
-            return `SOLICITUD FORMAL\n\nLima, ${fechaActual}\n\nAL DESPACHO CORRESPONDIENTE:\n\nAsunto: ${promptUsuario.substring(0, 50) || 'Solicitud de trámite'}\n\nPor medio de la presente, me dirijo a usted con el debido respeto para solicitar...\n\nSin otro particular, quedo de usted.\n\nAtentamente,\n\n----------------------------------------\nFIRMA`;
+            return `SOLICITA: Trámite o requerimiento general\n\n` +
+                   `SEÑOR DIRECTOR / JEFE DE ÁREA:\n\n` +
+                   `Yo, ________________________________, identificado(a) con DNI N° ______________, ante usted me presento y expongo:\n\n` +
+                   `Que, por convenir a mis intereses y derecho, solicito se sirva disponer a quien corresponda: ${promptUsuario.substring(0, 120) || 'Atender la presente solicitud de acuerdo a ley.'}\n\n` +
+                   `POR LO EXPUESTO:\n` +
+                   `A usted pido acceder a mi solicitud por ser de justicia.\n\n` +
+                   `Lima, ${fechaActual}\n\n` +
+                   `___________________________________\nFIRMA DEL SOLICITANTE`;
         }
         if (tipo === "Carta") {
-            return `CARTA FORMAL\n\nLima, ${fechaActual}\n\nEstimado(a) Señor(a):\n\nMediante la presente carta, me pongo en contacto para tratar los asuntos indicados:\n${promptUsuario}\n\nAgradeciendo de antemano su atención a la presente.\n\nAtentamente,\n\n----------------------------------------\nFIRMA`;
+            return `Lima, ${fechaActual}\n\n` +
+                   `Señor(a):\n` +
+                   `Director(a) de Recursos Humanos / Empresa\n\n` +
+                   `De mi especial consideración:\n\n` +
+                   `Mediante la presente carta, me dirijo a usted con el debido respeto para expresarle lo siguiente:\n` +
+                   `${promptUsuario || 'Le comunico las decisiones acordadas respecto a la relación institucional.'}\n\n` +
+                   `Agradeciendo de antemano la atención brindada a la presente, me despido cordialmente.\n\n` +
+                   `Atentamente,\n\n` +
+                   `___________________________________\nRemitente`;
         }
         if (tipo === "Contrato") {
-            return `CONTRATO DE PRESTACIÓN DE SERVICIOS / ACUERDO\n\nConste por el presente documento el acuerdo celebrado entre las partes:\n\n1. ANTECEDENTES Y DETALLES:\n${promptUsuario}\n\n2. ACUERDOS:\nAmbas partes expresan su total conformidad con lo estipulado.\n\nFirmado el ${fechaActual}.\n\n----------------------------------------\nFIRMA`;
+            return `MODELO DE CONTRATO DE PRESTACIÓN DE SERVICIOS / TRABAJO\n\n` +
+                   `Conste por el presente documento el contrato que celebran de una parte EL EMPLEADOR y de la otra parte EL TRABAJADOR, en los términos y condiciones siguientes:\n\n` +
+                   `PRIMERO.- OBJETIVO DEL CONTRATO:\n${promptUsuario || 'Prestación de servicios laborales y operativos según las normas vigentes.'}\n\n` +
+                   `SEGUNDO.- REMUNERACIÓN Y CONDICIONES:\nAmbas partes declaran estar conformes con los términos fijados.\n\n` +
+                   `En señal de conformidad, se firma el presente documento en dos ejemplares del mismo tenor en la fecha ${fechaActual}.`;
         }
-        return `DOCUMENTO GENERADO - ${tipo.toUpperCase()}\n\nContenido / Instrucciones:\n${promptUsuario}\n\n----------------------------------------\nFIRMA`;
+        return `DOCUMENTO GENERADO - ${tipo.toUpperCase()}\n\nContenido / Instrucciones:\n${promptUsuario}\n\nLima, ${fechaActual}`;
     }
 
     function extraerNombreDePrompt(prompt) {
         if (!prompt) return "NOMBRES Y APELLIDOS";
-        const min = prompt.toLowerCase();
-        if (min.includes("manuel andres da fonseca irribarri") || min.includes("manuel andrés da fonseca irribarri")) {
-            return "MANUEL ANDRÉS DA FONSECA IRRIBARRI";
-        }
         const match = prompt.match(/(?:de|nombre|para|usuario)\s+([A-Za-zÁÉÍÓÚáéíóúñÑ\s]{8,40})/i);
         return match ? match[1].toUpperCase().trim() : "NOMBRES Y APELLIDOS";
     }
@@ -878,7 +890,7 @@
                 <div class="cv-container">
                     <div class="cv-header-grid">
                         <div class="cv-photo-box" onclick="document.getElementById('input-cv-foto').click()">
-                            <span id="cv-photo-placeholder">📷<br>Subir Foto</span>
+                            <span id="cv-photo-placeholder">📷<br>Insertar Foto</span>
                             <img id="cv-photo-img" style="display:none;">
                             <input type="file" id="input-cv-foto" accept="image/*" style="display:none;" onchange="cargarFotoCv(event)">
                         </div>
@@ -909,18 +921,59 @@
                                 <li>Atención al Cliente</li>
                                 <li>Manejo de MS Office</li>
                             </ul>
+
+                            <div class="cv-section-title">IDIOMAS</div>
+                            <p style="font-size:9pt;">
+                                • Español (Nativo)<br>
+                                • Inglés (Intermedio)
+                            </p>
                         </div>
                         <div>
                             <div class="cv-section-title">PERFIL PROFESIONAL</div>
                             <div style="font-size:9.5pt; text-align:justify;">
                                 ${contenido.replace(/\n/g, '<br>')}
                             </div>
+
+                            <div class="cv-section-title">EXPERIENCIA LABORAL</div>
+                            <div style="font-size:9pt;">
+                                <b>Auxiliar Administrativo</b> - Empresa S.A.<br>
+                                <i>2021 - Presente</i><br>
+                                • Gestión y registro de expedientes.<br>
+                                • Atención a clientes y socios.
+                            </div>
+
+                            <div class="cv-section-title">FORMACIÓN ACADÉMICA</div>
+                            <div style="font-size:9pt;">
+                                <b>Técnico / Bachiller</b> - Universidad Nacional<br>
+                                <i>2016 - 2020</i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else if (tipo === 'Contrato') {
+            page.style.padding = '2.5cm 2.5cm 2.5cm 2.5cm';
+            
+            page.innerHTML = `
+                <div>
+                    ${contenido.replace(/\n/g, '<br>')}
+                    
+                    <div class="bloque-firmas-doble" contenteditable="false">
+                        <div class="caja-firma">
+                            ___________________________________<br>
+                            <strong>EL EMPLEADOR</strong><br>
+                            <span style="font-size:9pt; font-weight:normal;">DNI / RUC N°: _______________</span>
+                        </div>
+                        <div class="caja-firma">
+                            ___________________________________<br>
+                            <strong>EL TRABAJADOR</strong><br>
+                            <span style="font-size:9pt; font-weight:normal;">DNI N°: _______________</span>
                         </div>
                     </div>
                 </div>
             `;
         } else {
-            page.style.padding = tipo === 'Contrato' ? '3cm 3cm 2.5cm 2.5cm' : '2.5cm 2.5cm 2.5cm 3cm';
+            page.style.padding = '2.5cm 2.5cm 2.5cm 3cm';
             page.innerText = contenido;
         }
 
@@ -954,8 +1007,6 @@
 
     function aplicarFormatoSeleccion(comando) { document.execCommand(comando, false, null); }
     function aplicarAlineacionSeleccion(alineacion) { document.execCommand(alineacion, false, null); }
-
-    /* --- RELLENADO Y CONVERSIÓN MULTIFORMATO A PDF --- */
 
     function abrirRellenadoLibre() {
         if (!usuarioActual || usuarioActual.creditos <= 0) {
@@ -1249,7 +1300,6 @@
         cerrarModalSimbolos();
     }
 
-    /* ---- ELEMENTOS FLOTANTES Y FONDO COMPACTO ---- */
     function crearElementoFlotante(parent, x, y, pageNum, tipo, contenido, formato = null, customSize = null) {
         const wrapper = document.createElement('div');
         wrapper.className = 'floating-element';
