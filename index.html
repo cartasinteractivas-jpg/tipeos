@@ -622,12 +622,7 @@
     }
 
     async function abrirRellenadoPlantillaBD(plantilla) {
-        // Carga el PDF base de la plantilla y coloca inputs en las coordenadas guardadas
-        if (!plantilla.archivo_url) {
-            alert('Esta plantilla no tiene archivo base subido en el Admin.');
-            return;
-        }
-        // Reutilizamos la pantalla de relleno libre
+        // Carga el PDF base (si existe) o crea hoja en blanco según config, y coloca inputs en coordenadas del JSON
         document.getElementById('free-pdf-upload').value = '';
         document.getElementById('free-canvas-container').innerHTML = '';
         document.getElementById('upload-placeholder').style.display = 'none';
@@ -638,27 +633,58 @@
         window.pdfGlobalScale = 1;
         document.getElementById('zoom-label-free').innerText = '100%';
         window.pdfPageDimensions = {};
+        valoresCamposRellenado = {};
         showScreen('screen-rellenado-libre');
 
         const container = document.getElementById('free-canvas-container');
         container.innerHTML = '<div style="color:#aaa;margin-top:60px;text-align:center;">⏳ Cargando plantilla...</div>';
 
+        const config = plantilla.configuracion || {};
+        const elementos = config.elementos || [];
+        const pageSizeName = config.pageSize || 'A4';
+        const pageDimsPt = config.pageDimensions || { w: 595.28, h: 841.89 };
+        // dims en puntos PDF (si vienen como w/h)
+        const pageW = pageDimsPt.w || pageDimsPt.width || 595.28;
+        const pageH = pageDimsPt.h || pageDimsPt.height || 841.89;
+
         try {
-            const { data: blob, error } = await supabase.storage.from('documentos').download(plantilla.archivo_url);
-            if (error || !blob) throw new Error(error?.message || 'No se pudo descargar el archivo');
-            const arrayBuffer = await blob.arrayBuffer();
+            let arrayBuffer = null;
+
+            // 1) Intentar descargar archivo base si existe
+            if (plantilla.archivo_url) {
+                try {
+                    const { data: blob, error } = await supabase.storage.from('documentos').download(plantilla.archivo_url);
+                    if (!error && blob) {
+                        arrayBuffer = await blob.arrayBuffer();
+                    }
+                } catch (e) {
+                    console.warn('No se pudo descargar archivo base, se usará hoja en blanco:', e);
+                }
+            }
+
+            // 2) Si no hay archivo, crear PDF en blanco con el tamaño de la config
+            if (!arrayBuffer) {
+                const pdfDocBlank = await PDFLib.PDFDocument.create();
+                // Determinar cuántas páginas según los elementos (máx página mencionada)
+                let maxPag = 1;
+                elementos.forEach(el => { if ((el.pagina || 1) > maxPag) maxPag = el.pagina; });
+                for (let i = 0; i < maxPag; i++) {
+                    pdfDocBlank.addPage([pageW, pageH]);
+                }
+                arrayBuffer = await pdfDocBlank.save();
+            }
+
             freePdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
             const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
             freePdfPageCount = pdf.numPages;
             container.innerHTML = '';
 
-            const config = plantilla.configuracion || {};
-            const elementos = config.elementos || [];
+            const SCALE = 1.5;
 
             for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
                 const page = await pdf.getPage(pageNum);
-                const viewportHD = page.getViewport({ scale: 1.5 });
-                window.pdfPageDimensions[pageNum] = { width: viewportHD.width / 1.5, height: viewportHD.height / 1.5 };
+                const viewportHD = page.getViewport({ scale: SCALE });
+                window.pdfPageDimensions[pageNum] = { width: viewportHD.width / SCALE, height: viewportHD.height / SCALE };
 
                 const wrapper = document.createElement('div');
                 wrapper.className = 'pdf-page-wrapper';
@@ -670,6 +696,10 @@
                 canvas.width = viewportHD.width;
                 canvas.height = viewportHD.height;
 
+                // Fondo blanco si es hoja vacía
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
                 const overlay = document.createElement('div');
                 overlay.className = 'overlay-layer';
                 overlay.style.pointerEvents = 'none';
@@ -677,16 +707,22 @@
                 wrapper.appendChild(canvas);
                 wrapper.appendChild(overlay);
                 container.appendChild(wrapper);
-                await page.render({ canvasContext: ctx, viewport: viewportHD }).promise;
 
-                // Colocar campos de texto en las coordenadas (relativas) guardadas
+                // Renderizar contenido del PDF (si tiene)
+                try {
+                    await page.render({ canvasContext: ctx, viewport: viewportHD }).promise;
+                } catch (_) {
+                    // ya tenemos fondo blanco
+                }
+
+                // Colocar campos exactamente en las coordenadas relativas del JSON
                 elementos.filter(el => (el.pagina || 1) === pageNum).forEach((el, idx) => {
                     const key = `bd_${pageNum}_${idx}`;
                     const div = document.createElement('div');
-                    div.style.cssText = `position:absolute;left:${el.rel_x*100}%;top:${el.rel_y*100}%;width:${el.rel_w*100}%;height:${el.rel_h*100}%;border:1.5px solid #3498db;background:rgba(52,152,219,0.15);border-radius:3px;z-index:1002;pointer-events:auto;display:flex;align-items:center;overflow:hidden;box-sizing:border-box;`;
-                    
+                    div.style.cssText = `position:absolute;left:${(el.rel_x||0)*100}%;top:${(el.rel_y||0)*100}%;width:${(el.rel_w||0.2)*100}%;height:${(el.rel_h||0.04)*100}%;border:1.5px solid #3498db;background:rgba(52,152,219,0.18);border-radius:3px;z-index:1002;pointer-events:auto;display:flex;align-items:center;overflow:visible;box-sizing:border-box;`;
+
                     const tag = document.createElement('div');
-                    tag.style.cssText = 'position:absolute;top:-15px;left:0;background:#3498db;color:#fff;font-size:9px;padding:1px 5px;border-radius:3px;white-space:nowrap;pointer-events:none;';
+                    tag.style.cssText = 'position:absolute;top:-16px;left:0;background:#3498db;color:#fff;font-size:9px;padding:1px 5px;border-radius:3px;white-space:nowrap;pointer-events:none;z-index:1003;';
                     tag.innerText = el.nombre || 'Campo';
                     div.appendChild(tag);
 
@@ -695,17 +731,21 @@
                         div.style.borderColor = '#2ecc71';
                         div.style.justifyContent = 'center';
                         div.style.cursor = 'pointer';
-                        div.innerHTML += `<span style="font-size:10px;color:#27ae60;font-weight:bold;">✍️ Toca para firmar</span>`;
+                        const span = document.createElement('span');
+                        span.style.cssText = 'font-size:10px;color:#27ae60;font-weight:bold;';
+                        span.innerText = el.tipo === 'firma' ? '✍️ Toca para firmar' : '👆 Huella';
+                        div.appendChild(span);
                         div.onclick = () => {
-                            currentTarget = { parent: overlay, x: el.rel_x * overlay.offsetWidth, y: el.rel_y * overlay.offsetHeight, pageNum };
-                            // Guardar key para que al firmar se asocie
+                            currentTarget = { parent: overlay, x: (el.rel_x||0) * (overlay.offsetWidth||1), y: (el.rel_y||0) * (overlay.offsetHeight||1), pageNum };
                             window._firmaKeyBD = key;
                             abrirModalFirma();
                         };
                     } else {
-                        const input = document.createElement(el.rel_h > 0.05 ? 'textarea' : 'input');
-                        input.style.cssText = 'width:100%;height:100%;border:none;background:transparent;color:#000;font-size:12px;padding:2px 4px;outline:none;font-family:inherit;resize:none;';
+                        const input = document.createElement((el.rel_h || 0) > 0.05 ? 'textarea' : 'input');
+                        input.style.cssText = 'width:100%;height:100%;border:none;background:transparent;color:#000;font-size:12px;padding:2px 4px;outline:none;font-family:inherit;resize:none;box-sizing:border-box;';
                         input.placeholder = el.nombre || '';
+                        if (el.tipo === 'fecha') input.type = 'date';
+                        if (el.tipo === 'numero') input.type = 'number';
                         if (el.alineacion === 'centro') input.style.textAlign = 'center';
                         if (el.alineacion === 'derecha') input.style.textAlign = 'right';
                         input.oninput = (e) => { valoresCamposRellenado[key] = e.target.value; };
@@ -723,7 +763,6 @@
             const btnGenerar = document.getElementById('btn-generar-free');
             btnGenerar.innerText = `✨ Descargar PDF (${freePdfPageCount} Créditos)`;
             btnGenerar.style.display = 'block';
-            // Sobreescribir temporalmente el generador para usar valoresCamposRellenado + coordenadas
             btnGenerar.onclick = () => generarPdfPlantillaBD(plantilla, elementos);
         } catch (err) {
             console.error(err);
