@@ -4,67 +4,109 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>DocuFácil - Generador de Documentos</title>
+    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://unpkg.com/downloadjs@1.4.7"></script>
+
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: #121212; color: #ffffff; display: flex; justify-content: center; min-height: 100vh; overflow-x: hidden; touch-action: manipulation; }
+        
         .app-container { background: #1e1e1e; width: 100%; max-width: 480px; height: 100vh; display: flex; flex-direction: column; position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.5); overflow: hidden; }
+        
         .header { background: #2c3e50; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; border-bottom: 2px solid #34495e; }
         .header h1 { color: #fff; font-size: 20px; display: flex; align-items: center; gap: 8px; }
         .creditos-badge { background: #f1c40f; color: #000; padding: 5px 12px; border-radius: 20px; font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 5px; }
+
         .screen { padding: 20px; display: none; flex-direction: column; gap: 20px; flex: 1; overflow-y: auto; padding-bottom: 40px; }
         .screen.active { display: flex; }
+
         .compra-section { background: linear-gradient(135deg, #742384 0%, #4a1554 100%); border-radius: 12px; padding: 20px; text-align: center; border: 1px solid #8e44ad; }
         .yape-logo { height: 40px; margin-bottom: 10px; object-fit: contain; }
         .compra-info { color: #fff; font-size: 14px; margin-bottom: 15px; line-height: 1.5; }
         .precio-tag { background: #00E4C0; color: #000; font-weight: bold; padding: 3px 8px; border-radius: 5px; font-size: 15px; }
         .btn-whatsapp { background: #25D366; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; width: 100%; display: flex; justify-content: center; align-items: center; gap: 8px; text-decoration: none; }
+
         .activar-section { background: #222; border-radius: 12px; padding: 15px; border: 1px solid #333; }
         .activar-section h3 { color: #ccc; font-size: 15px; margin-bottom: 10px; }
         .input-codigo-wrapper { display: flex; gap: 10px; }
         .input-codigo { flex: 1; padding: 12px; background: #000; color: #f1c40f; border: 2px solid #444; border-radius: 8px; outline: none; font-size: 16px; text-align: center; font-weight: bold; text-transform: uppercase; }
         .btn-activar { background: #f1c40f; color: #000; border: none; padding: 0 20px; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; }
+
         .section-title { color: #fff; font-size: 18px; margin-top: 10px; border-bottom: 2px solid #333; padding-bottom: 8px; }
         .lista-plantillas { display: flex; flex-direction: column; gap: 12px; }
+        
         .card { background: #2a2a2a; border: 1px solid #444; border-radius: 10px; padding: 15px; cursor: pointer; display: flex; align-items: center; gap: 15px; position: relative; overflow: hidden; transition: 0.2s; }
         .card-icon { font-size: 30px; }
         .card-info { flex: 1; }
         .card-info h3 { color: #fff; font-size: 16px; margin-bottom: 4px; }
         .card-info p { color: #aaa; font-size: 12px; line-height: 1.3; }
         .card.locked { opacity: 0.7; border-color: #333; }
+        .card.locked::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 1; }
         .candado-icon { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); font-size: 24px; z-index: 2; }
+        
         .grid-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .grid-cards .card { flex-direction: column; text-align: center; padding: 12px; gap: 5px; }
+
         .zoom-toolbar { display: flex; align-items: center; gap: 6px; background: #222; padding: 3px 6px; border-radius: 6px; border: 1px solid #444; }
         .zoom-btn { background: #333; color: white; border: 1px solid #555; width: 26px; height: 26px; border-radius: 4px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 14px; }
         .zoom-label { font-size: 11px; color: #f1c40f; font-weight: bold; min-width: 38px; text-align: center; }
-        .canvas-container { width: 100%; height: calc(100vh - 60px); overflow: auto; display: flex; flex-direction: column; align-items: center; background: #000; position: relative; padding: 10px; scroll-behavior: smooth; touch-action: pan-x pan-y pinch-zoom !important; -webkit-overflow-scrolling: touch; }
+
+        .canvas-container { 
+            width: 100%; height: calc(100vh - 60px); overflow: auto; display: flex; flex-direction: column; 
+            align-items: center; background: #000; position: relative; padding: 10px; 
+            scroll-behavior: smooth; touch-action: pan-x pan-y pinch-zoom !important; -webkit-overflow-scrolling: touch;
+        }
         .pdf-page-wrapper { position: relative; background: white; box-shadow: 0 4px 15px rgba(0,0,0,0.5); margin-bottom: 20px; transform-origin: top center; transition: transform 0.1s ease; }
         .free-pdf-canvas { display: block; width: 100%; height: auto; }
+        
         .overlay-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1000; }
-        .floating-element { position: absolute; z-index: 1001; cursor: move; border: 1px dashed transparent; border-radius: 2px; display: inline-flex; align-items: center; justify-content: center; transform-origin: top left; box-sizing: border-box; padding: 0px 2px; user-select: none; touch-action: none; pointer-events: auto !important; }
+        
+        .floating-element { 
+            position: absolute; z-index: 1001; cursor: move; border: 1px dashed transparent; border-radius: 2px; 
+            display: inline-flex; align-items: center; justify-content: center; transform-origin: top left;
+            box-sizing: border-box; padding: 0px 2px; user-select: none; touch-action: none; pointer-events: auto !important;
+        }
         .floating-element.selected { border: 1.5px dashed #3498db !important; }
         .floating-element.locked { border-color: transparent !important; cursor: default; }
+        
         .floating-element.has-halo { background: #ffffff !important; box-shadow: 0 0 0 1px #ffffff; border-radius: 2px; }
         .floating-text { color: #000; font-family: sans-serif; white-space: nowrap; pointer-events: none; user-select: none; display: block; line-height: 1; }
-        .btn-delete-float, .btn-bg-float, .btn-lock-float, .resize-handle { position: absolute; background: #fff; border: 1px solid #aaa; color: #000; border-radius: 50%; width: 16px; height: 16px; font-size: 10px; font-weight: bold; cursor: pointer; display: none; justify-content: center; align-items: center; z-index: 1005; box-shadow: 0 1px 3px rgba(0,0,0,0.4); pointer-events: auto !important; transform-origin: center center; line-height: 1; }
+        
+        .btn-delete-float, .btn-bg-float, .btn-lock-float, .resize-handle { 
+            position: absolute; background: #fff; border: 1px solid #aaa; color: #000; border-radius: 50%; 
+            width: 16px; height: 16px; font-size: 10px; font-weight: bold; cursor: pointer; display: none; 
+            justify-content: center; align-items: center; z-index: 1005; box-shadow: 0 1px 3px rgba(0,0,0,0.4); 
+            pointer-events: auto !important; transform-origin: center center; line-height: 1;
+        }
         .btn-delete-float { top: -8px; right: -8px; background: #e74c3c; color: white; border: none; }
         .btn-bg-float { top: -8px; left: -8px; font-size: 8px; }
         .btn-lock-float { bottom: -8px; left: -8px; background: #f39c12; color: white; border: none; font-size: 8px; }
         .resize-handle { bottom: -8px; right: -8px; background: #3498db; border: 1px solid white; cursor: nwse-resize; }
+        
         .floating-element:hover .btn-delete-float, .floating-element:hover .resize-handle, .floating-element:hover .btn-bg-float, .floating-element:hover .btn-lock-float,
         .floating-element.selected .btn-delete-float, .floating-element.selected .resize-handle, .floating-element.selected .btn-bg-float, .floating-element.selected .btn-lock-float { display: flex !important; }
+        
         .floating-element.locked .btn-delete-float, .floating-element.locked .btn-bg-float, .floating-element.locked .resize-handle { display: none !important; }
+
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 99999; justify-content: center; align-items: center; padding: 20px; }
         .modal-content { background: #222; padding: 20px; border-radius: 10px; border: 1px solid #555; width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 15px; }
         .modal-content h3 { color: #f1c40f; text-align: center; margin-bottom: 5px; }
+        .format-toolbar { display: flex; gap: 10px; justify-content: center; }
+        .btn-format { background: #333; color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 6px; font-size: 16px; cursor: pointer; }
+        .btn-format.active { background: #3498db; border-color: #2980b9; }
+        .chips-container { display: flex; flex-wrap: wrap; gap: 8px; max-height: 80px; overflow-y: auto; }
+        .chip { background: #444; color: #fff; padding: 6px 12px; border-radius: 15px; font-size: 12px; cursor: pointer; border: none; }
+        .chip:hover { background: #f1c40f; color: #000; }
         .modal-actions { display: flex; gap: 10px; justify-content: center; margin-top: 10px; }
         .modal-actions button { margin: 0; width: auto; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .symbol-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .btn-symbol { background: #333; color: white; border: 1px solid #555; font-size: 30px; padding: 10px; border-radius: 8px; cursor: pointer; display: flex; justify-content: center; align-items: center; }
+
         #screen-ai-editor { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #121212; z-index: 3000; display: none; flex-direction: column; }
         #screen-ai-editor.active { display: flex; }
         .editor-toolbar { background: #2c3e50; padding: 8px 10px; display: flex; flex-wrap: wrap; gap: 6px; border-bottom: 1px solid #34495e; z-index: 10; align-items: center; }
@@ -72,389 +114,1450 @@
         .btn-editor-tool:hover { background: #3498db; }
         .btn-style-tool { background: #1a252f; color: #f1c40f; border: 1px solid #34495e; padding: 6px 10px; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: bold; }
         .btn-style-tool:hover { background: #f1c40f; color: #000; }
-        .editor-canvas-container { flex: 1; overflow-y: auto; overflow-x: auto; background: #000; padding: 20px 0; display: flex; flex-direction: column; align-items: center; gap: 20px; position: relative; touch-action: pan-x pan-y pinch-zoom !important; -webkit-overflow-scrolling: touch; }
-        .a4-wrapper-scalable { position: relative; transform-origin: top center; transition: transform 0.1s ease; }
-        .a4-page { background: white; box-shadow: 0 0 15px rgba(0,0,0,0.6); color: black; font-family: 'Times New Roman', Times, serif; font-size: 14px; line-height: 1.5; outline: none; text-align: justify; position: relative; box-sizing: border-box; word-wrap: break-word; overflow-wrap: break-word; white-space: pre-wrap; z-index: 1; }
-        #btn-float-add-global { position: fixed !important; bottom: 25px !important; right: 20px !important; background: #3498db; color: white; border: none; width: 56px; height: 56px; border-radius: 50%; font-size: 28px; z-index: 99998 !important; box-shadow: 0 4px 15px rgba(0,0,0,0.6); display: none; cursor: pointer; }
-        #menu-flotante-opciones-global { display: none; position: fixed !important; bottom: 90px !important; right: 20px !important; flex-direction: column; gap: 10px; z-index: 99998 !important; }
-        #menu-flotante-opciones-global button { background: #3498db; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; width: 130px; display: flex; align-items: center; gap: 8px; justify-content: center; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.5); font-size: 13px; }
-        .btn-adjuntar-modelo { background: #8e44ad; color: white; border: none; padding: 10px 18px; border-radius: 20px; font-size: 14px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); margin-bottom: 5px; }
+        
+        .editor-canvas-container { 
+            flex: 1; overflow-y: auto; overflow-x: auto; background: #000; padding: 20px 0; 
+            display: flex; flex-direction: column; align-items: center; gap: 20px; position: relative; 
+            touch-action: pan-x pan-y pinch-zoom !important; -webkit-overflow-scrolling: touch;
+        }
+
+        .a4-wrapper-scalable { width: 210mm; position: relative; transform-origin: top center; transition: transform 0.1s ease; }
+        
+        .a4-page { 
+            background: white; width: 210mm; min-height: 297mm; padding: 2.5cm; 
+            box-shadow: 0 0 15px rgba(0,0,0,0.6); color: black; 
+            font-family: 'Times New Roman', Times, serif; font-size: 14px; line-height: 1.5; 
+            outline: none; text-align: justify; position: relative; box-sizing: border-box; 
+            word-wrap: break-word; overflow-wrap: break-word; white-space: pre-wrap; z-index: 1;
+        }
+
+        /* CV styles matching the attached curriculum */
+        .cv-container { font-family: Arial, sans-serif; font-size: 10pt; color: #333; line-height: 1.4; }
+        .cv-header-grid { display: grid; grid-template-columns: 110px 1fr 170px; gap: 12px; align-items: start; border-bottom: 2px solid #2c3e50; padding-bottom: 12px; margin-bottom: 12px; }
+        .cv-photo-box { width: 100px; height: 120px; border: 2px dashed #95a5a6; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #f8f9fa; cursor: pointer; text-align: center; color: #7f8c8d; font-size: 10px; overflow: hidden; position: relative; }
+        .cv-photo-box img { width: 100%; height: 100%; object-fit: cover; }
+        .cv-photo-box:hover { border-color: #3498db; background: #ebf5fb; }
+        .cv-title { font-size: 16pt; font-weight: bold; color: #2c3e50; text-transform: uppercase; line-height: 1.1; }
+        .cv-name { font-size: 12pt; font-weight: bold; color: #34495e; margin-top: 4px; text-transform: uppercase; }
+        .cv-grid { display: grid; grid-template-columns: 1fr 1.8fr; gap: 18px; }
+        .cv-section-title { font-size: 10.5pt; font-weight: bold; color: #2c3e50; text-transform: uppercase; border-bottom: 1px solid #ccc; margin-top: 10px; margin-bottom: 6px; padding-bottom: 2px; }
+        .cv-job { margin-bottom: 10px; }
+        .cv-job-title { font-weight: bold; font-size: 10pt; }
+        .cv-job-company { color: #555; font-size: 9pt; }
+        .cv-job-date { color: #777; font-size: 8.5pt; }
+
+        #btn-float-add-global { 
+            position: fixed !important; bottom: 25px !important; right: 20px !important; 
+            background: #3498db; color: white; border: none; width: 56px; height: 56px; 
+            border-radius: 50%; font-size: 28px; z-index: 99998 !important; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.6); display: none; cursor: pointer;
+        }
+        #menu-flotante-opciones-global { 
+            display: none; position: fixed !important; bottom: 90px !important; right: 20px !important; 
+            flex-direction: column; gap: 10px; z-index: 99998 !important; 
+        }
+        #menu-flotante-opciones-global button { background: #3498db; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; width: 120px; display: flex; align-items: center; gap: 8px; justify-content: center; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+
+        .btn-adjuntar-modelo {
+            background: #8e44ad; color: white; border: none; padding: 10px 18px; border-radius: 20px;
+            font-size: 14px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); margin-bottom: 5px;
+        }
+
         .loading-spinner { width: 25px; height: 25px; border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: #f1c40f; animation: spin 1s ease-in-out infinite; display: none; }
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Exam specific */
+        .exam-question { margin-bottom: 14px; }
+        .exam-option { margin-left: 18px; margin-bottom: 4px; }
     </style>
 </head>
 <body>
+
 <div class="app-container">
-    <div class="header"><h1>📄 DocuFácil</h1><div class="creditos-badge">🪙 <span id="user-creditos">0</span></div></div>
+    <div class="header">
+        <h1>📄 DocuFácil</h1>
+        <div class="creditos-badge">🪙 <span id="user-creditos">0</span></div>
+    </div>
+
+    <!-- PANTALLA 1: INICIO -->
     <div id="screen-home" class="screen active">
         <div class="compra-section" id="seccion-compra">
             <img src="https://vectorseek.com/wp-content/uploads/2023/09/Yape-App-Logo-Vector.svg-.png" alt="Yape" class="yape-logo" onerror="this.style.display='none'">
             <div class="compra-info">
-                <p style="font-size:16px;font-weight:bold;margin-bottom:5px;">¿Necesitas crear un documento?</p>
+                <p style="font-size: 16px; font-weight: bold; margin-bottom: 5px;">¿Necesitas crear un documento?</p>
                 <p>Adquiere créditos y genera documentos profesionales al instante.</p>
-                <p style="margin-top:10px;font-size:15px;">1 Crédito = 1 Hoja = <span class="precio-tag">S/ 0.20</span></p>
-                <p style="margin-top:10px;font-weight:bold;color:#f1c40f;font-size:18px;">Yapea al: 967 188 120</p>
+                <p style="margin-top: 10px; font-size: 15px;">1 Crédito = 1 Hoja = <span class="precio-tag">S/ 0.20</span></p>
+                <p style="margin-top: 10px; font-weight: bold; color: #f1c40f; font-size: 18px;">Yapea al: 967 188 120</p>
             </div>
             <a href="https://wa.me/51967188120?text=Hola,%20ya%20yapeé.%20Quiero%20comprar%20créditos%20para%20DocuFácil." target="_blank" class="btn-whatsapp">💬 Enviar captura por WhatsApp</a>
         </div>
+
         <div class="activar-section">
             <h3>🔑 ¿Ya tienes un código? Actívalo aquí:</h3>
-            <div class="input-codigo-wrapper"><input type="text" id="input-codigo" class="input-codigo" placeholder="EJ: MANU-123" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9-]/g, '')"><button class="btn-activar" onclick="activarCodigoBoton()">Activar</button></div>
+            <div class="input-codigo-wrapper">
+                <input type="text" id="input-codigo" class="input-codigo" placeholder="EJ: MANU-123" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9-]/g, '')">
+                <button class="btn-activar" onclick="activarCodigoBoton()">Activar</button>
+            </div>
         </div>
+
         <h2 class="section-title">📚 Relleno Manual PDF / Doc / Imagen</h2>
         <div id="lista-plantillas" class="lista-plantillas"></div>
+
         <h2 class="section-title">✨ Generar con Inteligencia Artificial</h2>
         <div id="lista-ia-menu" class="grid-cards"></div>
     </div>
-    <div id="screen-ai-prompt" class="screen" style="padding:0;background:#121212;">
-        <div class="header"><button onclick="showScreen('screen-home')" style="background:#333;border:none;color:white;width:35px;height:35px;border-radius:8px;font-size:18px;cursor:pointer;">←</button><h1 id="ai-prompt-title" style="margin:0;font-size:18px;">Redactar</h1><div style="width:35px;"></div></div>
-        <div style="flex:1;display:flex;flex-direction:column;padding:20px;gap:15px;justify-content:center;align-items:center;">
-            <p style="text-align:center;color:#ccc;font-size:14px;">Escribe lo que deseas para tu documento o adjunta un archivo.</p>
-            <button class="btn-adjuntar-modelo" onclick="document.getElementById('input-modelo-adjunto').click()">📎 Adjuntar Archivo (PDF, Word, Excel, Imagen)</button>
+
+    <!-- PANTALLA: MENÚ PROMPT AI -->
+    <div id="screen-ai-prompt" class="screen" style="padding:0; background:#121212;">
+        <div class="header">
+            <button onclick="showScreen('screen-home')" style="background:#333; border:none; color:white; width:35px; height:35px; border-radius:8px; font-size:18px; cursor:pointer;">←</button>
+            <h1 id="ai-prompt-title" style="margin:0; font-size: 18px;">Redactar</h1>
+            <div style="width:35px;"></div>
+        </div>
+        <div style="flex:1; display:flex; flex-direction:column; padding:20px; gap:15px; justify-content:center; align-items: center;">
+            <p style="text-align:center; color:#ccc; font-size: 14px;">Escribe lo que deseas para tu <span id="ai-prompt-type" style="font-weight:bold; color:#f1c40f;">documento</span> o adjunta un archivo. Si no escribes nada, se procesará el adjunto.</p>
+            
+            <button class="btn-adjuntar-modelo" onclick="document.getElementById('input-modelo-adjunto').click()">
+                📎 Adjuntar Archivo (PDF, Word, Excel, Imagen)
+            </button>
             <input type="file" id="input-modelo-adjunto" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" style="display:none;" onchange="procesarModeloAdjunto(event)">
-            <span id="label-modelo-adjunto" style="font-size:12px;color:#2ecc71;font-weight:bold;display:none;"></span>
-            <textarea id="ai-prompt-input" rows="5" placeholder="Describe tu documento aquí..." style="width:100%;max-width:400px;border-radius:10px;padding:15px;background:#1e1e1e;color:white;border:1px solid #444;font-size:15px;outline:none;resize:none;"></textarea>
-            <div style="display:flex;justify-content:center;align-items:center;gap:15px;margin-top:10px;height:60px;">
-                <button id="btn-voice-prompt" onclick="iniciarVozPrompt()" style="background:#3498db;color:white;border:none;width:60px;height:60px;border-radius:50%;font-size:24px;box-shadow:0 4px 10px rgba(0,0,0,0.5);cursor:pointer;">🎤</button>
-                <button id="btn-send-prompt" onclick="enviarPromptAI()" style="background:#2ecc71;color:black;font-weight:bold;border:none;padding:15px 30px;border-radius:25px;font-size:18px;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,0.5);">Generar ✨</button>
+            <span id="label-modelo-adjunto" style="font-size:12px; color:#2ecc71; font-weight:bold; display:none;"></span>
+
+            <textarea id="ai-prompt-input" rows="7" placeholder="Ej: Haz un contrato utilizando los datos del recibo adjunto..." style="width:100%; max-width: 400px; border-radius:10px; padding:15px; background:#1e1e1e; color:white; border:1px solid #444; font-size:15px; outline:none; resize:none;"></textarea>
+            
+            <div style="display:flex; justify-content:center; align-items:center; gap:15px; margin-top: 10px; height: 60px;">
+                <button id="btn-voice-prompt" onclick="iniciarVozPrompt()" style="background:#3498db; color:white; border:none; width:60px; height:60px; border-radius:50%; font-size:24px; box-shadow:0 4px 10px rgba(0,0,0,0.5); cursor:pointer;">🎤</button>
+                <button id="btn-send-prompt" onclick="enviarPromptAI()" style="background:#2ecc71; color:black; font-weight:bold; border:none; padding:15px 30px; border-radius:25px; font-size:18px; display:flex; cursor:pointer; box-shadow:0 4px 10px rgba(0,0,0,0.5);">Generar ✨</button>
             </div>
             <div id="ai-prompt-loading" class="loading-spinner"></div>
         </div>
     </div>
-    <div id="screen-rellenado-libre" class="screen" style="padding:0;background:#121212;flex-direction:column;height:100vh;position:relative;">
-        <div style="background:#1a1a1a;padding:12px 15px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #333;width:100%;z-index:100;flex-wrap:wrap;">
-            <button onclick="location.reload()" style="background:#333;border:none;color:white;width:35px;height:35px;border-radius:8px;font-size:18px;cursor:pointer;">←</button>
-            <div style="flex:1;color:#f1c40f;font-weight:bold;font-size:14px;">Editor de PDF</div>
-            <div class="zoom-toolbar"><button class="zoom-btn" onclick="cambiarZoomPdfLibre(-0.15)">-</button><span id="zoom-label-free" class="zoom-label">100%</span><button class="zoom-btn" onclick="cambiarZoomPdfLibre(0.15)">+</button></div>
-            <button onclick="abrirRellenadoLibre()" style="background:#34495e;border:none;color:white;padding:8px 10px;border-radius:6px;font-size:11px;font-weight:bold;cursor:pointer;">🔄 Cargar</button>
-            <button id="btn-generar-free" onclick="generarPdfLibre()" style="background:#2ecc71;border:none;color:black;padding:8px 12px;border-radius:6px;font-size:11px;font-weight:bold;display:none;cursor:pointer;">✅ Descargar PDF</button>
+
+    <!-- PANTALLA: RELLENADO LIBRE MULTIFORMATO -->
+    <div id="screen-rellenado-libre" class="screen" style="padding:0; background:#121212; flex-direction:column; height:100vh; position:relative;">
+        <div style="background: #1a1a1a; padding: 12px 15px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #333; width: 100%; z-index: 100;">
+            <button onclick="location.reload()" style="background:#333; border:none; color:white; width:35px; height:35px; border-radius:8px; font-size:18px; cursor:pointer;">←</button>
+            <div style="flex:1; color:#f1c40f; font-weight:bold; font-size:14px;">Editor de PDF</div>
+            
+            <div class="zoom-toolbar">
+                <button class="zoom-btn" onclick="cambiarZoomPdfLibre(-0.15)">-</button>
+                <span id="zoom-label-free" class="zoom-label">100%</span>
+                <button class="zoom-btn" onclick="cambiarZoomPdfLibre(0.15)">+</button>
+            </div>
+
+            <button onclick="abrirRellenadoLibre()" style="background:#34495e; border:none; color:white; padding:8px 10px; border-radius:6px; font-size:11px; font-weight:bold; cursor:pointer;">🔄 Cargar</button>
+            <button id="btn-generar-free" onclick="generarPdfLibre()" style="background:#2ecc71; border:none; color:black; padding:8px 12px; border-radius:6px; font-size:11px; font-weight:bold; display:none; cursor:pointer;">✅ Descargar PDF</button>
         </div>
-        <div id="upload-placeholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:20px;">
-            <div style="background:#1e1e1e;border:2px dashed #f1c40f;padding:40px 20px;border-radius:15px;width:100%;max-width:280px;text-align:center;">
-                <div style="font-size:40px;margin-bottom:10px;">📂</div><h3 style="color:#fff;margin-bottom:5px;">Sube tu archivo</h3><p style="color:#aaa;font-size:12px;margin-bottom:15px;">PDF, Word, Excel, JPG o PNG</p>
-                <label for="free-pdf-upload" style="background:#3498db;color:white;padding:12px 20px;border-radius:8px;cursor:pointer;font-weight:bold;display:block;">Elegir Archivo</label>
-                <input type="file" id="free-pdf-upload" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" style="display:none;">
+
+        <div id="upload-placeholder" style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex:1; padding: 20px;">
+            <div style="background: #1e1e1e; border: 2px dashed #f1c40f; padding: 40px 20px; border-radius: 15px; width: 100%; max-width: 280px; text-align: center;">
+                <div style="font-size: 40px; margin-bottom: 10px;">📂</div>
+                <h3 style="color: #fff; margin-bottom: 5px; font-size: 16px;">Sube tu archivo</h3>
+                <p style="color:#aaa; font-size:12px; margin-bottom:15px;">Acepta PDF, Word, Excel, JPG o PNG</p>
+                <label for="free-pdf-upload" style="background: #3498db; color: white; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; display: block;">Elegir Archivo</label>
+                <input type="file" id="free-pdf-upload" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" style="display: none;">
             </div>
         </div>
-        <div id="free-canvas-container" class="canvas-container" style="display:none;"></div>
+
+        <div id="free-canvas-container" class="canvas-container" style="display: none;"></div>
     </div>
 </div>
+
+<!-- PANTALLA: EDITOR FULL AI -->
 <div id="screen-ai-editor" class="screen" style="padding:0;">
     <div class="editor-toolbar">
-        <button onclick="showScreen('screen-home')" style="background:#333;border:none;color:white;width:35px;height:35px;border-radius:8px;font-size:18px;cursor:pointer;">←</button>
-        <button class="btn-style-tool" onclick="document.execCommand('bold')"><b>B</b></button>
-        <button class="btn-style-tool" onclick="document.execCommand('italic')"><i>I</i></button>
-        <button class="btn-style-tool" onclick="document.execCommand('underline')"><u>U</u></button>
-        <div style="width:1px;height:20px;background:#444;margin:0 2px;"></div>
-        <button class="btn-editor-tool" onclick="document.execCommand('justifyLeft')">⬅</button>
-        <button class="btn-editor-tool" onclick="document.execCommand('justifyCenter')">⏺</button>
-        <button class="btn-editor-tool" onclick="document.execCommand('justifyRight')">➡</button>
-        <button class="btn-editor-tool" onclick="document.execCommand('justifyFull')">≡</button>
-        <div class="zoom-toolbar" style="margin-left:5px;"><button class="zoom-btn" onclick="cambiarZoomAI(-0.15)">-</button><span id="zoom-label-ai" class="zoom-label">100%</span><button class="zoom-btn" onclick="cambiarZoomAI(0.15)">+</button></div>
-        <button class="btn-editor-tool" style="background:#2ecc71;color:black;font-weight:bold;margin-left:auto;" onclick="generarPdfDesdeEditorAI()">✅ Descargar PDF</button>
+        <button onclick="location.reload()" style="background:#333; border:none; color:white; width:35px; height:35px; border-radius:8px; font-size:18px; cursor:pointer;">←</button>
+        
+        <button class="btn-style-tool" onclick="aplicarFormatoSeleccion('bold')" title="Negrita"><b>B</b></button>
+        <button class="btn-style-tool" onclick="aplicarFormatoSeleccion('italic')" title="Cursiva"><i>I</i></button>
+        <button class="btn-style-tool" onclick="aplicarFormatoSeleccion('underline')" title="Subrayado"><u>U</u></button>
+        <div style="width:1px; height:20px; background:#444; margin:0 2px;"></div>
+        
+        <button class="btn-editor-tool" onclick="aplicarAlineacionSeleccion('justifyLeft')">⬅ Izq</button>
+        <button class="btn-editor-tool" onclick="aplicarAlineacionSeleccion('justifyCenter')">⏺ Cen</button>
+        <button class="btn-editor-tool" onclick="aplicarAlineacionSeleccion('justifyRight')">➡ Der</button>
+        <button class="btn-editor-tool" onclick="aplicarAlineacionSeleccion('justifyFull')">≡ Jus</button>
+        
+        <div class="zoom-toolbar" style="margin-left:5px;">
+            <button class="zoom-btn" onclick="cambiarZoomAI(-0.15)">-</button>
+            <span id="zoom-label-ai" class="zoom-label">100%</span>
+            <button class="zoom-btn" onclick="cambiarZoomAI(0.15)">+</button>
+        </div>
+
+        <button class="btn-editor-tool" style="background:#2ecc71; color:black; font-weight:bold; margin-left:auto;" onclick="generarPdfDesdeEditorAI()">✅ Descargar PDF</button>
     </div>
     <div class="editor-canvas-container" id="ai-editor-container"></div>
 </div>
+
+<!-- BOTÓN FLOTANTE GLOBAL -->
 <button id="btn-float-add-global" onclick="toggleMenuMas()">✚</button>
-<div id="menu-flotante-opciones-global"></div>
-<input type="file" id="input-subir-imagen-global" accept="image/*" style="display:none;" onchange="procesarImagenSubida(event)">
+<div id="menu-flotante-opciones-global">
+    <button onclick="abrirModalTextoDesdeMas()">📝 Texto</button>
+    <button onclick="abrirModalFirmaDesdeMas()" style="background: #e67e22;">✍️ Firma</button>
+    <button onclick="abrirModalSimbolosDesdeMas()" style="background: #9b59b6;">✅ Símbolo</button>
+    <button onclick="abrirSubirImagenDesdeMas()" style="background: #2ecc71; color: black;">🖼️ Imagen</button>
+    <input type="file" id="input-subir-imagen-global" accept="image/*" style="display: none;" onchange="procesarImagenSubida(event)">
+</div>
+
+<!-- MODAL CONFIRMACIÓN -->
 <div id="modal-continuar" class="modal-overlay">
-    <div class="modal-content" style="text-align:center;"><h3>🎉 ¡PDF Descargado con Éxito!</h3><p style="color:#ccc;font-size:14px;margin:10px 0;">Tu documento ha sido descargado en formato PDF.</p><div class="modal-actions" style="flex-direction:column;"><button onclick="cerrarModalContinuar(true)" style="background:#3498db;color:white;width:100%;">✏️ Continuar editando</button><button onclick="cerrarModalContinuar(false)" style="background:#e74c3c;color:white;width:100%;">🏠 Ir al inicio</button></div></div>
+    <div class="modal-content" style="text-align: center;">
+        <h3>🎉 ¡PDF Descargado con Éxito!</h3>
+        <p style="color:#ccc; font-size:14px; margin: 10px 0;">Tu documento ha sido descargado en formato PDF.</p>
+        <div class="modal-actions" style="flex-direction: column;">
+            <button type="button" onclick="cerrarModalContinuar(true)" style="background: #3498db; color: white; width:100%;">✏️ Continuar editando</button>
+            <button type="button" onclick="cerrarModalContinuar(false)" style="background: #e74c3c; color: white; width:100%;">🏠 Ir al inicio</button>
+        </div>
+    </div>
 </div>
+
+<!-- MODALES -->
 <div id="modal-texto" class="modal-overlay">
-    <div class="modal-content"><h3>Añadir Texto</h3><div class="format-toolbar"><button type="button" id="btn-bold" class="btn-format" onclick="toggleFormat('bold')"><b>B</b></button><button type="button" id="btn-italic" class="btn-format" onclick="toggleFormat('italic')"><i>I</i></button><input type="number" id="input-size-texto" value="14" min="4" max="100" style="width:60px;padding:5px;border-radius:6px;border:1px solid #444;background:#111;color:white;text-align:center;outline:none;font-size:16px;"></div><input type="text" id="input-texto-modal" placeholder="Escribe aquí..." style="width:100%;padding:12px;border-radius:6px;border:1px solid #444;background:#111;color:white;font-size:16px;outline:none;"><div id="chips-historial" class="chips-container"></div><div class="modal-actions"><button onclick="cerrarModalTexto()" style="background:#555;color:white;">Cancelar</button><button onclick="guardarTextoModal()" style="background:#2ecc71;color:black;">Aceptar</button></div></div>
+    <div class="modal-content">
+        <h3>Añadir Texto</h3>
+        <div class="format-toolbar">
+            <button type="button" id="btn-bold" class="btn-format" onclick="toggleFormat('bold')"><b>B</b></button>
+            <button type="button" id="btn-italic" class="btn-format" onclick="toggleFormat('italic')"><i>I</i></button>
+            <input type="number" id="input-size-texto" value="14" min="4" max="100" style="width: 60px; padding: 5px; border-radius: 6px; border: 1px solid #444; background: #111; color: white; text-align: center; outline: none; font-size: 16px;" title="Tamaño real (Pt)">
+        </div>
+        <input type="text" id="input-texto-modal" placeholder="Escribe aquí..." style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #444; background: #111; color: white; font-size: 16px; outline: none;">
+        <div id="chips-historial" class="chips-container"></div>
+        <div class="modal-actions">
+            <button type="button" onclick="cerrarModalTexto()" style="background: #555; color: white;">Cancelar</button>
+            <button type="button" onclick="guardarTextoModal()" style="background: #2ecc71; color: black;">Aceptar</button>
+        </div>
+    </div>
 </div>
+
 <div id="modal-firma" class="modal-overlay">
-    <div class="modal-content"><h3>Dibuja tu firma</h3><div style="text-align:center;margin-bottom:10px;"><label style="color:#ccc;">Color:</label><input type="color" id="firma-color" value="#1a1a1a" style="width:60px;height:30px;border:none;background:none;cursor:pointer;"></div><canvas id="canvas-firma" width="380" height="200" style="background:white;border-radius:8px;box-shadow:0 4px 15px rgba(0,0,0,0.3);touch-action:none;width:100%;"></canvas><div class="modal-actions"><button onclick="limpiarFirma()" style="background:#e74c3c;color:white;">Limpiar</button><button onclick="cerrarModalFirma()" style="background:#555;color:white;">Cancelar</button><button onclick="guardarFirma()" style="background:#2ecc71;color:black;">Aceptar</button></div></div>
+    <div class="modal-content">
+        <h3>Dibuja tu firma</h3>
+        <div style="text-align:center; margin-bottom:10px;">
+            <label style="color:#ccc; font-size:14px;">Color: </label>
+            <input type="color" id="firma-color" value="#1a1a1a" style="width:60px; height:30px; border:none; background:none; cursor:pointer;">
+        </div>
+        <canvas id="canvas-firma" width="380" height="200" style="background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); touch-action: none; width: 100%;"></canvas>
+        <div class="modal-actions">
+            <button type="button" onclick="limpiarFirma()" style="background: #e74c3c; color: white;">Limpiar</button>
+            <button type="button" onclick="cerrarModalFirma()" style="background: #555; color: white;">Cancelar</button>
+            <button type="button" onclick="guardarFirma()" style="background: #2ecc71; color: black;">Aceptar</button>
+        </div>
+    </div>
 </div>
+
 <div id="modal-simbolos" class="modal-overlay">
-    <div class="modal-content"><h3>Añadir Símbolo</h3><div style="display:flex;justify-content:center;align-items:center;gap:10px;margin-bottom:10px;"><label style="color:#ccc;">Tamaño (Pt):</label><input type="number" id="input-size-simbolo" value="24" min="4" max="100" style="width:60px;padding:5px;border-radius:6px;border:1px solid #444;background:#111;color:white;text-align:center;outline:none;font-size:16px;"></div><div class="symbol-grid"><button class="btn-symbol" onclick="guardarSimbolo('✔')">✔</button><button class="btn-symbol" onclick="guardarSimbolo('✘')">✘</button><button class="btn-symbol" onclick="guardarSimbolo('•')">•</button></div><div class="modal-actions"><button onclick="cerrarModalSimbolos()" style="background:#555;color:white;">Cancelar</button></div></div>
+    <div class="modal-content">
+        <h3>Añadir Símbolo</h3>
+        <div style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 10px;">
+            <label style="color: #ccc; font-size: 14px;">Tamaño (Pt):</label>
+            <input type="number" id="input-size-simbolo" value="24" min="4" max="100" style="width: 60px; padding: 5px; border-radius: 6px; border: 1px solid #444; background: #111; color: white; text-align: center; outline: none; font-size: 16px;">
+        </div>
+        <div class="symbol-grid">
+            <button type="button" class="btn-symbol" onclick="guardarSimbolo('✔')">✔</button>
+            <button type="button" class="btn-symbol" onclick="guardarSimbolo('✘')">✘</button>
+            <button type="button" class="btn-symbol" onclick="guardarSimbolo('•')">•</button>
+        </div>
+        <div class="modal-actions">
+            <button type="button" onclick="cerrarModalSimbolos()" style="background: #555; color: white; border: none; border-radius: 5px;">Cancelar</button>
+        </div>
+    </div>
 </div>
-<div id="modal-huella" class="modal-overlay">
-    <div class="modal-content"><h3>🖐️ Capturar Huella Digital</h3><p style="color:#ccc;text-align:center;">Dibuja tu huella en el recuadro</p><canvas id="canvas-huella" width="380" height="200" style="background:white;border-radius:8px;touch-action:none;width:100%;"></canvas><div class="modal-actions"><button onclick="limpiarHuella()" style="background:#e74c3c;color:white;">Limpiar</button><button onclick="cerrarModalHuella()" style="background:#555;color:white;">Cancelar</button><button onclick="guardarHuella()" style="background:#2ecc71;color:black;">Aceptar</button></div></div>
-</div>
+
 <script>
     const supabaseUrl = 'https://wpzddhmllctdsiuxenss.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwemRkaG1sbGN0ZHNpdXhlbnNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5NjUyNzQsImV4cCI6MjA5OTU0MTI3NH0.hwSxJ3Sk_RlgbvFyr8S64XRuxW7j55BU4gaIneFTuhY';
     const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-    let usuarioActual = null, freePdfDoc = null, elementosFlotantes = [], freePdfPageCount = 0;
+    let usuarioActual = null;
+    let freePdfDoc = null;
+    let elementosFlotantes = []; 
+    let freePdfPageCount = 0; 
     let historialTextos = JSON.parse(localStorage.getItem('docufacil_historial')) || [];
-    let menuMasAbierto = false, currentTarget = null, textFormat = { bold: false, italic: false };
-    let lastTextSize = 14, lastSymbolSize = 24;
-    let sigCanvas, sigCtx, isDrawing = false, lastX = 0, lastY = 0, currentColor = '#1a1a1a';
-    let modeloAdjuntoFile = null, textoExtraidoAdjunto = "", plantillaSeleccionada = null;
-    let huellaCanvas, huellaCtx, isDrawingHuella = false, lastHuellaX = 0, lastHuellaY = 0;
-    window.pdfGlobalScale = 1; window.aiGlobalScale = 1; window.pdfPageDimensions = {};
-    let currentPageDims = { w: 595.28, h: 841.89 }, currentMargins = { top: 2.5, bottom: 2.5, left: 2.5, right: 2.5 };
+    let menuMasAbierto = false;
+    let currentTarget = null;
+    let textFormat = { bold: false, italic: false };
+    let lastTextSize = 14;
+    let lastSymbolSize = 24;
+    let sigCanvas, sigCtx, isDrawing = false;
+    let lastX = 0, lastY = 0;
+    let currentColor = '#1a1a1a';
+    let modeloAdjuntoFile = null;
+    let textoExtraidoAdjunto = "";
+    let currentAIType = '';
+    
+    window.pdfGlobalScale = 1;
+    window.aiGlobalScale = 1;
+    window.pdfPageDimensions = {}; 
 
-    function limpiarTextoParaPdf(t) { return t ? t.replace(/[^\x00-\x7F\xC0-\xFF]/g, '') : ''; }
-    function obtenerDimensionesPagina(s) { const d = { A4: { w: 595.28, h: 841.89 }, A5: { w: 419.53, h: 595.28 }, Letter: { w: 612, h: 792 } }; return d[s] || d['A4']; }
+    function limpiarTextoParaPdf(texto) {
+        if (!texto) return '';
+        return texto.replace(/[^\x00-\x7F\xC0-\xFF]/g, '');
+    }
 
     document.addEventListener('DOMContentLoaded', async () => {
-        renderizarPlantillas();
-        const c = localStorage.getItem('docufacil_codigo');
-        if (c) { document.getElementById('input-codigo').value = c; await activarCodigo(c, true); }
+        renderizarPlantillas(); 
+        const codigoGuardado = localStorage.getItem('docufacil_codigo');
+        if (codigoGuardado) {
+            document.getElementById('input-codigo').value = codigoGuardado;
+            await activarCodigo(codigoGuardado, true); 
+        }
         document.getElementById('ai-prompt-input').addEventListener('input', actualizarBotonesPrompt);
         window.addEventListener('resize', ajustarEscalaEditorA4);
     });
 
     function actualizarEscalaBotonesFlotantes() {
-        const z = document.getElementById('screen-ai-editor').classList.contains('active') ? window.aiGlobalScale : window.pdfGlobalScale;
-        const s = Math.min(1.2, Math.max(0.5, 1/z));
-        document.querySelectorAll('.btn-delete-float,.btn-bg-float,.btn-lock-float,.resize-handle').forEach(b => b.style.transform = `scale(${s})`);
-    }
-
-    function cambiarZoomAI(d) { window.aiGlobalScale = Math.max(0.4, Math.min(2.5, window.aiGlobalScale+d)); document.getElementById('zoom-label-ai').innerText = Math.round(window.aiGlobalScale*100)+'%'; ajustarEscalaEditorA4(); actualizarEscalaBotonesFlotantes(); }
-    function cambiarZoomPdfLibre(d) { window.pdfGlobalScale = Math.max(0.4, Math.min(2.5, window.pdfGlobalScale+d)); document.getElementById('zoom-label-free').innerText = Math.round(window.pdfGlobalScale*100)+'%'; document.querySelectorAll('.pdf-page-wrapper').forEach(w => { w.style.transform = `scale(${window.pdfGlobalScale})`; w.style.marginBottom = `${-(w.offsetHeight)*(1-window.pdfGlobalScale)+20}px`; }); actualizarEscalaBotonesFlotantes(); }
-    function ajustarEscalaEditorA4() {
-        const ws = document.querySelectorAll('.a4-wrapper-scalable'); if (!ws.length) return;
-        const cw = document.getElementById('ai-editor-container').offsetWidth-20;
-        const pw = ws[0].offsetWidth || 794; let as = cw < pw ? cw/pw : 1;
-        const sf = as * window.aiGlobalScale;
-        ws.forEach(w => { w.style.transform = `scale(${sf})`; w.style.marginBottom = `${-(297*3.779)*(1-sf)}px`; });
-    }
-
-    function showScreen(id) {
-        document.querySelectorAll('.screen').forEach(s => { s.style.display = 'none'; s.classList.remove('active'); });
-        const t = document.getElementById(id); if (t) { t.style.display = 'flex'; t.classList.add('active'); }
-        const btn = document.getElementById('btn-float-add-global');
-        const menu = document.getElementById('menu-flotante-opciones-global');
-        if (id === 'screen-rellenado-libre') {
-            btn.style.display = 'block';
-            menu.innerHTML = `<button onclick="abrirModalTextoDesdeMas()">📝 Texto</button><button onclick="abrirModalSimbolosDesdeMas()" style="background:#9b59b6;">✅ Símbolo</button><button onclick="abrirModalFirmaDesdeMas()" style="background:#e67e22;">✍️ Firma</button><button onclick="abrirSubirImagenDesdeMas()" style="background:#2ecc71;color:black;">🖼️ Imagen</button><button onclick="abrirHuellaDesdeMas()" style="background:#e74c3c;">🖐️ Huella</button>`;
-        } else if (id === 'screen-ai-editor') {
-            btn.style.display = 'block';
-            menu.innerHTML = `<button onclick="abrirModalFirmaDesdeMas()" style="background:#e67e22;">✍️ Firma</button><button onclick="abrirSubirImagenDesdeMas()" style="background:#2ecc71;color:black;">🖼️ Imagen</button><button onclick="abrirHuellaDesdeMas()" style="background:#e74c3c;">🖐️ Huella</button>`;
-            setTimeout(ajustarEscalaEditorA4, 100);
-        } else {
-            btn.style.display = 'none'; menu.style.display = 'none'; menuMasAbierto = false;
-        }
-        window.scrollTo(0,0);
-    }
-
-    async function activarCodigoBoton() { const c = document.getElementById('input-codigo').value.trim(); if (!c) { alert("Ingresa un código"); return; } await activarCodigo(c, false); }
-    async function activarCodigo(codigo, silencioso = false) {
-        const { data, error } = await supabase.from('usuarios_codigos').select('*').eq('codigo', codigo).single();
-        if (error || !data) { localStorage.removeItem('docufacil_codigo'); if (!silencioso) alert("Código incorrecto"); return; }
-        if (data.creditos <= 0) { if (!silencioso) alert("Sin créditos"); return; }
-        usuarioActual = data; localStorage.setItem('docufacil_codigo', codigo);
-        document.getElementById('user-creditos').innerText = usuarioActual.creditos;
-        if (!silencioso) { document.getElementById('input-codigo').value = ''; alert(`✅ Código activado. Créditos: ${usuarioActual.creditos}`); }
-        renderizarPlantillas();
-    }
-
-    async function descontarCredito(cant = 1) {
-        if (!usuarioActual || usuarioActual.creditos < cant) return false;
-        const ns = usuarioActual.creditos - cant;
-        const { error } = await supabase.from('usuarios_codigos').update({ creditos: ns }).eq('id', usuarioActual.id);
-        if (error) { alert("Error al procesar crédito"); return false; }
-        usuarioActual.creditos = ns; document.getElementById('user-creditos').innerText = ns;
-        if (ns === 0) renderizarPlantillas();
-        return true;
-    }
-
-    async function renderizarPlantillas() {
-        const cont = document.getElementById('lista-plantillas');
-        const menuIA = document.getElementById('lista-ia-menu');
-        const tc = usuarioActual && usuarioActual.creditos > 0;
-        const cl = tc ? '' : 'locked';
-        const ch = tc ? '' : '<div class="candado-icon">🔒</div>';
-        cont.innerHTML = `<div class="card ${cl}" onclick="abrirRellenadoLibre()" style="border-color:#e67e22;"><div class="card-icon">✍️</div><div class="card-info"><h3 style="color:#e67e22;">Cargar PDF, Word, Excel o Imagen</h3><p>Completa, edita y estampa firmas o textos. Todo se convierte y descarga en PDF.</p></div>${ch}</div>`;
-        const { data: plantillas, error } = await supabase.from('plantillas').select('*').order('id', { ascending: false });
-        if (error) { console.error(error); menuIA.innerHTML = '<p style="color:red;grid-column:span 2;">Error al cargar plantillas</p>'; return; }
-        if (plantillas && plantillas.length) {
-            menuIA.innerHTML = plantillas.map(p => {
-                const icono = p.icono || (p.tipo === 'ia' ? '🤖' : '📑');
-                return `<div class="card ${cl}" onclick="seleccionarPlantilla('${p.id}','${p.nombre.replace(/'/g,"\\'")}','${p.tipo}')" style="border-color:#9b59b6;"><div class="card-icon">${icono}</div><h3 style="color:#9b59b6;font-size:14px;">${p.nombre}</h3><p style="color:#aaa;font-size:11px;">${p.descripcion||''}</p>${ch}</div>`;
-            }).join('');
-        } else {
-            menuIA.innerHTML = '<p style="color:#888;grid-column:span 2;">No hay plantillas aún</p>';
-        }
-    }
-
-    async function seleccionarPlantilla(id, nombre, tipo) {
-        if (!usuarioActual || usuarioActual.creditos <= 0) { alert("🔒 Sin créditos"); return; }
-        const { data, error } = await supabase.from('plantillas').select('*').eq('id', id).single();
-        if (error || !data) { alert("Error al cargar plantilla"); return; }
-        plantillaSeleccionada = data; modeloAdjuntoFile = null; textoExtraidoAdjunto = "";
-        document.getElementById('label-modelo-adjunto').style.display = 'none';
-        document.getElementById('ai-prompt-title').innerText = nombre;
-        document.getElementById('ai-prompt-input').value = '';
-        document.getElementById('ai-prompt-input').placeholder = `Describe los datos para "${nombre}" o adjunta un archivo...`;
-        showScreen('screen-ai-prompt');
-    }
-
-    async function procesarModeloAdjunto(e) { /* ... igual que antes ... */ }
-    function actualizarBotonesPrompt() { /* ... igual ... */ }
-    function iniciarVozPrompt() { /* ... igual ... */ }
-    async function enviarPromptAI() {
-        const input = document.getElementById('ai-prompt-input').value.trim();
-        if (!input && !textoExtraidoAdjunto) { alert("Escribe algo o adjunta un archivo."); return; }
-        document.getElementById('ai-prompt-loading').style.display = 'block';
-        try {
-            let prompt = input ? `Redacta un documento formal: "${input}".` : "Transcribe el adjunto como documento formal.";
-            if (textoExtraidoAdjunto) prompt += `\n\nINFORMACIÓN ADJUNTA:\n"""${textoExtraidoAdjunto.substring(0,3500)}"""`;
-            if (plantillaSeleccionada?.configuracion?.preguntas) {
-                prompt += "\n\nResponde estas preguntas en el documento:\n" + plantillaSeleccionada.configuracion.preguntas.map((p,i)=>`${i+1}. ${p}`).join('\n');
-            }
-            const { data, error } = await supabase.functions.invoke('generar-documento', { body: JSON.stringify({ history: [], user_input: prompt, current_draft: null }) });
-            const contenido = (error || !data?.response) ? `Documento generado.\n${input}\n${textoExtraidoAdjunto}\n----------------------------------------\nFIRMA` : data.response.document_content || data.response;
-            prepararEditorConPlantilla(contenido);
-            if (modeloAdjuntoFile && modeloAdjuntoFile.type.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.onload = function(e) { const ov = document.querySelector('#ai-editor-container .overlay-layer'); if (ov) crearElementoFlotante(ov, 100, 100, 1, 'image', e.target.result); };
-                reader.readAsDataURL(modeloAdjuntoFile);
-            }
-            showScreen('screen-ai-editor');
-        } catch (e) { alert("Error: "+e.message); }
-        finally { document.getElementById('ai-prompt-loading').style.display = 'none'; }
-    }
-
-    function prepararEditorConPlantilla(contenido) {
-        const container = document.getElementById('ai-editor-container'); container.innerHTML = '';
-        window.aiGlobalScale = 1; document.getElementById('zoom-label-ai').innerText = "100%"; elementosFlotantes = [];
-        let pageSize = 'A4'; let margins = { top: 2.5, bottom: 2.5, left: 2.5, right: 2.5 };
-        if (plantillaSeleccionada?.configuracion) {
-            if (plantillaSeleccionada.configuracion.pageSize) pageSize = plantillaSeleccionada.configuracion.pageSize;
-            if (plantillaSeleccionada.configuracion.margins) margins = plantillaSeleccionada.configuracion.margins;
-        }
-        const dims = obtenerDimensionesPagina(pageSize); currentPageDims = dims; currentMargins = margins;
-        const cmToPt = 28.35;
-        const mt = margins.top * cmToPt, mb = margins.bottom * cmToPt, ml = margins.left * cmToPt, mr = margins.right * cmToPt;
-        const pw = dims.w, ph = dims.h;
-        const wrapper = document.createElement('div'); wrapper.className = 'a4-wrapper-scalable'; wrapper.style.width = pw+'px';
-        const page = document.createElement('div'); page.className = 'a4-page'; page.contentEditable = 'true'; page.dataset.pageNum = 1;
-        page.style.width = pw+'px'; page.style.minHeight = ph+'px'; page.style.padding = `${mt}px ${mr}px ${mb}px ${ml}px`;
-        page.innerText = contenido;
-        const overlay = document.createElement('div'); overlay.className = 'overlay-layer'; overlay.dataset.overlayNum = 1;
-        wrapper.appendChild(page); wrapper.appendChild(overlay); container.appendChild(wrapper);
-        ajustarEscalaEditorA4();
-        page.addEventListener('input', function() {
-            if (page.scrollHeight > ph+30 && container.querySelectorAll('.a4-page').length < 8) {
-                const nw = document.createElement('div'); nw.className = 'a4-wrapper-scalable'; nw.style.width = pw+'px';
-                const np = document.createElement('div'); np.className = 'a4-page'; np.contentEditable = 'true'; np.dataset.pageNum = container.querySelectorAll('.a4-page').length+1;
-                np.style.width = pw+'px'; np.style.minHeight = ph+'px'; np.style.padding = `${mt}px ${mr}px ${mb}px ${ml}px`;
-                const no = document.createElement('div'); no.className = 'overlay-layer'; no.dataset.overlayNum = np.dataset.pageNum;
-                nw.appendChild(np); nw.appendChild(no); container.appendChild(nw);
-                ajustarEscalaEditorA4();
-            }
+        const currentZoom = document.getElementById('screen-ai-editor').classList.contains('active') ? window.aiGlobalScale : window.pdfGlobalScale;
+        const btnScale = Math.min(1.2, Math.max(0.5, 1 / currentZoom));
+        document.querySelectorAll('.btn-delete-float, .btn-bg-float, .btn-lock-float, .resize-handle').forEach(btn => {
+            btn.style.transform = `scale(${btnScale})`;
         });
     }
 
-    function abrirRellenadoLibre() { /* ... */ }
-    document.getElementById('free-pdf-upload').addEventListener('change', async function(e) { /* ... */ });
-    async function cargarPdfEnEditor(fileOrBlob) { /* ... */ }
+    function cambiarZoomAI(delta) {
+        window.aiGlobalScale = Math.max(0.4, Math.min(2.5, window.aiGlobalScale + delta));
+        document.getElementById('zoom-label-ai').innerText = `${Math.round(window.aiGlobalScale * 100)}%`;
+        ajustarEscalaEditorA4();
+        actualizarEscalaBotonesFlotantes();
+    }
 
-    function toggleMenuMas() { menuMasAbierto = !menuMasAbierto; document.getElementById('menu-flotante-opciones-global').style.display = menuMasAbierto ? 'flex' : 'none'; }
-    function getViewportCenter() { /* ... */ }
-    function abrirModalTextoDesdeMas() { toggleMenuMas(); currentTarget = getViewportCenter(); abrirModalTexto(); }
-    function abrirModalSimbolosDesdeMas() { toggleMenuMas(); currentTarget = getViewportCenter(); abrirModalSimbolos(); }
-    function abrirModalFirmaDesdeMas() { toggleMenuMas(); currentTarget = getViewportCenter(); abrirModalFirma(); }
-    function abrirSubirImagenDesdeMas() { toggleMenuMas(); currentTarget = getViewportCenter(); document.getElementById('input-subir-imagen-global').click(); }
-    function abrirHuellaDesdeMas() { toggleMenuMas(); currentTarget = getViewportCenter(); abrirModalHuella(); }
-    function procesarImagenSubida(e) { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = ev => crearElementoFlotante(currentTarget.parent, currentTarget.x, currentTarget.y, currentTarget.pageNum, 'image', ev.target.result); r.readAsDataURL(f); }
+    function cambiarZoomPdfLibre(delta) {
+        window.pdfGlobalScale = Math.max(0.4, Math.min(2.5, window.pdfGlobalScale + delta));
+        document.getElementById('zoom-label-free').innerText = `${Math.round(window.pdfGlobalScale * 100)}%`;
+        const wrappers = document.querySelectorAll('.pdf-page-wrapper');
+        wrappers.forEach(w => {
+            w.style.transform = `scale(${window.pdfGlobalScale})`;
+            w.style.marginBottom = `${-(w.offsetHeight) * (1 - window.pdfGlobalScale) + 20}px`;
+        });
+        actualizarEscalaBotonesFlotantes();
+    }
 
-    function abrirModalTexto() { /* ... */ }
+    function ajustarEscalaEditorA4() {
+        const wrappers = document.querySelectorAll('.a4-wrapper-scalable');
+        if (!wrappers.length) return;
+        const containerWidth = document.getElementById('ai-editor-container').offsetWidth - 20;
+        const pageA4WidthPx = 794; 
+        let autoScale = 1;
+        if (containerWidth < pageA4WidthPx) autoScale = containerWidth / pageA4WidthPx;
+        const scaleFinal = autoScale * window.aiGlobalScale;
+        wrappers.forEach(w => {
+            w.style.transform = `scale(${scaleFinal})`;
+            w.style.marginBottom = `${-(297 * 3.779) * (1 - scaleFinal)}px`;
+        });
+    }
+
+    function showScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => { s.style.display = 'none'; s.classList.remove('active'); });
+        const target = document.getElementById(screenId);
+        if (target) { target.style.display = 'flex'; target.classList.add('active'); }
+        
+        const btnGlobal = document.getElementById('btn-float-add-global');
+        if (screenId === 'screen-rellenado-libre' || screenId === 'screen-ai-editor') {
+            btnGlobal.style.display = 'block';
+            if (screenId === 'screen-ai-editor') setTimeout(ajustarEscalaEditorA4, 100);
+        } else {
+            btnGlobal.style.display = 'none';
+            document.getElementById('menu-flotante-opciones-global').style.display = 'none';
+            menuMasAbierto = false;
+        }
+        window.scrollTo(0, 0);
+    }
+
+    async function activarCodigoBoton() {
+        const input = document.getElementById('input-codigo');
+        const codigo = input.value.trim();
+        if (!codigo) { alert("⚠️ Por favor ingresa un código."); return; }
+        await activarCodigo(codigo, false);
+    }
+
+    async function activarCodigo(codigo, silencioso = false) {
+        try {
+            const { data, error } = await supabase.from('usuarios_codigos').select('*').eq('codigo', codigo).single();
+            if (error || !data) {
+                localStorage.removeItem('docufacil_codigo');
+                if (!silencioso) alert("❌ Código incorrecto o no existe.");
+                return;
+            }
+            if (data.creditos <= 0) {
+                if (!silencioso) alert("⚠️ Este código ya no tiene créditos.");
+                return;
+            }
+            usuarioActual = data;
+            localStorage.setItem('docufacil_codigo', codigo);
+            document.getElementById('user-creditos').innerText = usuarioActual.creditos;
+            if (!silencioso) {
+                document.getElementById('input-codigo').value = '';
+                alert(`✅ ¡Código activado! Tienes ${usuarioActual.creditos} créditos disponibles.`);
+            }
+            renderizarPlantillas();
+        } catch (e) {
+            if (!silencioso) alert("Error de conexión con el servidor.");
+        }
+    }
+
+    async function descontarCredito(cantidad = 1) {
+        if (!usuarioActual || usuarioActual.creditos < cantidad) return false;
+        const nuevoSaldo = usuarioActual.creditos - cantidad;
+        const { error } = await supabase.from('usuarios_codigos').update({ creditos: nuevoSaldo }).eq('id', usuarioActual.id);
+        if (error) { alert("Error al procesar el crédito."); return false; }
+        usuarioActual.creditos = nuevoSaldo;
+        document.getElementById('user-creditos').innerText = nuevoSaldo;
+        if (nuevoSaldo === 0) renderizarPlantillas(); 
+        return true;
+    }
+
+    function renderizarPlantillas() {
+        const contenedor = document.getElementById('lista-plantillas');
+        const menuIA = document.getElementById('lista-ia-menu');
+        if (!contenedor || !menuIA) return;
+        
+        const tieneCreditos = usuarioActual && usuarioActual.creditos > 0;
+        const claseBloqueado = tieneCreditos ? '' : 'locked';
+        const candadoHtml = tieneCreditos ? '' : '<div class="candado-icon">🔒</div>';
+
+        contenedor.innerHTML = `
+           <div class="card ${claseBloqueado}" onclick="abrirRellenadoLibre()" style="border-color: #e67e22;">
+                <div class="card-icon">✍️</div>
+                <div class="card-info">
+                    <h3 style="color: #e67e22;">Cargar PDF, Word, Excel o Imagen</h3>
+                    <p>Completa, edita y estampa firmas o textos. Todo se convierte y descarga en PDF.</p>
+                </div>
+                ${candadoHtml}
+            </div>
+        `;
+        
+        menuIA.innerHTML = `
+            <div class="card ${claseBloqueado}" onclick="manejarClickMenuAI('Carta')" style="border-color: #3498db;">
+                <div class="card-icon">✉️</div>
+                <h3 style="color: #3498db; font-size:14px;">Cartas</h3>
+                ${candadoHtml}
+            </div>
+            <div class="card ${claseBloqueado}" onclick="manejarClickMenuAI('Solicitud')" style="border-color: #9b59b6;">
+                <div class="card-icon">📝</div>
+                <h3 style="color: #9b59b6; font-size:14px;">Solicitudes</h3>
+                ${candadoHtml}
+            </div>
+            <div class="card ${claseBloqueado}" onclick="manejarClickMenuAI('Contrato')" style="border-color: #2ecc71;">
+                <div class="card-icon">🤝</div>
+                <h3 style="color: #2ecc71; font-size:14px;">Contrato</h3>
+                ${candadoHtml}
+            </div>
+            <div class="card ${claseBloqueado}" onclick="manejarClickMenuAI('Currículum')" style="border-color: #f1c40f;">
+                <div class="card-icon">💼</div>
+                <h3 style="color: #f1c40f; font-size:14px;">Currículum</h3>
+                ${candadoHtml}
+            </div>
+            <div class="card ${claseBloqueado}" onclick="manejarClickMenuAI('Examen')" style="border-color: #e74c3c;">
+                <div class="card-icon">📋</div>
+                <h3 style="color: #e74c3c; font-size:14px;">Examen</h3>
+                ${candadoHtml}
+            </div>
+        `;
+    }
+
+    function manejarClickMenuAI(tipo) {
+        if (!usuarioActual || usuarioActual.creditos <= 0) {
+            alert("🔒 Necesitas activar un código con créditos.");
+            document.getElementById('seccion-compra').scrollIntoView({ behavior: 'smooth' });
+            return;
+        }
+        currentAIType = tipo;
+        modeloAdjuntoFile = null;
+        textoExtraidoAdjunto = "";
+        
+        const lblAdjunto = document.getElementById('label-modelo-adjunto');
+        if (lblAdjunto) {
+            lblAdjunto.style.display = 'none';
+            lblAdjunto.innerText = '';
+        }
+
+        const elemType = document.getElementById('ai-prompt-type');
+        if (elemType) elemType.innerText = tipo.toLowerCase();
+
+        document.getElementById('ai-prompt-title').innerText = 'Redactar ' + tipo;
+        document.getElementById('ai-prompt-input').value = '';
+        
+        actualizarBotonesPrompt();
+        showScreen('screen-ai-prompt');
+    }
+
+    async function procesarModeloAdjunto(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        modeloAdjuntoFile = file;
+        textoExtraidoAdjunto = "";
+        
+        const lbl = document.getElementById('label-modelo-adjunto');
+        lbl.innerText = `⏳ Procesando: ${file.name}...`;
+        lbl.style.display = 'block';
+
+        try {
+            if (file.type === 'application/pdf') {
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                let fullText = "";
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+                    fullText += textContent.items.map(item => item.str).join(" ") + "\n";
+                }
+                textoExtraidoAdjunto = fullText;
+            } else if (file.name.endsWith('.docx') || file.type.includes('wordprocessingml')) {
+                const arrayBuffer = await file.arrayBuffer();
+                const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
+                textoExtraidoAdjunto = result.value;
+            } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+                const arrayBuffer = await file.arrayBuffer();
+                const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                let excelText = "";
+                workbook.SheetNames.forEach(sheetName => {
+                    excelText += XLSX.utils.sheet_to_txt(workbook.Sheets[sheetName]) + "\n";
+                });
+                textoExtraidoAdjunto = excelText;
+            } else if (file.type.startsWith('text/')) {
+                textoExtraidoAdjunto = await file.text();
+            }
+            lbl.innerText = `✅ Adjunto leído e integrado: ${file.name}`;
+        } catch (err) {
+            lbl.innerText = `📎 Modelo adjuntado: ${file.name}`;
+        }
+        actualizarBotonesPrompt();
+    }
+    
+    function actualizarBotonesPrompt() {
+        const val = document.getElementById('ai-prompt-input').value.trim();
+        const btnVoice = document.getElementById('btn-voice-prompt');
+        const btnSend = document.getElementById('btn-send-prompt');
+        if (val || modeloAdjuntoFile) {
+            if (btnVoice) btnVoice.style.display = 'none';
+            if (btnSend) btnSend.style.display = 'flex';
+        } else {
+            if (btnVoice) btnVoice.style.display = 'flex';
+            if (btnSend) btnSend.style.display = 'flex';
+        }
+    }
+    
+    function iniciarVozPrompt() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) { alert("Tu navegador no soporta dictado por voz."); return; }
+        const btn = document.getElementById('btn-voice-prompt');
+        const recog = new SpeechRecognition();
+        recog.lang = 'es-ES';
+        recog.continuous = false;
+        recog.onstart = () => { btn.style.background = '#e74c3c'; };
+        recog.onresult = (e) => { 
+            document.getElementById('ai-prompt-input').value += e.results[0][0].transcript + ' ';
+            actualizarBotonesPrompt();
+        };
+        recog.onend = () => { btn.style.background = '#3498db'; actualizarBotonesPrompt(); };
+        recog.start();
+    }
+    
+    async function enviarPromptAI() {
+        const input = document.getElementById('ai-prompt-input').value.trim();
+        
+        document.getElementById('ai-prompt-loading').style.display = 'block';
+        const btnSend = document.getElementById('btn-send-prompt');
+        btnSend.disabled = true;
+        btnSend.innerText = 'Generando...';
+        
+        try {
+            let prompt = "";
+            const reglaFirma = `\n\n----------------------------------------\nFIRMA`;
+            const contextoAdjunto = textoExtraidoAdjunto ? `\n\nINFORMACIÓN EXTRAÍDA DEL ADJUNTO:\n"""${textoExtraidoAdjunto.substring(0, 3500)}"""\n` : "";
+
+            if (!input && textoExtraidoAdjunto) {
+                prompt = `Toma la siguiente información del archivo adjunto y reestructúrala o transcríbela respetando exactamente el formato formal de un(a) ${currentAIType} profesional peruano/chileno. Usa lenguaje formal, estructura clara y deja espacio para firma:\n${contextoAdjunto} ${reglaFirma}`;
+            } else {
+                prompt = `Redacta un(a) ${currentAIType} formal y profesional (estilo Perú/Chile) tomando como base estas instrucciones: "${input}". ${contextoAdjunto}
+                
+IMPORTANTE:
+- Usa el formato exacto y estructura de documentos oficiales.
+- Si es Currículum: foto placeholder + columnas (perfil, experiencia, formación, habilidades, idiomas, intereses, referencias).
+- Si es Contrato: cláusulas numeradas, partes, duración, remuneración, firmas.
+- Si es Solicitud: encabezado formal, exposición de motivos, "POR LO EXPUESTO", anexos.
+- Si es Carta: fecha, destinatario, cuerpo, despedida, firma.
+- Si es Examen: título, nombre del alumno, preguntas numeradas con opciones a) b) c) d).
+- Si hay mucha información genera contenido completo (puede ocupar varias páginas).
+${reglaFirma}`;
+            }
+
+            const { data, error } = await supabase.functions.invoke('generar-documento', {
+                body: JSON.stringify({ history: [], user_input: prompt, current_draft: null }),
+            });
+            
+            let contenidoAI = "";
+            if (error || !data || !data.response) {
+                contenidoAI = obtenerPlantillaFallback(currentAIType, (input || "Datos del adjunto") + "\n" + textoExtraidoAdjunto);
+            } else {
+                contenidoAI = data.response.document_content || data.response;
+            }
+
+            prepararEditorPorTipo(currentAIType, contenidoAI, input + " " + textoExtraidoAdjunto);
+
+            if (modeloAdjuntoFile && modeloAdjuntoFile.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const firstOverlay = document.querySelector('#ai-editor-container .overlay-layer');
+                    if (firstOverlay) {
+                        crearElementoFlotante(firstOverlay, 100, 100, 1, 'image', e.target.result);
+                    }
+                };
+                reader.readAsDataURL(modeloAdjuntoFile);
+            }
+
+            showScreen('screen-ai-editor');
+
+        } catch (error) {
+            const fallback = obtenerPlantillaFallback(currentAIType, input + " " + textoExtraidoAdjunto);
+            prepararEditorPorTipo(currentAIType, fallback, input + " " + textoExtraidoAdjunto);
+            showScreen('screen-ai-editor');
+        } finally {
+            document.getElementById('ai-prompt-loading').style.display = 'none';
+            btnSend.disabled = false;
+            btnSend.innerText = 'Generar ✨';
+        }
+    }
+
+    function obtenerPlantillaFallback(tipo, promptUsuario) {
+        const fechaActual = new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+        const datos = promptUsuario.substring(0, 800) || "Información proporcionada por el usuario";
+        
+        if (tipo === "Solicitud") {
+            return `SOLICITA : Codifique al MASPOL y se\nAnexe al Legajo Personal\nLegajo Personal una\nResolución Directoral de\nNombramiento de docente\npolicial en actividad---------------\n\nSEÑOR GENERAL PNP\nDIRECTOR DE LA DIRECCIÓN EJECUTIVA DE PERSONAL DE LA PNP.\nS.G.\n\n${datos.split('\n')[0] || 'Ramibito PÉREZ PÉREZ'}, Suboficial de Primera de la\nPNP, identificado con CIP. Nº 30303030 y DNI Nº 10101010, prestando\nservicios actualmente en el DINOES - PNP, ante usted con el debido\nrespeto, me presento y expongo lo siguiente:\n\nQue, habiendo culminado el (Nombre del curso),\nen la (Unidad Policial) donde me desempeño como Docente policial en\nactividad, es que recurro a su Despacho a fin de que se codifique a mi\nMASPOL y se anexe a mi Legajo Personal una (01) copia fedateada de la\nResolución Directoral N° xxxx-2016-DIREED-PNP/ESCEDCON del\n12AGO2016. En tal sentido solicito a Ud. Sr. General se digne disponer a\nquien corresponda acceder a mi petición por ser de Justicia.\n\nPOR LO EXPUESTO:\n\nA Ud., Señor General, agradeceré acceder a mi\npetición.\n\nANEXOS:\n– Resolución N° (Resolución emitida por la Dirección Ejecutivo de Educación y Doctrina de la PNP.)\n– Copia simple del CIP.\n– Copia simple del DNI.\n\nLima, ${fechaActual}.\n\n----------------------------------------\nFIRMA\nCIP: 30464546\nRamibito PÉREZ SOSA\nSO1 PNP`;
+        }
+        if (tipo === "Carta") {
+            return `Santiago de Chile, ${fechaActual}\n\nSr. Pedro Enríquez\nDirector de recursos humanos de Petróleos S.A.\n\nMe dirijo a usted con el fin de postularme al puesto de secretario general de la sede central de la compañía.\n\nQuisiera trabajar en esta compañía porque es una de las más valoradas del sector. Tengo experiencia en otros puestos similares, ya que he trabajado como secretario general durante diez años en dos empresas que se dedican a la refinación del petróleo.\n\nAdemás, tengo conocimientos de inglés, francés y alemán y de distintos programas informáticos que se utilizan en este tipo de trabajos.\n\nAdjunto mi CV, en el que se encuentra la información sobre mi experiencia, mis estudios y mis datos personales.\n\nA la espera de sus noticias, le saluda atentamente,\n\n----------------------------------------\nFIRMA\nMariano Pérez`;
+        }
+        if (tipo === "Contrato") {
+            return `MODELO DE CONTRATO DE TRABAJO SUJETO A MODALIDAD\n\nConste por el presente documento, que se suscribe por triplicado con igual tenor y valor, el contrato de trabajo sujeto a modalidad que al amparo del Texto Único Ordenado del Decreto Legislativo N° 728, Decreto Supremo N° 003-97-TR, Ley de Productividad y Competitividad Laboral y normas complementarias, que celebran de una parte ________________, con RUC N° ______________ y domicilio real en ________________, debidamente representada por el señor ________________, con DNI N° ______________, a quien en adelante se le denominará EL EMPLEADOR, y de la otra parte, don(ña) ________________, identificado(a) con DNI N° ______________, y domicilio real en ________________, a quien en adelante se le denominará EL TRABAJADOR, en los términos y condiciones siguientes:\n\n1.- EL EMPLEADOR es una ________________, cuyo objeto social es ________________, y que se halla debidamente autorizada por ________________, de fecha ________________, emitida por ________________, que requiere de los servicios del TRABAJADOR en forma ________________ (3) para ________________ (4).\n\n2.- Por el presente contrato, EL TRABAJADOR se obliga a prestar sus servicios al EMPLEADOR para realizar las siguientes actividades: ________________, debiendo el TRABAJADOR cumplir estrictamente las directrices de su empleador, y las que se impartan por necesidades del servicio en ejercicio de las facultades de administración y dirección de la empresa, de conformidad con el artículo 9° del Texto Único Ordenado de la Ley de Productividad y Competitividad Laboral, aprobado mediante Decreto Supremo N° 003-97-TR.\n\n3.- La duración del presente contrato es de ________________, iniciándose el día ________________ y concluirá el día ________________ de 20____.\n\n4.- En contraprestación a los servicios del TRABAJADOR, EL EMPLEADOR se obliga a pagar una remuneración de S/ ________________ (6) ________________, igualmente se obliga a facilitar al TRABAJADOR los materiales necesarios para que desarrolle sus labores, así como el pago de los beneficios que por ley, pacto o costumbre tuvieren los trabajadores del centro de trabajo promedio a plazo indeterminado.\n\n5.- EL TRABAJADOR deberá prestar sus servicios en el horario de ________________ a ________________ (días), de ________________ a ________________ (horas), teniendo un refrigerio de ________________ (minutos), que será tomado de ________________ a ________________.\n\n6.- EL EMPLEADOR, así como el TRABAJADOR, se obligan a insertar al TRABAJADOR en el Libro de Planillas de Remuneraciones, así como poner en conocimiento de la Autoridad Administrativa de Trabajo el presente contrato, para su conocimiento y registro, en cumplimiento de lo dispuesto por el artículo 72° del Texto Único Ordenado del Decreto Legislativo N° 728, Ley de Productividad y Competitividad Laboral, aprobado mediante Decreto Supremo N° 003-97-TR.\n\n7.- Queda entendido que EL EMPLEADOR no está obligado a dar aviso alguno adicional, conforme al término del presente contrato, operando su extinción en la fecha de su vencimiento, conforme a la cláusula tercera, oportunidad en la cual se abonarán al TRABAJADOR los beneficios sociales, que se pudieran corresponder de acuerdo a Ley.\n\nDatos del usuario / adjunto:\n${datos}\n\n----------------------------------------\nFIRMA EL EMPLEADOR\n\n----------------------------------------\nFIRMA EL TRABAJADOR`;
+        }
+        if (tipo === "Examen") {
+            return `Nombre: _________________________\n\nEJEMPLO DEL EXAMEN DE CDA\n\n1. ¿Cuál es la mejor edad para presentar música a los niños?\n   ○ a. Bebés\n   ○ b. Bebés que ya caminan\n   ○ c. Preescolares pequeños\n   ○ d. Preescolares mayores\n\n2. ¿Qué es lo más apropiado para que los niños no interrumpan actividades en áreas donde otros niños están trabajando?\n   ○ a. Usar los muebles para crear senderos que eviten el tránsito de los niños en las áreas de juego.\n   ○ b. Hacer que el niño escoja un lugar para jugar hasta que la hora de juego se acabe.\n   ○ c. Enseñar la regla, "Nosotros caminamos en los lugares de juegos de otros niños con cuidado y despacito."\n   ○ d. Hacer que los niños jueguen solamente en las mesas.\n\n3. ¿Cuál es la merienda más nutritiva para toddlers?\n   ○ a. Galletas, caramelos y leche.\n   ○ b. Papitas saladitas de bolsa y 100% jugo de naranja.\n   ○ c. Rodajas de manzana, pan integral con mantequilla de maní/cacahuate y leche.\n   ○ d. Galletas saladas y 100% jugo de frutas.\n\n(Datos / instrucciones del usuario):\n${datos}`;
+        }
+        // Currículum fallback is handled specially in prepararEditorPorTipo
+        return `DOCUMENTO GENERADO - ${tipo.toUpperCase()}\n\nContenido / Instrucciones:\n${datos}\n\n----------------------------------------\nFIRMA`;
+    }
+
+    function extraerNombreDePrompt(prompt) {
+        if (!prompt) return "NOMBRES Y APELLIDOS";
+        const min = prompt.toLowerCase();
+        if (min.includes("manuel andres da fonseca irribarri") || min.includes("manuel andrés da fonseca irribarri")) {
+            return "MANUEL ANDRÉS DA FONSECA IRRIBARRI";
+        }
+        const match = prompt.match(/(?:de|nombre|para|usuario|soy|me llamo)\s+([A-Za-zÁÉÍÓÚáéíóúñÑ\s]{6,45})/i);
+        return match ? match[1].toUpperCase().trim() : "NOMBRES Y APELLIDOS";
+    }
+
+    function crearPaginaA4(num) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'a4-wrapper-scalable';
+
+        const page = document.createElement('div');
+        page.id = `a4-page-${num}`;
+        page.className = 'a4-page';
+        page.contentEditable = 'true';
+        page.dataset.pageNum = num;
+
+        const overlay = document.createElement('div');
+        overlay.className = 'overlay-layer';
+        overlay.dataset.overlayNum = num;
+        
+        wrapper.appendChild(page);
+        wrapper.appendChild(overlay);
+
+        page.addEventListener('input', () => verificarDesbordamientoPagina(page));
+        return { wrapper, page, overlay };
+    }
+
+    function prepararEditorPorTipo(tipo, contenido, promptOriginal = "") {
+        const container = document.getElementById('ai-editor-container');
+        container.innerHTML = '';
+        window.aiGlobalScale = 1;
+        document.getElementById('zoom-label-ai').innerText = "100%";
+        elementosFlotantes = [];
+        
+        const { wrapper, page } = crearPaginaA4(1);
+
+        if (tipo === 'Currículum') {
+            page.style.padding = '1.4cm 1.6cm';
+            const nombreExtraido = extraerNombreDePrompt(promptOriginal);
+            const textoLimpio = (contenido || '').replace(/\n/g, '<br>');
+
+            page.innerHTML = `
+                <div class="cv-container">
+                    <div class="cv-header-grid">
+                        <div class="cv-photo-box" onclick="document.getElementById('input-cv-foto').click()">
+                            <span id="cv-photo-placeholder">📷<br>Subir Foto</span>
+                            <img id="cv-photo-img" style="display:none;">
+                            <input type="file" id="input-cv-foto" accept="image/*" style="display:none;" onchange="cargarFotoCv(event)">
+                        </div>
+                        <div>
+                            <div class="cv-title">CURRÍCULUM VITAE</div>
+                            <div class="cv-name">${nombreExtraido}</div>
+                            <div style="font-size:9pt; color:#555; margin-top:4px;">AUXILIAR / ADMINISTRATIVO</div>
+                        </div>
+                        <div style="text-align:right; font-size:8pt; color:#555; line-height:1.55;">
+                            📞 +51 999 999 999<br>
+                            ✉️ juan.correo@gmail.com<br>
+                            📍 CDMX / Lima, Perú<br>
+                            🔗 linkedin.com/in/perfil
+                        </div>
+                    </div>
+
+                    <div class="cv-grid">
+                        <div>
+                            <div class="cv-section-title">PERFIL</div>
+                            <p style="font-size:9pt; text-align:justify;">
+                                Profesional responsable, organizado y con experiencia en atención al cliente, administración y apoyo operativo. Cuento con habilidades para la comunicación, el trabajo en equipo, la resolución de problemas y el manejo de tareas administrativas. Interesado en integrarme a una empresa donde pueda aportar y crecer.
+                            </p>
+
+                            <div class="cv-section-title">HABILIDADES</div>
+                            <ul style="font-size:9pt; padding-left:14px; margin:0;">
+                                <li>Comunicación</li>
+                                <li>Trabajo en equipo</li>
+                                <li>Microsoft Office</li>
+                                <li>Liderazgo</li>
+                            </ul>
+
+                            <div class="cv-section-title">IDIOMAS</div>
+                            <p style="font-size:9pt;">
+                                • Español (lengua materna)<br>
+                                • Inglés (avanzado)<br>
+                                • Portugués (principiante)
+                            </p>
+
+                            <div class="cv-section-title">INTERESES</div>
+                            <p style="font-size:9pt;">
+                                • Inteligencia artificial<br>
+                                • Deportes (Fútbol)
+                            </p>
+                        </div>
+                        <div>
+                            <div class="cv-section-title">EXPERIENCIA LABORAL</div>
+                            <div class="cv-job">
+                                <div class="cv-job-title">AUXILIAR - Distribuidora MX</div>
+                                <div class="cv-job-date">20XX - Presente</div>
+                                <ul style="font-size:8.5pt; padding-left:14px; margin:4px 0 0 0;">
+                                    <li>Atención a clientes por teléfono, correo electrónico y WhatsApp.</li>
+                                    <li>Seguimiento de solicitudes, quejas y comentarios hasta su resolución.</li>
+                                    <li>Captura de datos en sistema interno y actualización de expedientes.</li>
+                                    <li>Apoyo en la exploración de productos, servicios y proceso de compra.</div>
+                                </ul>
+                            </div>
+                            <div class="cv-job">
+                                <div class="cv-job-title">A. ADMINISTRATIVO - Comercializadora del Centro</div>
+                                <div class="cv-job-date">20XX - 20XX</div>
+                                <ul style="font-size:8.5pt; padding-left:14px; margin:4px 0 0 0;">
+                                    <li>Atención telefónica y presencial a clientes, proveedores y visitantes.</li>
+                                    <li>Registro, organización y actualización de documentos administrativos.</li>
+                                    <li>Resolución de dudas básicas a los clientes.</li>
+                                </ul>
+                            </div>
+                            <div class="cv-job">
+                                <div class="cv-job-title">ASISTENTE DE ATENCIÓN AL CLIENTE - Nike</div>
+                                <div class="cv-job-date">20XX - 20XX</div>
+                                <ul style="font-size:8.5pt; padding-left:14px; margin:4px 0 0 0;">
+                                    <li>Apoyo en la atención al producto, servicios y procesos de compra.</li>
+                                    <li>Trabajo en conjunto con el área de ventas para mejorar la experiencia del cliente.</li>
+                                </ul>
+                            </div>
+
+                            <div class="cv-section-title">FORMACIÓN</div>
+                            <div class="cv-job">
+                                <div class="cv-job-title">GRADO EN ADMINISTRACIÓN</div>
+                                <div class="cv-job-company">Universidad del Valle</div>
+                                <div class="cv-job-date">20XX - 20XX</div>
+                            </div>
+                            <div class="cv-job">
+                                <div class="cv-job-title">BACHILLERATO GENERAL</div>
+                                <div class="cv-job-company">Colegio Nacional de México</div>
+                                <div class="cv-job-date">20XX - 20XX</div>
+                            </div>
+
+                            <div class="cv-section-title">REFERENCIAS</div>
+                            <p style="font-size:8.5pt;">
+                                <b>Lic. Ana Patricia Gómez</b><br>
+                                Supervisora - Comercializadora del Centro S.A.C.V.<br>
+                                CDMX, México · +52 999 999 999<br>
+                                ana.patricia@mail.com<br><br>
+                                <b>Carlos Ramírez Torres</b><br>
+                                Coordinador - Servicios Integrales México<br>
+                                CDMX, México · +52 999 999 999<br>
+                                carlos.ramirez@mail.com
+                            </p>
+                        </div>
+                    </div>
+                    <div style="margin-top:12px; font-size:8.5pt; color:#666; border-top:1px solid #ddd; padding-top:8px;">
+                        ${textoLimpio.substring(0, 600)}
+                    </div>
+                </div>
+            `;
+        } else if (tipo === 'Examen') {
+            page.style.padding = '2cm 2.2cm';
+            page.style.fontFamily = 'Arial, sans-serif';
+            page.style.fontSize = '12px';
+            page.innerHTML = contenido.replace(/\n/g, '<br>').replace(/○/g, '○');
+        } else {
+            // Contrato, Solicitud, Carta → plain text with good margins
+            page.style.padding = tipo === 'Contrato' ? '2.2cm 2.4cm' : '2.3cm 2.5cm 2.3cm 2.8cm';
+            page.style.fontSize = tipo === 'Contrato' ? '11.5px' : '13px';
+            page.innerText = contenido;
+        }
+
+        container.appendChild(wrapper);
+        ajustarEscalaEditorA4();
+        
+        // Force multi-page check after a short delay
+        setTimeout(() => {
+            const p = document.querySelector('.a4-page');
+            if (p) verificarDesbordamientoPagina(p);
+        }, 300);
+    }
+
+    function cargarFotoCv(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = document.getElementById('cv-photo-img');
+            img.src = e.target.result;
+            img.style.display = 'block';
+            document.getElementById('cv-photo-placeholder').style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function verificarDesbordamientoPagina(page) {
+        const maxAlturaPx = 1050; // slightly less than full A4 height in px
+        if (page.scrollHeight > maxAlturaPx + 30) {
+            const container = document.getElementById('ai-editor-container');
+            const numPaginas = container.querySelectorAll('.a4-page').length;
+            // Only create a new empty page if content is really overflowing
+            if (numPaginas < 8) { // safety limit
+                const { wrapper: nuevoWrapper } = crearPaginaA4(numPaginas + 1);
+                container.appendChild(nuevoWrapper);
+                ajustarEscalaEditorA4();
+            }
+        }
+    }
+
+    function aplicarFormatoSeleccion(comando) { document.execCommand(comando, false, null); }
+    function aplicarAlineacionSeleccion(alineacion) { document.execCommand(alineacion, false, null); }
+
+    /* --- RELLENADO Y CONVERSIÓN MULTIFORMATO A PDF --- */
+
+    function abrirRellenadoLibre() {
+        if (!usuarioActual || usuarioActual.creditos <= 0) {
+            alert("🔒 Necesitas activar un código con créditos.");
+            document.getElementById('seccion-compra').scrollIntoView({ behavior: 'smooth' });
+            return;
+        }
+        document.getElementById('free-pdf-upload').value = '';
+        document.getElementById('free-canvas-container').innerHTML = ''; 
+        document.getElementById('upload-placeholder').style.display = 'flex'; 
+        document.getElementById('free-canvas-container').style.display = 'none'; 
+        document.getElementById('btn-generar-free').style.display = 'none'; 
+        elementosFlotantes = [];
+        freePdfPageCount = 0;
+        window.pdfGlobalScale = 1;
+        document.getElementById('zoom-label-free').innerText = "100%";
+        window.pdfPageDimensions = {};
+        showScreen('screen-rellenado-libre');
+    }
+
+    document.getElementById('free-pdf-upload').addEventListener('change', async function(e) {
+        if (!e.target.files.length) return;
+        const file = e.target.files[0];
+        
+        if (file.type === 'application/pdf') {
+            cargarPdfEnEditor(file);
+        } else if (file.type.startsWith('image/')) {
+            const pdfDoc = await PDFLib.PDFDocument.create();
+            const imageBytes = await file.arrayBuffer();
+            const img = file.type.includes('png') ? await pdfDoc.embedPng(imageBytes) : await pdfDoc.embedJpg(imageBytes);
+            const page = pdfDoc.addPage([img.width, img.height]);
+            page.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
+            const pdfBytes = await pdfDoc.save();
+            cargarPdfEnEditor(new Blob([pdfBytes], { type: 'application/pdf' }));
+        } else {
+            let textoExtraido = "";
+            if (file.name.endsWith('.docx') || file.type.includes('wordprocessingml')) {
+                const arrayBuffer = await file.arrayBuffer();
+                const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
+                textoExtraido = result.value;
+            } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+                const arrayBuffer = await file.arrayBuffer();
+                const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                workbook.SheetNames.forEach(sheetName => {
+                    textoExtraido += XLSX.utils.sheet_to_txt(workbook.Sheets[sheetName]) + "\n";
+                });
+            } else {
+                textoExtraido = await file.text();
+            }
+
+            const pdfDoc = await PDFLib.PDFDocument.create();
+            const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+            let page = pdfDoc.addPage(PDFLib.PageSizes.A4);
+            const { width, height } = page.getSize();
+            let y = height - 50;
+            const lines = textoExtraido.split('\n');
+
+            for (let line of lines) {
+                if (y < 50) {
+                    page = pdfDoc.addPage(PDFLib.PageSizes.A4);
+                    y = height - 50;
+                }
+                const lLimpia = limpiarTextoParaPdf(line);
+                if (lLimpia.trim()) {
+                    page.drawText(lLimpia.substring(0, 90), { x: 50, y, size: 11, font });
+                }
+                y -= 15;
+            }
+            const pdfBytes = await pdfDoc.save();
+            cargarPdfEnEditor(new Blob([pdfBytes], { type: 'application/pdf' }));
+        }
+    });
+
+    async function cargarPdfEnEditor(fileOrBlob) {
+        const arrayBuffer = await fileOrBlob.arrayBuffer();
+        freePdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
+        const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+        const pdf = await loadingTask.promise;
+        freePdfPageCount = pdf.numPages; 
+        const container = document.getElementById('free-canvas-container');
+        container.innerHTML = ''; 
+        container.style.display = 'flex';
+        document.getElementById('upload-placeholder').style.display = 'none';
+
+        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+            const page = await pdf.getPage(pageNum);
+            const viewportHD = page.getViewport({ scale: 1.5 });
+            
+            window.pdfPageDimensions[pageNum] = { width: viewportHD.width / 1.5, height: viewportHD.height / 1.5 };
+            
+            const wrapper = document.createElement('div');
+            wrapper.className = 'pdf-page-wrapper';
+            wrapper.dataset.pageNum = pageNum;
+            
+            const canvas = document.createElement('canvas');
+            canvas.className = 'free-pdf-canvas';
+            const ctx = canvas.getContext('2d');
+            canvas.width = viewportHD.width;
+            canvas.height = viewportHD.height;
+            
+            const overlay = document.createElement('div');
+            overlay.className = 'overlay-layer';
+
+            wrapper.appendChild(canvas);
+            wrapper.appendChild(overlay);
+            container.appendChild(wrapper);
+
+            await page.render({ canvasContext: ctx, viewport: viewportHD }).promise;
+
+            wrapper.addEventListener('click', function(ev) {
+                if (ev.target.closest('.floating-element')) return; 
+                document.querySelectorAll('.floating-element').forEach(el => el.classList.remove('selected'));
+            });
+        }
+        const btnGenerar = document.getElementById('btn-generar-free');
+        btnGenerar.innerText = `✨ Descargar PDF Lleno (${freePdfPageCount} Créditos)`;
+        btnGenerar.style.display = 'block';
+        showScreen('screen-rellenado-libre');
+    }
+
+    function toggleMenuMas() {
+        menuMasAbierto = !menuMasAbierto;
+        const menu = document.getElementById('menu-flotante-opciones-global');
+        if (menu) menu.style.display = menuMasAbierto ? 'flex' : 'none';
+    }
+
+    function getViewportCenter() {
+        const isAIEditor = document.getElementById('screen-ai-editor').classList.contains('active');
+        const container = isAIEditor ? document.getElementById('ai-editor-container') : document.getElementById('free-canvas-container');
+        const rect = container.getBoundingClientRect();
+        
+        const centerX = rect.left + (rect.width / 2);
+        const centerY = rect.top + (rect.height / 2);
+        
+        if (isAIEditor) {
+            const wrappers = document.querySelectorAll('.a4-wrapper-scalable');
+            let targetWrapper = wrappers[0];
+            wrappers.forEach(w => {
+                const wRect = w.getBoundingClientRect();
+                if (centerY >= wRect.top && centerY <= wRect.bottom) targetWrapper = w;
+            });
+            const overlay = targetWrapper.querySelector('.overlay-layer');
+            const pageRect = overlay.getBoundingClientRect();
+            const relativeX = (centerX - pageRect.left) / window.aiGlobalScale;
+            const relativeY = (centerY - pageRect.top) / window.aiGlobalScale;
+            return { wrapper: overlay, x: relativeX, y: relativeY, pageNum: parseInt(targetWrapper.querySelector('.a4-page').dataset.pageNum || 1) };
+        } else {
+            const wrappers = document.querySelectorAll('.pdf-page-wrapper');
+            let targetWrapper = wrappers[0];
+            wrappers.forEach(w => {
+                const wRect = w.getBoundingClientRect();
+                if (centerY >= wRect.top && centerY <= wRect.bottom) targetWrapper = w;
+            });
+            const overlay = targetWrapper.querySelector('.overlay-layer');
+            const wRect = overlay.getBoundingClientRect();
+            const relativeX = (centerX - wRect.left) / window.pdfGlobalScale;
+            const relativeY = (centerY - wRect.top) / window.pdfGlobalScale;
+            return { wrapper: overlay, x: relativeX, y: relativeY, pageNum: parseInt(targetWrapper.dataset.pageNum) };
+        }
+    }
+
+    function abrirModalTextoDesdeMas() {
+        toggleMenuMas();
+        const center = getViewportCenter();
+        currentTarget = { parent: center.wrapper, x: center.x, y: center.y, pageNum: center.pageNum };
+        abrirModalTexto();
+    }
+    function abrirModalFirmaDesdeMas() {
+        toggleMenuMas();
+        const center = getViewportCenter();
+        currentTarget = { parent: center.wrapper, x: center.x, y: center.y, pageNum: center.pageNum };
+        abrirModalFirma();
+    }
+    function abrirModalSimbolosDesdeMas() {
+        toggleMenuMas();
+        const center = getViewportCenter();
+        currentTarget = { parent: center.wrapper, x: center.x, y: center.y, pageNum: center.pageNum };
+        abrirModalSimbolos();
+    }
+    function abrirSubirImagenDesdeMas() {
+        toggleMenuMas();
+        const center = getViewportCenter();
+        currentTarget = { parent: center.wrapper, x: center.x, y: center.y, pageNum: center.pageNum };
+        document.getElementById('input-subir-imagen-global').click();
+    }
+    function procesarImagenSubida(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            crearElementoFlotante(currentTarget.parent, currentTarget.x, currentTarget.y, currentTarget.pageNum, 'image', e.target.result);
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function abrirModalTexto() {
+        textFormat = { bold: false, italic: false };
+        document.getElementById('btn-bold').classList.remove('active');
+        document.getElementById('btn-italic').classList.remove('active');
+        const input = document.getElementById('input-texto-modal');
+        input.value = '';
+        input.style.fontWeight = 'normal';
+        input.style.fontStyle = 'normal';
+        document.getElementById('input-size-texto').value = lastTextSize;
+        renderizarChipsHistorial();
+        document.getElementById('modal-texto').style.display = 'flex';
+        setTimeout(() => input.focus(), 100);
+    }
     function cerrarModalTexto() { document.getElementById('modal-texto').style.display = 'none'; }
-    function toggleFormat(type) { /* ... */ }
-    function renderizarChipsHistorial() { /* ... */ }
-    function guardarTextoModal() { /* ... */ }
 
-    function abrirModalFirma() { /* ... */ }
-    function actualizarEstiloFirma() { /* ... */ }
-    function startDrawing(e) { /* ... */ }
-    function draw(e) { /* ... */ }
-    function stopDrawing() { /* ... */ }
-    function getPos(e) { /* ... */ }
-    function calculateLineWidth(x1,y1,x2,y2) { /* ... */ }
-    function limpiarFirma() { /* ... */ }
+    function toggleFormat(type) {
+        textFormat[type] = !textFormat[type];
+        const btn = document.getElementById(`btn-${type}`);
+        const input = document.getElementById('input-texto-modal');
+        if (textFormat[type]) btn.classList.add('active'); else btn.classList.remove('active');
+        if (type === 'bold') input.style.fontWeight = textFormat.bold ? 'bold' : 'normal';
+        if (type === 'italic') input.style.fontStyle = textFormat.italic ? 'italic' : 'normal';
+    }
+
+    function renderizarChipsHistorial() {
+        const container = document.getElementById('chips-historial');
+        container.innerHTML = '';
+        historialTextos.forEach(texto => {
+            const chip = document.createElement('button');
+            chip.type = 'button'; chip.className = 'chip'; chip.innerText = texto;
+            chip.onclick = () => { document.getElementById('input-texto-modal').value = texto; };
+            container.appendChild(chip);
+        });
+    }
+
+    function guardarTextoModal() {
+        const input = document.getElementById('input-texto-modal');
+        const texto = input.value.trim();
+        if (!texto) return;
+        lastTextSize = parseInt(document.getElementById('input-size-texto').value) || 14;
+        crearElementoFlotante(currentTarget.parent, currentTarget.x, currentTarget.y, currentTarget.pageNum, 'text', texto, null, lastTextSize);
+        guardarEnHistorial(texto);
+        cerrarModalTexto();
+    }
+
+    function abrirModalFirma() {
+        document.getElementById('modal-firma').style.display = 'flex';
+        sigCanvas = document.getElementById('canvas-firma');
+        sigCtx = sigCanvas.getContext('2d', { alpha: true });
+        sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+        currentColor = document.getElementById('firma-color').value;
+        actualizarEstiloFirma();
+        
+        sigCanvas.onmousedown = startDrawing; 
+        sigCanvas.onmousemove = draw; 
+        sigCanvas.onmouseup = stopDrawing; 
+        sigCanvas.onmouseleave = stopDrawing;
+        
+        sigCanvas.ontouchstart = (e) => { e.preventDefault(); startDrawing(e); };
+        sigCanvas.ontouchmove = (e) => { e.preventDefault(); draw(e); };
+        sigCanvas.ontouchend = stopDrawing;
+        document.getElementById('firma-color').oninput = function() { currentColor = this.value; actualizarEstiloFirma(); };
+    }
+    function actualizarEstiloFirma() { sigCtx.strokeStyle = currentColor; sigCtx.lineCap = 'round'; sigCtx.lineJoin = 'round'; sigCtx.shadowColor = currentColor === '#1a1a1a' ? 'rgba(0,0,0,0.4)' : 'transparent'; sigCtx.shadowBlur = 1; }
+    function startDrawing(e) { isDrawing = true; const pos = getPos(e); lastX = pos.x; lastY = pos.y; }
+    function draw(e) {
+        if (!isDrawing) return;
+        const pos = getPos(e); const lineWidth = calculateLineWidth(lastX, lastY, pos.x, pos.y);
+        sigCtx.lineWidth = lineWidth; sigCtx.beginPath(); sigCtx.moveTo(lastX, lastY); sigCtx.lineTo(pos.x, pos.y); sigCtx.stroke();
+        lastX = pos.x; lastY = pos.y;
+    }
+    function stopDrawing() { isDrawing = false; }
+    function getPos(e) {
+        const rect = sigCanvas.getBoundingClientRect(); const clientX = e.touches ? e.touches[0].clientX : e.clientX; const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return { x: (clientX - rect.left) * (sigCanvas.width / rect.width), y: (clientY - rect.top) * (sigCanvas.height / rect.height) };
+    }
+    function calculateLineWidth(x1, y1, x2, y2) { const dist = Math.hypot(x2 - x1, y2 - y1); return Math.max(2.5, Math.min(6.5, 5 - dist * 0.12)); }
+    function limpiarFirma() { sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height); }
     function cerrarModalFirma() { document.getElementById('modal-firma').style.display = 'none'; }
-    function guardarFirma() { /* ... */ }
+    function guardarFirma() {
+        const dataUrl = document.getElementById('canvas-firma').toDataURL('image/png');
+        crearElementoFlotante(currentTarget.parent, currentTarget.x, currentTarget.y, currentTarget.pageNum, 'image', dataUrl);
+        cerrarModalFirma();
+    }
 
-    function abrirModalSimbolos() { /* ... */ }
+    function abrirModalSimbolos() {
+        document.getElementById('input-size-simbolo').value = lastSymbolSize;
+        document.getElementById('modal-simbolos').style.display = 'flex';
+    }
     function cerrarModalSimbolos() { document.getElementById('modal-simbolos').style.display = 'none'; }
-    function guardarSimbolo(simbolo) { /* ... */ }
-
-    function abrirModalHuella() {
-        document.getElementById('modal-huella').style.display = 'flex';
-        huellaCanvas = document.getElementById('canvas-huella');
-        huellaCtx = huellaCanvas.getContext('2d', { alpha: true });
-        huellaCtx.clearRect(0, 0, huellaCanvas.width, huellaCanvas.height);
-        huellaCtx.strokeStyle = '#333'; huellaCtx.lineCap = 'round'; huellaCtx.lineJoin = 'round'; huellaCtx.lineWidth = 4;
-        huellaCanvas.onmousedown = startHuella; huellaCanvas.onmousemove = drawHuella; huellaCanvas.onmouseup = stopHuella; huellaCanvas.onmouseleave = stopHuella;
-        huellaCanvas.ontouchstart = (e) => { e.preventDefault(); startHuella(e); };
-        huellaCanvas.ontouchmove = (e) => { e.preventDefault(); drawHuella(e); };
-        huellaCanvas.ontouchend = stopHuella;
-    }
-    function getPosHuella(e) { const rect = huellaCanvas.getBoundingClientRect(); const cx = e.touches?.[0]?.clientX || e.clientX; const cy = e.touches?.[0]?.clientY || e.clientY; return { x: (cx - rect.left) * (huellaCanvas.width / rect.width), y: (cy - rect.top) * (huellaCanvas.height / rect.height) }; }
-    function startHuella(e) { isDrawingHuella = true; const pos = getPosHuella(e); lastHuellaX = pos.x; lastHuellaY = pos.y; }
-    function drawHuella(e) { if (!isDrawingHuella) return; const pos = getPosHuella(e); huellaCtx.beginPath(); huellaCtx.moveTo(lastHuellaX, lastHuellaY); huellaCtx.lineTo(pos.x, pos.y); huellaCtx.stroke(); lastHuellaX = pos.x; lastHuellaY = pos.y; }
-    function stopHuella() { isDrawingHuella = false; }
-    function limpiarHuella() { huellaCtx.clearRect(0, 0, huellaCanvas.width, huellaCanvas.height); }
-    function cerrarModalHuella() { document.getElementById('modal-huella').style.display = 'none'; }
-    function guardarHuella() {
-        const dataUrl = document.getElementById('canvas-huella').toDataURL('image/png');
-        crearElementoFlotante(currentTarget.parent, currentTarget.x, currentTarget.y, currentTarget.pageNum, 'image', dataUrl, null, 80);
-        cerrarModalHuella();
+    function guardarSimbolo(simbolo) {
+        lastSymbolSize = parseInt(document.getElementById('input-size-simbolo').value) || 24;
+        const canvas = document.createElement('canvas'); canvas.width = 100; canvas.height = 100;
+        const ctx = canvas.getContext('2d'); ctx.fillStyle = 'black'; ctx.font = '80px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(simbolo, 50, 50);
+        crearElementoFlotante(currentTarget.parent, currentTarget.x, currentTarget.y, currentTarget.pageNum, 'image', canvas.toDataURL('image/png'), null, lastSymbolSize * 2);
+        cerrarModalSimbolos();
     }
 
-    function crearElementoFlotante(parent, x, y, pageNum, tipo, contenido, formato = null, customSize = null) { /* ... */ }
-    function hacerInteractivoPCyMovil(wrapper, elData, resizeHandle) { /* ... */ }
-    function mostrarModalContinuar() { document.getElementById('modal-continuar').style.display = 'flex'; }
-    function cerrarModalContinuar(continuar) { document.getElementById('modal-continuar').style.display = 'none'; if (!continuar) location.reload(); }
-    async function generarPdfLibre() { /* ... */ }
+    /* ---- ELEMENTOS FLOTANTES ---- */
+    function crearElementoFlotante(parent, x, y, pageNum, tipo, contenido, formato = null, customSize = null) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'floating-element';
+        
+        const initialSize = (customSize || (tipo === 'text' ? 14 : 120));
+        
+        const pdfDim = window.pdfPageDimensions[pageNum] || { width: 595.28 };
+        const scaleFactor = parent.offsetWidth / pdfDim.width;
+        const domSize = initialSize * scaleFactor;
+        
+        const parentWidth = parent.offsetWidth;
+        const parentHeight = parent.offsetHeight;
+        const pctX = (x - (domSize / 2)) / parentWidth;
+        const pctY = (y - (domSize / 2)) / parentHeight;
+        
+        wrapper.style.left = `${pctX * 100}%`;
+        wrapper.style.top = `${pctY * 100}%`;
+        
+        const resizeHandle = document.createElement('div');
+        resizeHandle.className = 'resize-handle';
+        
+        let elData = { wrapper, type: tipo, pageNum, hasHalo: false, locked: false, pctX, pctY, size: initialSize };
+        let domElement;
+        
+        if (tipo === 'text') {
+            domElement = document.createElement('span');
+            domElement.className = 'floating-text';
+            domElement.innerText = contenido;
+            domElement.style.fontSize = `${domSize}px`;
+            domElement.style.color = 'black';
+            elData.texto = contenido;
+        } else if (tipo === 'image') {
+            domElement = document.createElement('img');
+            domElement.src = contenido;
+            domElement.style.width = `${domSize}px`;
+            domElement.style.height = 'auto';
+            domElement.style.display = 'block';
+            elData.dataUrl = contenido;
+        }
+        
+        const btnDelete = document.createElement('div');
+        btnDelete.innerHTML = '×'; btnDelete.className = 'btn-delete-float';
+        btnDelete.onclick = (e) => { e.stopPropagation(); wrapper.remove(); elementosFlotantes = elementosFlotantes.filter(i => i !== elData); };
+        
+        const btnBg = document.createElement('div');
+        btnBg.innerHTML = '⬜'; btnBg.className = 'btn-bg-float';
+        btnBg.title = "Fondo blanco";
+        btnBg.onclick = (e) => { 
+            e.stopPropagation(); 
+            elData.hasHalo = !elData.hasHalo; 
+            wrapper.classList.toggle('has-halo', elData.hasHalo);
+            btnBg.style.background = elData.hasHalo ? '#3498db' : '#fff';
+        };
+
+        const btnLock = document.createElement('div');
+        btnLock.innerHTML = '📌'; btnLock.className = 'btn-lock-float';
+        btnLock.title = "Anclar";
+        btnLock.onclick = (e) => {
+            e.stopPropagation();
+            elData.locked = !elData.locked;
+            wrapper.classList.toggle('locked', elData.locked);
+            btnLock.style.background = elData.locked ? '#e74c3c' : '#f39c12';
+        };
+
+        wrapper.appendChild(domElement); wrapper.appendChild(btnDelete); wrapper.appendChild(btnBg); wrapper.appendChild(btnLock); wrapper.appendChild(resizeHandle);
+        parent.appendChild(wrapper);
+
+        const seleccionar = (e) => {
+            e.stopPropagation();
+            document.querySelectorAll('.floating-element').forEach(el => el.classList.remove('selected'));
+            wrapper.classList.add('selected');
+        };
+        wrapper.addEventListener('mousedown', seleccionar);
+        wrapper.addEventListener('touchstart', seleccionar);
+        hacerInteractivoPCyMovil(wrapper, elData, resizeHandle);
+        elementosFlotantes.push(elData);
+
+        actualizarEscalaBotonesFlotantes();
+    }
+
+    function hacerInteractivoPCyMovil(wrapper, elData, resizeHandle) {
+        let isDragging = false, isResizing = false;
+        let startX, startY, initialLeft, initialTop, initialSize = 0;
+        
+        const start = (e) => {
+            if (e.target.classList.contains('btn-delete-float') || e.target.classList.contains('btn-bg-float') || e.target.classList.contains('btn-lock-float')) return;
+            if (elData.locked) return;
+            
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            
+            if (e.target === resizeHandle) { 
+                isResizing = true; 
+                initialSize = elData.size; 
+                startX = clientX; 
+            } else { 
+                isDragging = true; 
+                startX = clientX; 
+                startY = clientY; 
+                initialLeft = wrapper.offsetLeft; 
+                initialTop = wrapper.offsetTop; 
+            }
+            e.stopPropagation();
+        };
+
+        const move = (e) => {
+            if (elData.locked || (!isDragging && !isResizing)) return;
+            
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            
+            const parent = wrapper.parentElement;
+            const isAI = document.getElementById('screen-ai-editor').classList.contains('active');
+            const currentZoom = isAI ? window.aiGlobalScale : window.pdfGlobalScale;
+
+            if (isDragging) {
+                const dx = (clientX - startX) / currentZoom;
+                const dy = (clientY - startY) / currentZoom;
+                const newLeft = initialLeft + dx;
+                const newTop = initialTop + dy;
+                
+                elData.pctX = newLeft / parent.offsetWidth;
+                elData.pctY = newTop / parent.offsetHeight;
+                
+                wrapper.style.left = `${elData.pctX * 100}%`;
+                wrapper.style.top = `${elData.pctY * 100}%`;
+            } else if (isResizing) {
+                const dx = (clientX - startX) / currentZoom;
+                const pdfDim = window.pdfPageDimensions[elData.pageNum] || { width: 595.28 };
+                const scaleFactor = parent.offsetWidth / pdfDim.width;
+                actualizarTamano(initialSize + (dx / scaleFactor), scaleFactor);
+            }
+            e.preventDefault();
+        };
+
+        function actualizarTamano(newPdfSize, scaleFactor) {
+            if (elData.type === 'text') newPdfSize = Math.max(4, Math.min(newPdfSize, 150));
+            else if (elData.type === 'image') newPdfSize = Math.max(10, Math.min(newPdfSize, 800));
+            
+            elData.size = newPdfSize;
+            const domSize = newPdfSize * scaleFactor;
+            
+            if (elData.type === 'text') {
+                elData.wrapper.querySelector('.floating-text').style.fontSize = domSize + 'px';
+            } else if (elData.type === 'image') {
+                elData.wrapper.querySelector('img').style.width = domSize + 'px';
+            }
+        }
+        
+        const stop = () => { isDragging = false; isResizing = false; };
+        
+        wrapper.addEventListener('mousedown', start);
+        wrapper.addEventListener('touchstart', start, {passive: false});
+        
+        window.addEventListener('mousemove', move);
+        window.addEventListener('touchmove', move, {passive: false});
+        
+        window.addEventListener('mouseup', stop);
+        window.addEventListener('touchend', stop);
+    }
+
+    function mostrarModalContinuar() {
+        document.getElementById('modal-continuar').style.display = 'flex';
+    }
+
+    function cerrarModalContinuar(continuar) {
+        document.getElementById('modal-continuar').style.display = 'none';
+        if (!continuar) {
+            location.reload();
+        }
+    }
+
+    async function generarPdfLibre() {
+        if (!freePdfDoc) return;
+        if (usuarioActual.creditos < freePdfPageCount) {
+            alert(`⚠️ Necesitas ${freePdfPageCount} créditos para descargar. Tienes ${usuarioActual.creditos}.`);
+            return;
+        }
+        const btn = document.getElementById('btn-generar-free');
+        btn.innerText = "⏳ Procesando..."; btn.disabled = true;
+        try {
+            const pages = freePdfDoc.getPages();
+            for (const el of elementosFlotantes) {
+                const page = pages[el.pageNum - 1];
+                const { width, height } = page.getSize();
+                
+                const pdfX = el.pctX * width;
+                const domScaleFactor = width / el.wrapper.parentElement.offsetWidth;
+                
+                const rectWidthPdf = el.wrapper.offsetWidth * domScaleFactor;
+                const elHeightPdf = el.wrapper.offsetHeight * domScaleFactor;
+                const pdfY = height - (el.pctY * height) - elHeightPdf;
+                
+                if (el.hasHalo) {
+                    page.drawRectangle({
+                        x: pdfX, y: pdfY, width: rectWidthPdf, height: elHeightPdf, color: PDFLib.rgb(1, 1, 1)
+                    });
+                }
+
+                if (el.type === 'text') {
+                    const textoLimpio = limpiarTextoParaPdf(el.texto);
+                    page.drawText(textoLimpio, { x: pdfX, y: pdfY + (elHeightPdf * 0.2), size: el.size, color: PDFLib.rgb(0, 0, 0) });
+                } else if (el.type === 'image') {
+                    const img = el.dataUrl.startsWith('data:image/jpeg') || el.dataUrl.startsWith('data:image/jpg') 
+                        ? await freePdfDoc.embedJpg(el.dataUrl) 
+                        : await freePdfDoc.embedPng(el.dataUrl);
+                    page.drawImage(img, { x: pdfX, y: pdfY, width: rectWidthPdf, height: elHeightPdf });
+                }
+            }
+            const pagado = await descontarCredito(freePdfPageCount);
+            if (!pagado) throw new Error("No se pudo procesar el pago.");
+            const pdfBytes = await freePdfDoc.save();
+            download(pdfBytes, "Documento_Final.pdf", "application/pdf");
+            
+            mostrarModalContinuar();
+        } catch (err) { alert("Error: " + err.message); }
+        finally { btn.innerText = `✨ Descargar PDF Lleno (${freePdfPageCount} Créditos)`; btn.disabled = false; }
+    }
+
     async function generarPdfDesdeEditorAI() {
-        const paginas = document.querySelectorAll('.a4-page');
-        if (usuarioActual.creditos < paginas.length) { alert("Créditos insuficientes"); return; }
+        const paginasA4 = document.querySelectorAll('.a4-page');
+        const totalHojasCreadas = paginasA4.length;
+
+        if (usuarioActual.creditos < totalHojasCreadas) {
+            alert(`⚠️ Necesitas ${totalHojasCreadas} créditos para exportar este documento.`);
+            return;
+        }
+
         try {
             const pdfDoc = await PDFLib.PDFDocument.create();
             const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
-            const dims = currentPageDims; const margins = currentMargins;
-            const cmToPt = 28.35;
-            const mt = margins.top * cmToPt, mb = margins.bottom * cmToPt, ml = margins.left * cmToPt, mr = margins.right * cmToPt;
-            for (let i = 0; i < paginas.length; i++) {
-                const pageDOM = paginas[i];
-                const pdfPage = pdfDoc.addPage([dims.w, dims.h]);
-                const text = pageDOM.innerText.trim();
-                let y = dims.h - mt;
-                const maxWidth = dims.w - ml - mr;
+
+            for (let i = 0; i < paginasA4.length; i++) {
+                const pageDOM = paginasA4[i];
+                const pdfPage = pdfDoc.addPage(PDFLib.PageSizes.A4);
+                const { width, height } = pdfPage.getSize();
+                
+                // Simple text extraction for now (keeps compatibility)
+                let text = pageDOM.innerText.trim();
+                const marginTop = 55, marginBottom = 55, marginLeft = 55, marginRight = 55;
+                let currentY = height - marginTop;
+                const maxWidth = width - marginLeft - marginRight;
+                const fontSize = 11;
+
                 const lines = text.split('\n');
                 for (let line of lines) {
-                    const ll = limpiarTextoParaPdf(line);
-                    if (!ll.trim()) { y -= 14; continue; }
-                    const words = ll.split(' '); let sub = '';
-                    for (let w of words) {
-                        const test = sub + w + ' ';
-                        if (font.widthOfTextAtSize(test, 11) > maxWidth) {
-                            if (sub.trim()) { pdfPage.drawText(sub.trim(), { x: ml, y, size: 11, font }); y -= 14; }
-                            sub = w + ' ';
-                        } else sub = test;
+                    const lineLimpia = limpiarTextoParaPdf(line);
+                    if (lineLimpia.trim() === "") {
+                        currentY -= 14;
+                        continue;
                     }
-                    if (sub.trim()) { pdfPage.drawText(sub.trim(), { x: ml, y, size: 11, font }); y -= 15; }
-                    if (y < mb) break;
+                    
+                    const words = lineLimpia.split(' ');
+                    let subLine = '';
+                    for (let word of words) {
+                        const testLine = subLine + word + ' ';
+                        if (font.widthOfTextAtSize(testLine, fontSize) > maxWidth) {
+                            if (subLine.trim()) {
+                                pdfPage.drawText(subLine.trim(), { x: marginLeft, y: currentY, size: fontSize, font });
+                                currentY -= 14;
+                            }
+                            subLine = word + ' ';
+                        } else {
+                            subLine = testLine;
+                        }
+                    }
+                    if (subLine.trim()) {
+                        pdfPage.drawText(subLine.trim(), { x: marginLeft, y: currentY, size: fontSize, font });
+                        currentY -= 15;
+                    }
+                    if (currentY < marginBottom) break; // simple safety
                 }
-                const flotantes = elementosFlotantes.filter(el => el.pageNum === (i+1));
-                for (const el of flotantes) {
-                    const pw = pageDOM.offsetWidth, ph = pageDOM.offsetHeight;
-                    const pdfX = el.pctX * dims.w;
-                    const ew = (el.wrapper.offsetWidth / pw) * dims.w;
-                    const eh = (el.wrapper.offsetHeight / ph) * dims.h;
-                    const pdfY = dims.h - (el.pctY * dims.h) - eh;
-                    if (el.hasHalo) pdfPage.drawRectangle({ x: pdfX, y: pdfY, width: ew, height: eh, color: PDFLib.rgb(1,1,1) });
-                    if (el.type === 'image') {
-                        const img = el.dataUrl.startsWith('data:image/jpeg') ? await pdfDoc.embedJpg(el.dataUrl) : await pdfDoc.embedPng(el.dataUrl);
-                        pdfPage.drawImage(img, { x: pdfX, y: pdfY, width: ew, height: eh });
+
+                const flotantesHoja = elementosFlotantes.filter(el => el.pageNum === (i + 1));
+                for (const el of flotantesHoja) {
+                    const pdfX = el.pctX * width;
+                    const domScaleFactor = width / pageDOM.offsetWidth;
+                    const rectWidthPdf = el.wrapper.offsetWidth * domScaleFactor;
+                    const elHeightPdf = el.wrapper.offsetHeight * domScaleFactor;
+                    const pdfY = height - (el.pctY * height) - elHeightPdf;
+                    
+                    if (el.hasHalo) {
+                        pdfPage.drawRectangle({ x: pdfX, y: pdfY, width: rectWidthPdf, height: elHeightPdf, color: PDFLib.rgb(1, 1, 1) });
+                    }
+                    if (el.type === 'text') {
+                        const tLimpio = limpiarTextoParaPdf(el.texto);
+                        pdfPage.drawText(tLimpio, { x: pdfX, y: pdfY + (elHeightPdf * 0.2), size: el.size, color: PDFLib.rgb(0, 0, 0) });
+                    } else if (el.type === 'image') {
+                        const img = el.dataUrl.startsWith('data:image/jpeg') || el.dataUrl.startsWith('data:image/jpg')
+                            ? await pdfDoc.embedJpg(el.dataUrl)
+                            : await pdfDoc.embedPng(el.dataUrl);
+                        pdfPage.drawImage(img, { x: pdfX, y: pdfY, width: rectWidthPdf, height: elHeightPdf });
                     }
                 }
             }
-            if (!await descontarCredito(paginas.length)) return;
-            const pdfBytes = await pdfDoc.save(); download(pdfBytes, "Documento_IA.pdf", "application/pdf");
+
+            const pagado = await descontarCredito(totalHojasCreadas);
+            if (!pagado) {
+                alert("Error al procesar el pago de créditos.");
+                return;
+            }
+
+            const pdfBytes = await pdfDoc.save();
+            download(pdfBytes, "Documento_AI.pdf", "application/pdf");
+            
             mostrarModalContinuar();
-        } catch (e) { alert("Error: "+e.message); }
+        } catch (e) { 
+            alert("Error al generar PDF: " + (e.message || e)); 
+        }
     }
-    function guardarEnHistorial(texto) { /* ... */ }
+
+    function guardarEnHistorial(texto) {
+        if (texto && !historialTextos.includes(texto)) {
+            historialTextos.push(texto);
+            localStorage.setItem('docufacil_historial', JSON.stringify(historialTextos));
+        }
+    }
 </script>
 </body>
 </html>
