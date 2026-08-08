@@ -216,7 +216,7 @@
             <div style="width:35px;"></div>
         </div>
         <div style="flex:1; display:flex; flex-direction:column; padding:20px; gap:15px; justify-content:center; align-items: center;">
-            <p style="text-align:center; color:#ccc; font-size: 14px;">Escribe lo que deseas para tu <span id="ai-prompt-type" style="font-weight:bold; color:#f1c40f;">documento</span> o adjunta un archivo. Si no escribes nada, se procesará el adjunto.</p>
+            <p style="text-align:center; color:#ccc; font-size: 15px; font-weight:bold;" id="ai-prompt-help">Pon los datos para tu documento o adjúntalo</p>
             
             <button class="btn-adjuntar-modelo" onclick="document.getElementById('input-modelo-adjunto').click()">
                 📎 Adjuntar Archivo (PDF, Word, Excel, Imagen)
@@ -224,7 +224,7 @@
             <input type="file" id="input-modelo-adjunto" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" style="display:none;" onchange="procesarModeloAdjunto(event)">
             <span id="label-modelo-adjunto" style="font-size:12px; color:#2ecc71; font-weight:bold; display:none;"></span>
 
-            <textarea id="ai-prompt-input" rows="7" placeholder="Ej: Haz un contrato utilizando los datos del recibo adjunto..." style="width:100%; max-width: 400px; border-radius:10px; padding:15px; background:#1e1e1e; color:white; border:1px solid #444; font-size:15px; outline:none; resize:none;"></textarea>
+            <textarea id="ai-prompt-input" rows="7" placeholder="Escribe aquí los datos de tu documento..." style="width:100%; max-width: 400px; border-radius:10px; padding:15px; background:#1e1e1e; color:white; border:1px solid #444; font-size:15px; outline:none; resize:none;"></textarea>
             
             <div style="display:flex; justify-content:center; align-items:center; gap:15px; margin-top: 10px; height: 60px;">
                 <button id="btn-voice-prompt" onclick="iniciarVozPrompt()" style="background:#3498db; color:white; border:none; width:60px; height:60px; border-radius:50%; font-size:24px; box-shadow:0 4px 10px rgba(0,0,0,0.5); cursor:pointer;">🎤</button>
@@ -595,27 +595,14 @@
     }
 
     function abrirPantallaPromptPlantilla(plantilla) {
-        const config = plantilla.configuracion || {};
-        const preguntas = config.preguntas || [];
-        const elementos = config.elementos || [];
         currentAIType = plantilla.nombre || 'Documento';
         modeloAdjuntoFile = null;
         textoExtraidoAdjunto = "";
         const lblAdjunto = document.getElementById('label-modelo-adjunto');
         if (lblAdjunto) { lblAdjunto.style.display = 'none'; lblAdjunto.innerText = ''; }
-        const elemType = document.getElementById('ai-prompt-type');
-        if (elemType) elemType.innerText = (plantilla.nombre || 'documento').toLowerCase();
         document.getElementById('ai-prompt-title').innerText = plantilla.nombre || 'Redactar';
-
-        let prefill = '';
-        if (plantilla.tipo === 'ia' && preguntas.length > 0) {
-            prefill = preguntas.map((q, i) => `${i + 1}. ${q}: `).join('\n');
-        } else if (elementos.length > 0) {
-            prefill = 'Describe o pega los datos para rellenar estos campos:\n' +
-                elementos.map(e => `- ${e.nombre || 'campo'}`).join('\n') +
-                '\n\n(También puedes adjuntar un PDF/Word/imagen con la información)';
-        }
-        document.getElementById('ai-prompt-input').value = prefill;
+        // Cuadro vacío: el usuario escribe o adjunta; la IA usa eso para rellenar
+        document.getElementById('ai-prompt-input').value = '';
         const btnSend = document.getElementById('btn-send-prompt');
         if (btnSend) {
             btnSend.innerText = (plantilla.tipo === 'rellenado' || plantilla.tipo === 'relleno')
@@ -727,8 +714,15 @@
                 // Colocar campos exactamente en las coordenadas relativas del JSON
                 elementos.filter(el => (el.pagina || 1) === pageNum).forEach((el, idx) => {
                     const key = `bd_${pageNum}_${idx}`;
+                    let relW = el.rel_w || 0.2;
+                    let relH = el.rel_h || 0.04;
+                    // Firma/huella: hacer el área más cuadrada (mínimo ~proporción 2.2:1 ancho/alto o altura mínima)
+                    if (el.tipo === 'firma' || el.tipo === 'huella') {
+                        const minH = Math.max(relH, relW * 0.35, 0.06);
+                        relH = minH;
+                    }
                     const div = document.createElement('div');
-                    div.style.cssText = `position:absolute;left:${(el.rel_x||0)*100}%;top:${(el.rel_y||0)*100}%;width:${(el.rel_w||0.2)*100}%;height:${(el.rel_h||0.04)*100}%;border:1.5px solid #3498db;background:rgba(52,152,219,0.18);border-radius:3px;z-index:1002;pointer-events:auto;display:flex;align-items:center;overflow:visible;box-sizing:border-box;`;
+                    div.style.cssText = `position:absolute;left:${(el.rel_x||0)*100}%;top:${(el.rel_y||0)*100}%;width:${relW*100}%;height:${relH*100}%;border:1.5px solid #3498db;background:rgba(52,152,219,0.18);border-radius:6px;z-index:1002;pointer-events:auto;display:flex;align-items:center;justify-content:center;overflow:visible;box-sizing:border-box;`;
 
                     const tag = document.createElement('div');
                     tag.style.cssText = 'position:absolute;top:-16px;left:0;background:#3498db;color:#fff;font-size:9px;padding:1px 5px;border-radius:3px;white-space:nowrap;pointer-events:none;z-index:1003;';
@@ -736,17 +730,20 @@
                     div.appendChild(tag);
 
                     if (el.tipo === 'firma' || el.tipo === 'huella') {
-                        div.style.background = 'rgba(46,204,113,0.2)';
+                        div.style.background = 'rgba(46,204,113,0.22)';
                         div.style.borderColor = '#2ecc71';
-                        div.style.justifyContent = 'center';
+                        div.style.borderWidth = '2px';
                         div.style.cursor = 'pointer';
+                        div.style.minHeight = '48px';
                         const span = document.createElement('span');
-                        span.style.cssText = 'font-size:10px;color:#27ae60;font-weight:bold;';
+                        span.style.cssText = 'font-size:11px;color:#27ae60;font-weight:bold;text-align:center;padding:4px;';
                         span.innerText = el.tipo === 'firma' ? '✍️ Toca para firmar' : '👆 Huella';
                         div.appendChild(span);
                         div.onclick = () => {
                             currentTarget = { parent: overlay, x: (el.rel_x||0) * (overlay.offsetWidth||1), y: (el.rel_y||0) * (overlay.offsetHeight||1), pageNum };
                             window._firmaKeyBD = key;
+                            // Guardar también rel ajustado para estampar más cuadrado
+                            window._firmaRel = { rel_x: el.rel_x, rel_y: el.rel_y, rel_w: relW, rel_h: relH, pagina: pageNum };
                             abrirModalFirma();
                         };
                     } else {
@@ -842,8 +839,9 @@
                             const img = valor.includes('jpeg') || valor.includes('jpg')
                                 ? await freePdfDoc.embedJpg(valor) : await freePdfDoc.embedPng(valor);
                             const x = el.rel_x * width;
-                            const h = el.rel_h * height;
                             const w = el.rel_w * width;
+                            // Más cuadrada: altura mínima ~35% del ancho
+                            let h = Math.max(el.rel_h * height, w * 0.35, 40);
                             const pdfY = height - (el.rel_y * height) - h;
                             page.drawImage(img, { x, y: pdfY, width: w, height: h });
                         } catch (_) {}
@@ -902,6 +900,7 @@
             document.getElementById('seccion-compra').scrollIntoView({ behavior: 'smooth' });
             return;
         }
+        plantillaActual = null; // flujo libre, no plantilla BD
         currentAIType = tipo;
         modeloAdjuntoFile = null;
         textoExtraidoAdjunto = "";
@@ -912,11 +911,10 @@
             lblAdjunto.innerText = '';
         }
 
-        const elemType = document.getElementById('ai-prompt-type');
-        if (elemType) elemType.innerText = tipo.toLowerCase();
-
         document.getElementById('ai-prompt-title').innerText = 'Redactar ' + tipo;
         document.getElementById('ai-prompt-input').value = '';
+        const btnSend = document.getElementById('btn-send-prompt');
+        if (btnSend) btnSend.innerText = 'Generar ✨';
         
         actualizarBotonesPrompt();
         showScreen('screen-ai-prompt');
