@@ -590,19 +590,14 @@
         }
         plantillaActual = plantilla;
         valoresCamposRellenado = {};
-        if (plantilla.tipo === 'ia') {
-            // Usar flujo de preguntas de la plantilla IA
-            abrirPlantillaIA(plantilla);
-        } else {
-            // Rellenado con coordenadas
-            abrirRellenadoPlantillaBD(plantilla);
-        }
+        // Siempre: primero prompt + adjuntar archivo; la IA rellena después
+        abrirPantallaPromptPlantilla(plantilla);
     }
 
-    function abrirPlantillaIA(plantilla) {
+    function abrirPantallaPromptPlantilla(plantilla) {
         const config = plantilla.configuracion || {};
         const preguntas = config.preguntas || [];
-        // Si tiene preguntas definidas, las metemos en el prompt; si no, usamos el flujo libre original
+        const elementos = config.elementos || [];
         currentAIType = plantilla.nombre || 'Documento';
         modeloAdjuntoFile = null;
         textoExtraidoAdjunto = "";
@@ -611,18 +606,28 @@
         const elemType = document.getElementById('ai-prompt-type');
         if (elemType) elemType.innerText = (plantilla.nombre || 'documento').toLowerCase();
         document.getElementById('ai-prompt-title').innerText = plantilla.nombre || 'Redactar';
-        // Prellenar el textarea con las preguntas para que el usuario las responda
+
         let prefill = '';
-        if (preguntas.length > 0) {
+        if (plantilla.tipo === 'ia' && preguntas.length > 0) {
             prefill = preguntas.map((q, i) => `${i + 1}. ${q}: `).join('\n');
+        } else if (elementos.length > 0) {
+            prefill = 'Describe o pega los datos para rellenar estos campos:\n' +
+                elementos.map(e => `- ${e.nombre || 'campo'}`).join('\n') +
+                '\n\n(También puedes adjuntar un PDF/Word/imagen con la información)';
         }
         document.getElementById('ai-prompt-input').value = prefill;
+        const btnSend = document.getElementById('btn-send-prompt');
+        if (btnSend) {
+            btnSend.innerText = (plantilla.tipo === 'rellenado' || plantilla.tipo === 'relleno')
+                ? 'Rellenar con IA ✨' : 'Generar ✨';
+        }
         actualizarBotonesPrompt();
         showScreen('screen-ai-prompt');
     }
 
-    async function abrirRellenadoPlantillaBD(plantilla) {
+    async function abrirRellenadoPlantillaBD(plantilla, valoresPrefill = null) {
         // Carga el PDF base (si existe) o crea hoja en blanco según config, y coloca inputs en coordenadas del JSON
+        // valoresPrefill: objeto { bd_1_0: "texto", ... } opcional desde la IA
         document.getElementById('free-pdf-upload').value = '';
         document.getElementById('free-canvas-container').innerHTML = '';
         document.getElementById('upload-placeholder').style.display = 'none';
@@ -633,7 +638,11 @@
         window.pdfGlobalScale = 1;
         document.getElementById('zoom-label-free').innerText = '100%';
         window.pdfPageDimensions = {};
-        valoresCamposRellenado = {};
+        if (valoresPrefill && typeof valoresPrefill === 'object') {
+            valoresCamposRellenado = { ...valoresPrefill };
+        } else if (!valoresCamposRellenado || Object.keys(valoresCamposRellenado).length === 0) {
+            valoresCamposRellenado = {};
+        }
         showScreen('screen-rellenado-libre');
 
         const container = document.getElementById('free-canvas-container');
@@ -748,6 +757,10 @@
                         if (el.tipo === 'numero') input.type = 'number';
                         if (el.alineacion === 'centro') input.style.textAlign = 'center';
                         if (el.alineacion === 'derecha') input.style.textAlign = 'right';
+                        // Prefill desde IA
+                        if (valoresCamposRellenado[key]) {
+                            input.value = valoresCamposRellenado[key];
+                        }
                         input.oninput = (e) => { valoresCamposRellenado[key] = e.target.value; };
                         div.appendChild(input);
                     }
@@ -990,9 +1003,95 @@
         btnSend.innerText = 'Generando...';
         
         try {
+            const esRellenado = plantillaActual && (plantillaActual.tipo === 'rellenado' || plantillaActual.tipo === 'relleno');
+            const config = (plantillaActual && plantillaActual.configuracion) || {};
+            const elementos = config.elementos || [];
+            const contextoAdjunto = textoExtraidoAdjunto ? `\n\nINFORMACIÓN EXTRAÍDA DEL ADJUNTO:\n"""${textoExtraidoAdjunto.substring(0, 3500)}"""\n` : "";
+
+            // ========== PLANTILLA CON COORDENADAS: IA rellena campos ==========
+            if (esRellenado && elementos.length > 0) {
+                const nombresCampos = elementos.map(e => e.nombre || 'campo');
+                const prompt = `Eres un asistente que rellena formularios de documentos.
+A partir de los datos del usuario y del adjunto, genera ÚNICAMENTE un JSON válido (sin markdown, sin \`\`\`) con una clave por cada campo.
+
+CAMPOS A RELLENAR (usa exactamente estas claves):
+${nombresCampos.map(n => `- "${n}"`).join('\n')}
+
+DATOS DEL USUARIO:
+${input || '(no escribió texto)'}
+${contextoAdjunto}
+
+REGLAS:
+- Responde SOLO el objeto JSON, nada más.
+- Si un campo es fecha, usa formato dd/mm/aaaa.
+- Si no hay dato para un campo, pon cadena vacía "".
+- Para campos de firma o huella deja "".
+- Redacta textos formales y coherentes (saludo, cuerpo, despedida, etc.) cuando corresponda.
+- Ejemplo de formato: {"fecha":"08/08/2026","Datos del destinatario":"Sr. Juan Pérez\\nLima","saludo":"Estimado señor:","cuerpo":"..."}`;
+
+                let mapaValores = {};
+                try {
+                    const { data, error } = await supabase.functions.invoke('generar-documento', {
+                        body: JSON.stringify({ history: [], user_input: prompt, current_draft: null }),
+                    });
+                    let raw = '';
+                    if (!error && data) {
+                        raw = data.response?.document_content || data.response || data || '';
+                        if (typeof raw === 'object') raw = JSON.stringify(raw);
+                    }
+                    // Extraer JSON del texto
+                    const match = String(raw).match(/\{[\s\S]*\}/);
+                    if (match) {
+                        mapaValores = JSON.parse(match[0]);
+                    }
+                } catch (e) {
+                    console.warn('IA no devolvió JSON válido, se usará fallback simple', e);
+                }
+
+                // Fallback: repartir el texto del usuario en los campos de tipo texto
+                if (Object.keys(mapaValores).length === 0 && input) {
+                    elementos.forEach((el, i) => {
+                        if (el.tipo !== 'firma' && el.tipo !== 'huella') {
+                            mapaValores[el.nombre] = i === 0 ? input : '';
+                        }
+                    });
+                }
+
+                // Mapear a keys internas bd_page_idx
+                valoresCamposRellenado = {};
+                elementos.forEach((el, idx) => {
+                    const pageNum = el.pagina || 1;
+                    const key = `bd_${pageNum}_${idx}`;
+                    const nombre = el.nombre || '';
+                    // buscar valor por nombre exacto o case-insensitive
+                    let val = mapaValores[nombre];
+                    if (val === undefined) {
+                        const found = Object.keys(mapaValores).find(k => k.toLowerCase() === nombre.toLowerCase());
+                        val = found ? mapaValores[found] : '';
+                    }
+                    if (val !== undefined && val !== null) valoresCamposRellenado[key] = String(val);
+                });
+
+                // Abrir editor de coordenadas CON valores prellenados
+                await abrirRellenadoPlantillaBD(plantillaActual, valoresCamposRellenado);
+
+                // Si adjunto era imagen, ofrecerla como flotante
+                if (modeloAdjuntoFile && modeloAdjuntoFile.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        setTimeout(() => {
+                            const overlay = document.querySelector('#free-canvas-container .overlay-layer');
+                            if (overlay) crearElementoFlotante(overlay, 80, 80, 1, 'image', e.target.result);
+                        }, 500);
+                    };
+                    reader.readAsDataURL(modeloAdjuntoFile);
+                }
+                return;
+            }
+
+            // ========== FLUJO IA LIBRE (sin coordenadas) ==========
             let prompt = "";
             const reglaFirma = `\n\n----------------------------------------\nFIRMA`;
-            const contextoAdjunto = textoExtraidoAdjunto ? `\n\nINFORMACIÓN EXTRAÍDA DEL ADJUNTO:\n"""${textoExtraidoAdjunto.substring(0, 3500)}"""\n` : "";
 
             if (!input && textoExtraidoAdjunto) {
                 prompt = `Toma la siguiente información del archivo adjunto y reestructúrala o transcríbela respetando exactamente el formato formal de un(a) ${currentAIType} profesional peruano/chileno. Usa lenguaje formal, estructura clara y deja espacio para firma:\n${contextoAdjunto} ${reglaFirma}`;
@@ -1037,13 +1136,19 @@ ${reglaFirma}`;
             showScreen('screen-ai-editor');
 
         } catch (error) {
-            const fallback = obtenerPlantillaFallback(currentAIType, input + " " + textoExtraidoAdjunto);
-            prepararEditorPorTipo(currentAIType, fallback, input + " " + textoExtraidoAdjunto);
-            showScreen('screen-ai-editor');
+            console.error(error);
+            if (plantillaActual && (plantillaActual.tipo === 'rellenado' || plantillaActual.tipo === 'relleno')) {
+                await abrirRellenadoPlantillaBD(plantillaActual, {});
+            } else {
+                const fallback = obtenerPlantillaFallback(currentAIType, input + " " + textoExtraidoAdjunto);
+                prepararEditorPorTipo(currentAIType, fallback, input + " " + textoExtraidoAdjunto);
+                showScreen('screen-ai-editor');
+            }
         } finally {
             document.getElementById('ai-prompt-loading').style.display = 'none';
             btnSend.disabled = false;
-            btnSend.innerText = 'Generar ✨';
+            const esRell = plantillaActual && (plantillaActual.tipo === 'rellenado' || plantillaActual.tipo === 'relleno');
+            btnSend.innerText = esRell ? 'Rellenar con IA ✨' : 'Generar ✨';
         }
     }
 
