@@ -1009,10 +1009,15 @@
             // ========== PLANTILLA CON COORDENADAS: IA rellena campos ==========
             if (esRellenado && elementos.length > 0) {
                 const nombresCampos = elementos.map(e => e.nombre || 'campo');
-                const prompt = `Eres un asistente que rellena formularios de documentos.
-A partir de los datos del usuario y del adjunto, genera ÚNICAMENTE un JSON válido (sin markdown, sin \`\`\`) con una clave por cada campo.
+                const layoutDesc = (config.layout_map && config.layout_map.descripcion_para_ia)
+                    ? config.layout_map.descripcion_para_ia
+                    : '';
+                const prompt = `Eres un asistente que rellena un documento formal respetando su estructura visual y proporciones.
 
-CAMPOS A RELLENAR (usa exactamente estas claves):
+MAPA DE LAYOUT DEL DOCUMENTO (renglones, espacios y proporciones reales):
+${layoutDesc || '(usar solo la lista de campos)'}
+
+CAMPOS A RELLENAR (usa exactamente estas claves en el JSON):
 ${nombresCampos.map(n => `- "${n}"`).join('\n')}
 
 DATOS DEL USUARIO:
@@ -1020,12 +1025,14 @@ ${input || '(no escribió texto)'}
 ${contextoAdjunto}
 
 REGLAS:
-- Responde SOLO el objeto JSON, nada más.
-- Si un campo es fecha, usa formato dd/mm/aaaa.
-- Si no hay dato para un campo, pon cadena vacía "".
-- Para campos de firma o huella deja "".
-- Redacta textos formales y coherentes (saludo, cuerpo, despedida, etc.) cuando corresponda.
-- Ejemplo de formato: {"fecha":"08/08/2026","Datos del destinatario":"Sr. Juan Pérez\\nLima","saludo":"Estimado señor:","cuerpo":"..."}`;
+- Responde SOLO un objeto JSON válido, sin markdown ni explicaciones.
+- Respeta el orden vertical y el “aire” entre bloques como en un documento oficial.
+- Campos con poco alto (h pequeño) = una sola línea corta. Campos altos = párrafo breve, no ensayos largos.
+- Si un campo es fecha, formato dd/mm/aaaa.
+- Si no hay dato, "".
+- Firma/huella: "".
+- Lenguaje formal (Perú/Chile).
+- Ejemplo: {"fecha":"08/08/2026","Datos del destinatario":"Sr. Juan Pérez\\nLima","saludo":"Estimado señor:","cuerpo":"..."}`;
 
                 let mapaValores = {};
                 try {
