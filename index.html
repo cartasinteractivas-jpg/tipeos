@@ -992,6 +992,58 @@
         recog.start();
     }
     
+    /** Rellena campos de una carta/plantilla cuando la IA falla o no devuelve JSON */
+    function construirFallbackCarta(elementos, inputUsuario, textoAdjunto) {
+        const base = (inputUsuario || '').trim();
+        const extra = (textoAdjunto || '').trim().substring(0, 1200);
+        const todo = [base, extra].filter(Boolean).join('\n');
+        const hoy = new Date();
+        const fechaStr = `${String(hoy.getDate()).padStart(2,'0')}/${String(hoy.getMonth()+1).padStart(2,'0')}/${hoy.getFullYear()}`;
+
+        // Heurística simple: partir párrafos del usuario
+        const lineas = todo.split(/\n+/).map(l => l.trim()).filter(Boolean);
+        const primerBloque = lineas.slice(0, 2).join('\n') || 'Señor(a) / Institución destinataria';
+        const resto = lineas.slice(2).join(' ') || lineas.join(' ') || 'Por medio de la presente me dirijo a usted para exponer lo siguiente.';
+
+        const mapa = {};
+        elementos.forEach(el => {
+            const n = (el.nombre || '').toLowerCase();
+            const tipo = el.tipo || 'texto';
+            if (tipo === 'firma' || tipo === 'huella') {
+                mapa[el.nombre] = '';
+                return;
+            }
+            if (tipo === 'fecha' || n.includes('fecha') || (n === 'firma' && tipo === 'fecha')) {
+                // Ojo: en tu plantilla el campo "Firma" es tipo fecha (arriba a la derecha)
+                mapa[el.nombre] = fechaStr;
+            } else if (n.includes('destinat')) {
+                mapa[el.nombre] = primerBloque;
+            } else if (n.includes('saludo')) {
+                mapa[el.nombre] = 'Estimado(a) señor(a):';
+            } else if (n.includes('introduc')) {
+                mapa[el.nombre] = resto.substring(0, 280) || 'Me dirijo a usted con el debido respeto para solicitar su atención respecto al asunto indicado.';
+            } else if (n.includes('cuerpo')) {
+                const cuerpoTxt = resto.length > 100 ? resto : (todo || 'Solicito se sirva disponer lo conveniente a fin de atender la presente solicitud, por ser de justicia.');
+                mapa[el.nombre] = cuerpoTxt.substring(0, 400);
+            } else if (n.includes('desped')) {
+                mapa[el.nombre] = 'Sin otro particular, quedo de usted.';
+            } else if (n.includes('atenta') || n.includes('atentamente')) {
+                mapa[el.nombre] = 'Atentamente,';
+            } else if (n.includes('nombre') || n.includes('apellido')) {
+                // Intentar extraer un nombre del texto
+                const m = todo.match(/(?:me llamo|soy|nombre[:\s]+)([A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(?:\s+[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+){1,3})/i);
+                mapa[el.nombre] = m ? m[1] : (lineas[0] && lineas[0].length < 40 ? lineas[0] : '');
+            } else if (n.includes('dni') || n.includes('documento')) {
+                const m = todo.match(/\b(\d{8})\b/);
+                mapa[el.nombre] = m ? ('DNI ' + m[1]) : '';
+            } else {
+                // Campo genérico: poner algo útil del usuario
+                mapa[el.nombre] = todo.substring(0, 200) || '';
+            }
+        });
+        return mapa;
+    }
+
     async function enviarPromptAI() {
         const input = document.getElementById('ai-prompt-input').value.trim();
         
@@ -1035,47 +1087,68 @@ REGLAS:
 - Ejemplo: {"fecha":"08/08/2026","Datos del destinatario":"Sr. Juan Pérez\\nLima","saludo":"Estimado señor:","cuerpo":"..."}`;
 
                 let mapaValores = {};
+                let iaOk = false;
                 try {
                     const { data, error } = await supabase.functions.invoke('generar-documento', {
-                        body: JSON.stringify({ history: [], user_input: prompt, current_draft: null }),
+                        body: { history: [], user_input: prompt, current_draft: null, mode: 'json_campos' },
                     });
+                    console.log('Respuesta IA raw:', data, error);
                     let raw = '';
                     if (!error && data) {
-                        raw = data.response?.document_content || data.response || data || '';
-                        if (typeof raw === 'object') raw = JSON.stringify(raw);
+                        if (typeof data === 'string') raw = data;
+                        else if (data.response) {
+                            raw = typeof data.response === 'string' ? data.response : (data.response.document_content || JSON.stringify(data.response));
+                        } else if (data.document_content) raw = data.document_content;
+                        else raw = JSON.stringify(data);
                     }
-                    // Extraer JSON del texto
-                    const match = String(raw).match(/\{[\s\S]*\}/);
+                    // Limpiar markdown ```json ... ```
+                    raw = String(raw).replace(/```json\s*/gi, '').replace(/```/g, '').trim();
+                    const match = raw.match(/\{[\s\S]*\}/);
                     if (match) {
                         mapaValores = JSON.parse(match[0]);
+                        iaOk = Object.keys(mapaValores).length > 0;
                     }
                 } catch (e) {
-                    console.warn('IA no devolvió JSON válido, se usará fallback simple', e);
+                    console.warn('IA no devolvió JSON válido, se usará fallback local', e);
                 }
 
-                // Fallback: repartir el texto del usuario en los campos de tipo texto
-                if (Object.keys(mapaValores).length === 0 && input) {
-                    elementos.forEach((el, i) => {
-                        if (el.tipo !== 'firma' && el.tipo !== 'huella') {
-                            mapaValores[el.nombre] = i === 0 ? input : '';
-                        }
-                    });
+                // Fallback local robusto: rellena por nombre de campo aunque falle la IA
+                if (!iaOk) {
+                    mapaValores = construirFallbackCarta(elementos, input, textoExtraidoAdjunto);
+                    console.log('Usando fallback local:', mapaValores);
                 }
 
-                // Mapear a keys internas bd_page_idx
+                // Mapear a keys internas bd_page_idx (match flexible de nombres)
                 valoresCamposRellenado = {};
                 elementos.forEach((el, idx) => {
                     const pageNum = el.pagina || 1;
                     const key = `bd_${pageNum}_${idx}`;
-                    const nombre = el.nombre || '';
-                    // buscar valor por nombre exacto o case-insensitive
+                    const nombre = (el.nombre || '').trim();
                     let val = mapaValores[nombre];
-                    if (val === undefined) {
-                        const found = Object.keys(mapaValores).find(k => k.toLowerCase() === nombre.toLowerCase());
-                        val = found ? mapaValores[found] : '';
+                    if (val === undefined || val === null) {
+                        const found = Object.keys(mapaValores).find(k =>
+                            k.toLowerCase().trim() === nombre.toLowerCase() ||
+                            k.toLowerCase().includes(nombre.toLowerCase()) ||
+                            nombre.toLowerCase().includes(k.toLowerCase())
+                        );
+                        val = found != null ? mapaValores[found] : '';
                     }
-                    if (val !== undefined && val !== null) valoresCamposRellenado[key] = String(val);
+                    // Fecha: si el campo es tipo fecha y está vacío, poner hoy
+                    if ((el.tipo === 'fecha' || /fecha/i.test(nombre)) && (!val || val === '')) {
+                        const d = new Date();
+                        val = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+                    }
+                    if (el.tipo === 'firma' || el.tipo === 'huella') val = '';
+                    valoresCamposRellenado[key] = String(val ?? '');
                 });
+
+                const llenos = Object.values(valoresCamposRellenado).filter(v => v && v.length > 0).length;
+                if (llenos === 0) {
+                    alert('⚠️ No se pudieron generar textos. Escribe datos en el cuadro o adjunta un archivo e inténtalo de nuevo.');
+                } else if (!iaOk) {
+                    // Aviso suave: se usó relleno local
+                    console.info('Relleno local aplicado (' + llenos + ' campos). Revisa y edita si hace falta.');
+                }
 
                 // Abrir editor de coordenadas CON valores prellenados
                 await abrirRellenadoPlantillaBD(plantillaActual, valoresCamposRellenado);
