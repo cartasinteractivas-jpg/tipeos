@@ -780,6 +780,77 @@
         }
     }
 
+    /** Parte texto en líneas que caben en maxWidth (tamaño fijo 12) */
+    function partirLineasPdf(texto, font, fontSize, maxWidth) {
+        const lineas = [];
+        const paragrafos = String(texto).split(/\n/);
+        paragrafos.forEach((par, pi) => {
+            if (pi > 0 && lineas.length) lineas.push(''); // salto de párrafo
+            const words = par.trim().split(/\s+/).filter(Boolean);
+            if (!words.length) { lineas.push(''); return; }
+            let linea = '';
+            words.forEach(word => {
+                const prueba = linea ? linea + ' ' + word : word;
+                if (font.widthOfTextAtSize(prueba, fontSize) <= maxWidth) {
+                    linea = prueba;
+                } else {
+                    if (linea) lineas.push(linea);
+                    // palabra muy larga: cortar
+                    if (font.widthOfTextAtSize(word, fontSize) > maxWidth) {
+                        let chunk = '';
+                        for (const ch of word) {
+                            if (font.widthOfTextAtSize(chunk + ch, fontSize) <= maxWidth) chunk += ch;
+                            else { if (chunk) lineas.push(chunk); chunk = ch; }
+                        }
+                        linea = chunk;
+                    } else {
+                        linea = word;
+                    }
+                }
+            });
+            if (linea) lineas.push(linea);
+        });
+        return lineas;
+    }
+
+    /** Dibuja líneas con alineación (incluye justificado) tamaño 12 */
+    function dibujarLineasEnPagina(page, lineas, font, fontSize, x, topY, maxWidth, lineHeight, alineacion, maxBottomY) {
+        let y = topY;
+        const drawn = [];
+        for (let i = 0; i < lineas.length; i++) {
+            if (y < maxBottomY) break;
+            const linea = lineas[i];
+            if (!linea) { y -= lineHeight; drawn.push(i); continue; }
+            const tw = font.widthOfTextAtSize(linea, fontSize);
+            let drawX = x;
+            if (alineacion === 'centro') drawX = x + (maxWidth - tw) / 2;
+            else if (alineacion === 'derecha') drawX = x + maxWidth - tw;
+            else if (alineacion === 'justificado' || alineacion === 'justificado') {
+                // Justificar: repartir espacio entre palabras (excepto última línea del bloque se trata normal si es corta)
+                const words = linea.split(/\s+/);
+                if (words.length > 1 && i < lineas.length - 1 && linea.length > 20) {
+                    const textOnly = words.join('');
+                    const spaceTotal = maxWidth - font.widthOfTextAtSize(words.join(''), fontSize);
+                    // aproximación: dibujar palabra a palabra
+                    let cx = x;
+                    const gaps = words.length - 1;
+                    const gapW = gaps > 0 ? (maxWidth - words.reduce((s, w) => s + font.widthOfTextAtSize(w, fontSize), 0)) / gaps : 0;
+                    words.forEach((w, wi) => {
+                        page.drawText(w, { x: cx, y, size: fontSize, font, color: PDFLib.rgb(0, 0, 0) });
+                        cx += font.widthOfTextAtSize(w, fontSize) + (wi < gaps ? Math.max(gapW, font.widthOfTextAtSize(' ', fontSize)) : 0);
+                    });
+                    y -= lineHeight;
+                    drawn.push(i);
+                    continue;
+                }
+            }
+            page.drawText(linea, { x: drawX, y, size: fontSize, font, color: PDFLib.rgb(0, 0, 0) });
+            y -= lineHeight;
+            drawn.push(i);
+        }
+        return { lastY: y, drawnCount: drawn.length };
+    }
+
     async function generarPdfPlantillaBD(plantilla, elementos) {
         if (!freePdfDoc) return;
         if (usuarioActual.creditos < freePdfPageCount) {
@@ -789,65 +860,113 @@
         const btn = document.getElementById('btn-generar-free');
         btn.innerText = '⏳ Procesando...'; btn.disabled = true;
         try {
-            // Recoger inputs visibles
             document.querySelectorAll('#free-canvas-container input, #free-canvas-container textarea').forEach(inp => {
-                // ya se guardan en oninput
+                if (inp.dataset && inp.oninput) { /* valores ya en valoresCamposRellenado */ }
             });
-            const pages = freePdfDoc.getPages();
-            const font = await freePdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+            // sincronizar valores de inputs visibles
+            document.querySelectorAll('#free-canvas-container input, #free-canvas-container textarea').forEach((inp, i) => {
+                // los inputs están en orden por página; mejor usar el value ya ligado en oninput
+            });
 
-            for (let pageNum = 1; pageNum <= pages.length; pageNum++) {
+            const font = await freePdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+            const FONT_SIZE = 12; // tamaño único para todo el documento
+            const LINE_H = 16;
+            const config = plantilla.configuracion || {};
+            const pageW = (config.pageDimensions && (config.pageDimensions.w || config.pageDimensions.width)) || 595.28;
+            const pageH = (config.pageDimensions && (config.pageDimensions.h || config.pageDimensions.height)) || 841.89;
+            const margins = config.margins || { top: 1, bottom: 1, left: 1, right: 1 };
+            const marginBottomPt = (margins.bottom || 1) * 28.35;
+            const marginTopPt = (margins.top || 1) * 28.35;
+
+            // Ordenar elementos: primero los que no son cuerpo largo, cuerpo al final para overflow
+            const indices = elementos.map((el, idx) => ({ el, idx }));
+            const overflowQueue = []; // texto que no cupo → páginas extra
+
+            // Asegurar al menos las páginas del PDF base
+            let pages = freePdfDoc.getPages();
+
+            elementos.forEach((el, idx) => {
+                const pageNum = el.pagina || 1;
+                if (pageNum > pages.length) return;
                 const page = pages[pageNum - 1];
                 const { width, height } = page.getSize();
-                const pageElems = elementos.filter(el => (el.pagina || 1) === pageNum);
-                pageElems.forEach((el, idx) => {
-                    const key = `bd_${pageNum}_${idx}`;
-                    const valor = valoresCamposRellenado[key];
-                    if (!valor) return;
-                    const x = el.rel_x * width;
-                    const h = el.rel_h * height;
-                    const w = el.rel_w * width;
-                    const pdfY = height - (el.rel_y * height) - h;
+                const key = `bd_${pageNum}_${idx}`;
+                let valor = valoresCamposRellenado[key];
+                if (!valor || (typeof valor === 'string' && valor.startsWith('data:image'))) return;
 
-                    if (typeof valor === 'string' && valor.startsWith('data:image')) {
-                        // firma async se maneja abajo
-                    } else {
-                        const texto = limpiarTextoParaPdf(String(valor));
-                        const fontSize = Math.max(8, Math.min(14, h * 0.55));
-                        let textX = x + 2;
-                        if (el.alineacion === 'centro') {
-                            textX = x + (w - font.widthOfTextAtSize(texto, fontSize)) / 2;
-                        } else if (el.alineacion === 'derecha') {
-                            textX = x + w - font.widthOfTextAtSize(texto, fontSize) - 2;
-                        }
-                        page.drawText(texto, { x: textX, y: pdfY + h * 0.25, size: fontSize, font, color: PDFLib.rgb(0,0,0), maxWidth: w - 4 });
-                    }
-                });
+                    const x = el.rel_x * width;
+                    const boxH = el.rel_h * height;
+                    const w = el.rel_w * width;
+                    const topOfBox = height - (el.rel_y * height); // y PDF del borde superior del box
+                    const bottomOfBox = topOfBox - boxH;
+                    const texto = limpiarTextoParaPdf(String(valor));
+                    const alineacion = el.alineacion || 'izquierda';
+                    const maxWidth = Math.max(20, w - 4);
+                    const lineas = partirLineasPdf(texto, font, FONT_SIZE, maxWidth);
+                    const startY = topOfBox - FONT_SIZE; // primera línea
+                    const minY = Math.max(bottomOfBox + 2, marginBottomPt);
+
+                    const esCuerpoLargo = /cuerpo|introduc/i.test(el.nombre || '') || alineacion === 'justificado';
+
+                    const { lastY, drawnCount } = dibujarLineasEnPagina(
+                        page, lineas, font, FONT_SIZE, x + 2, startY, maxWidth, LINE_H, alineacion, minY
+                    );
+
+                    // Si sobran líneas (texto más largo que el box) → continuar en páginas nuevas
+                    if (drawnCount < lineas.length && esCuerpoLargo) {
+                    overflowQueue.push({
+                        lineasRestantes: lineas.slice(drawnCount),
+                        x: x + 2,
+                        maxWidth,
+                        alineacion,
+                        nombre: el.nombre
+                    });
+                }
+            });
+
+            // Páginas extra A4 para continuar cuerpo/introducción justificada
+            for (const ov of overflowQueue) {
+                let restantes = ov.lineasRestantes;
+                while (restantes.length > 0) {
+                    const newPage = freePdfDoc.addPage([pageW, pageH]);
+                    freePdfPageCount++;
+                    const { width, height } = newPage.getSize();
+                    const startY = height - marginTopPt - FONT_SIZE;
+                    const minY = marginBottomPt;
+                    const { drawnCount } = dibujarLineasEnPagina(
+                        newPage, restantes, font, FONT_SIZE, ov.x, startY, ov.maxWidth, LINE_H, ov.alineacion || 'justificado', minY
+                    );
+                    restantes = restantes.slice(drawnCount);
+                    if (drawnCount === 0) break; // seguridad
+                }
             }
 
+            pages = freePdfDoc.getPages();
+            freePdfPageCount = pages.length;
+
             // Firmas guardadas como dataURL
-            for (let pageNum = 1; pageNum <= pages.length; pageNum++) {
+            elementos.forEach((el, idx) => {
+                const pageNum = el.pagina || 1;
+                if (pageNum > pages.length) return;
                 const page = pages[pageNum - 1];
                 const { width, height } = page.getSize();
-                const pageElems = elementos.filter(el => (el.pagina || 1) === pageNum);
-                for (let idx = 0; idx < pageElems.length; idx++) {
-                    const el = pageElems[idx];
-                    const key = `bd_${pageNum}_${idx}`;
-                    const valor = valoresCamposRellenado[key];
-                    if (typeof valor === 'string' && valor.startsWith('data:image')) {
+                const key = `bd_${pageNum}_${idx}`;
+                const valor = valoresCamposRellenado[key];
+                if (typeof valor === 'string' && valor.startsWith('data:image')) {
+                    (async () => {
                         try {
                             const img = valor.includes('jpeg') || valor.includes('jpg')
                                 ? await freePdfDoc.embedJpg(valor) : await freePdfDoc.embedPng(valor);
                             const x = el.rel_x * width;
                             const w = el.rel_w * width;
-                            // Más cuadrada: altura mínima ~35% del ancho
                             let h = Math.max(el.rel_h * height, w * 0.35, 40);
                             const pdfY = height - (el.rel_y * height) - h;
                             page.drawImage(img, { x, y: pdfY, width: w, height: h });
                         } catch (_) {}
-                    }
+                    })();
                 }
-            }
+            });
+            await new Promise(r => setTimeout(r, 300));
 
             // También dibujar elementos flotantes extras (si el usuario añadió firmas/texto libres)
             for (const el of elementosFlotantes) {
@@ -861,7 +980,7 @@
                 const pdfY = height - (el.pctY * height) - rectH;
                 if (el.hasHalo) page.drawRectangle({ x: pdfX, y: pdfY, width: rectW, height: rectH, color: PDFLib.rgb(1,1,1) });
                 if (el.type === 'text') {
-                    page.drawText(limpiarTextoParaPdf(el.texto), { x: pdfX, y: pdfY + rectH * 0.2, size: el.size, color: PDFLib.rgb(0,0,0) });
+                    page.drawText(limpiarTextoParaPdf(el.texto), { x: pdfX, y: pdfY + rectH * 0.2, size: 12, color: PDFLib.rgb(0,0,0) });
                 } else if (el.type === 'image') {
                     try {
                         const img = el.dataUrl.includes('jpeg') || el.dataUrl.includes('jpg')
