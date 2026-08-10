@@ -293,10 +293,10 @@
 <!-- BOTÓN FLOTANTE GLOBAL -->
 <button id="btn-float-add-global" onclick="toggleMenuMas()">✚</button>
 <div id="menu-flotante-opciones-global">
-    <button onclick="abrirModalTextoDesdeMas()">📝 Texto</button>
-    <button onclick="abrirModalFirmaDesdeMas()" style="background: #e67e22;">✍️ Firma</button>
-    <button onclick="abrirModalSimbolosDesdeMas()" style="background: #9b59b6;">✅ Símbolo</button>
-    <button onclick="abrirSubirImagenDesdeMas()" style="background: #2ecc71; color: black;">🖼️ Imagen</button>
+    <button id="btn-menu-texto" onclick="abrirModalTextoDesdeMas()">📝 Texto</button>
+    <button id="btn-menu-firma" onclick="abrirModalFirmaDesdeMas()" style="background: #e67e22;">✍️ Firma</button>
+    <button id="btn-menu-simbolo" onclick="abrirModalSimbolosDesdeMas()" style="background: #9b59b6;">✅ Símbolo</button>
+    <button id="btn-menu-imagen" onclick="abrirSubirImagenDesdeMas()" style="background: #2ecc71; color: black;">🖼️ Imagen</button>
     <input type="file" id="input-subir-imagen-global" accept="image/*" style="display: none;" onchange="procesarImagenSubida(event)">
 </div>
 
@@ -944,49 +944,55 @@
             pages = freePdfDoc.getPages();
             freePdfPageCount = pages.length;
 
-            // Firmas guardadas como dataURL
-            elementos.forEach((el, idx) => {
+            // Firmas de campos BD (coordenadas)
+            for (let idx = 0; idx < elementos.length; idx++) {
+                const el = elementos[idx];
                 const pageNum = el.pagina || 1;
-                if (pageNum > pages.length) return;
+                if (pageNum > pages.length) continue;
                 const page = pages[pageNum - 1];
                 const { width, height } = page.getSize();
                 const key = `bd_${pageNum}_${idx}`;
                 const valor = valoresCamposRellenado[key];
                 if (typeof valor === 'string' && valor.startsWith('data:image')) {
-                    (async () => {
-                        try {
-                            const img = valor.includes('jpeg') || valor.includes('jpg')
-                                ? await freePdfDoc.embedJpg(valor) : await freePdfDoc.embedPng(valor);
-                            const x = el.rel_x * width;
-                            const w = el.rel_w * width;
-                            let h = Math.max(el.rel_h * height, w * 0.35, 40);
-                            const pdfY = height - (el.rel_y * height) - h;
-                            page.drawImage(img, { x, y: pdfY, width: w, height: h });
-                        } catch (_) {}
-                    })();
+                    try {
+                        const img = valor.includes('jpeg') || valor.includes('jpg')
+                            ? await freePdfDoc.embedJpg(valor) : await freePdfDoc.embedPng(valor);
+                        const x = el.rel_x * width;
+                        const w = el.rel_w * width;
+                        let h = Math.max(el.rel_h * height, w * 0.35, 40);
+                        const pdfY = height - (el.rel_y * height) - h;
+                        page.drawImage(img, { x, y: pdfY, width: w, height: h });
+                    } catch (_) {}
                 }
-            });
-            await new Promise(r => setTimeout(r, 300));
+            }
 
-            // También dibujar elementos flotantes extras (si el usuario añadió firmas/texto libres)
+            // Elementos flotantes (Firma / Imagen del botón +) anclados en su posición, por encima
             for (const el of elementosFlotantes) {
-                const page = pages[el.pageNum - 1];
-                if (!page) continue;
+                const page = pages[(el.pageNum || 1) - 1];
+                if (!page || !el.wrapper) continue;
                 const { width, height } = page.getSize();
+                // Posición actual del wrapper (por si lo movieron)
+                const pctX = parseFloat(el.wrapper.style.left) / 100;
+                const pctY = parseFloat(el.wrapper.style.top) / 100;
+                el.pctX = isNaN(pctX) ? el.pctX : pctX;
+                el.pctY = isNaN(pctY) ? el.pctY : pctY;
+                const parentW = el.wrapper.parentElement?.offsetWidth || width;
+                const scale = width / parentW;
+                const rectW = Math.max(20, el.wrapper.offsetWidth * scale);
+                const rectH = Math.max(20, el.wrapper.offsetHeight * scale);
                 const pdfX = el.pctX * width;
-                const domScale = width / (el.wrapper.parentElement?.offsetWidth || width);
-                const rectW = el.wrapper.offsetWidth * domScale;
-                const rectH = el.wrapper.offsetHeight * domScale;
                 const pdfY = height - (el.pctY * height) - rectH;
-                if (el.hasHalo) page.drawRectangle({ x: pdfX, y: pdfY, width: rectW, height: rectH, color: PDFLib.rgb(1,1,1) });
-                if (el.type === 'text') {
-                    page.drawText(limpiarTextoParaPdf(el.texto), { x: pdfX, y: pdfY + rectH * 0.2, size: 12, color: PDFLib.rgb(0,0,0) });
-                } else if (el.type === 'image') {
+                if (el.hasHalo) {
+                    page.drawRectangle({ x: pdfX, y: pdfY, width: rectW, height: rectH, color: PDFLib.rgb(1, 1, 1) });
+                }
+                if (el.type === 'text' && el.texto) {
+                    page.drawText(limpiarTextoParaPdf(el.texto), { x: pdfX, y: pdfY + rectH * 0.2, size: 12, font, color: PDFLib.rgb(0, 0, 0) });
+                } else if (el.dataUrl) {
                     try {
                         const img = el.dataUrl.includes('jpeg') || el.dataUrl.includes('jpg')
                             ? await freePdfDoc.embedJpg(el.dataUrl) : await freePdfDoc.embedPng(el.dataUrl);
                         page.drawImage(img, { x: pdfX, y: pdfY, width: rectW, height: rectH });
-                    } catch (_) {}
+                    } catch (e) { console.warn('No se pudo dibujar flotante', e); }
                 }
             }
 
@@ -1702,7 +1708,18 @@ ${reglaFirma}`;
     function toggleMenuMas() {
         menuMasAbierto = !menuMasAbierto;
         const menu = document.getElementById('menu-flotante-opciones-global');
-        if (menu) menu.style.display = menuMasAbierto ? 'flex' : 'none';
+        if (!menu) return;
+        // En plantilla BD (Carta Simple, etc.): solo Firma e Imagen
+        const esPlantillaBD = !!(plantillaActual && (plantillaActual.tipo === 'rellenado' || plantillaActual.tipo === 'relleno' || plantillaActual.tipo === 'ia'));
+        const btnTexto = document.getElementById('btn-menu-texto');
+        const btnSimbolo = document.getElementById('btn-menu-simbolo');
+        const btnFirma = document.getElementById('btn-menu-firma');
+        const btnImagen = document.getElementById('btn-menu-imagen');
+        if (btnTexto) btnTexto.style.display = esPlantillaBD ? 'none' : 'flex';
+        if (btnSimbolo) btnSimbolo.style.display = esPlantillaBD ? 'none' : 'flex';
+        if (btnFirma) btnFirma.style.display = 'flex';
+        if (btnImagen) btnImagen.style.display = 'flex';
+        menu.style.display = menuMasAbierto ? 'flex' : 'none';
     }
 
     function getViewportCenter() {
